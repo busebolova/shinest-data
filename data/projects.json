@@ -1,0 +1,155 @@
+[
+  {
+    "id": "1",
+    "title": {
+      "tr": "Banyo Tasarımı",
+      "en": "Bathroom Design",
+      "de": "Badezimmer-Design",
+      "fr": "Design de Salle de Bain",
+      "it": "Design Bagno",
+      "ru": "Дизайн Ванной",
+      "ar": "تصميم الحمام"
+    },
+    "slug": "banyo-tasarimi",
+    "category": "Banyo Tasarımı",
+    "location": "İzmir",
+    "year": "2024",
+    "status": "published",
+    "featuredImage": "/images/bathroom-design-1.png",
+    "images": [
+      "/images/bathroom-design-1.png",
+      "/images/bathroom-design-2.png",
+      "/images/bathroom-design-3.png"
+    ],
+    "description": {
+      "tr": "Modern ve fonksiyonel banyo tasarımı projesi. Minimalist yaklaşım ile konfor ve estetiği bir araya getiren tasarım.",
+      "en": "Modern and functional bathroom design project. Design that combines comfort and aesthetics with a minimalist approach.",
+      "de": "Modernes und funktionales Badezimmer-Designprojekt. Design, das Komfort und Ästhetik mit einem minimalistischen Ansatz verbindet.",
+      "fr": "Projet de design de salle de bain moderne et fonctionnel. Design qui allie confort et esthétique avec une approche minimaliste.",
+      "it": "Progetto di design bagno moderno e funzionale. Design che combina comfort ed estetica con un approccio minimalista.",
+      "ru": "Современный и функциональный проект дизайна ванной. Дизайн, сочетающий комфорт и эстетику с минималистским подходом.",
+      "ar": "مشروع تصميم حمام عصري ووظيفي. تصميم يجمع بين الراحة والجمال مع نهج بسيط."
+    },
+    "client": "Özel Müşteri",
+    "area": "12 m²",
+    "duration": "2 Hafta",
+    "createdAt": "2024-01-15",
+    "updatedAt": "2024-01-20"
+  },
+  {
+    "id": "2",
+    "title": {
+      "tr": "Kafe Tasarımı",
+      "en": "Cafe Design",
+      "de": "Café-Design",
+      "fr": "Design de Café",
+      "it": "Design Caffè",
+      "ru": "Дизайн Кафе",
+      "ar": "تصميم المقهى"
+    },
+    "slug": "sabine-patisserie",
+    "category": "Kafe Tasarımı",
+    "location": "İstanbul",
+    "year": "2024",
+    "status": "published",
+    "featuredImage": "/images/cafe-design-1.png",
+    "images": [
+      "/images/cafe-design-1.png",
+      "/images/cafe-design-2.png"
+    ],
+    "description": {
+      "tr": "Modern patisserie tasarımı. Yeşil fluted tezgah, beyaz asma lambalar ve şık vitrin dolabı ile sıcak ve davetkar bir atmosfer yaratılmıştır.",
+      "en": "Modern patisserie design. A warm and inviting atmosphere created with green fluted counter, white pendant lights and elegant display cabinet.",
+      "de": "Modernes Patisserie-Design. Eine warme und einladende Atmosphäre mit grüner gerillter Theke, weißen Pendelleuchten und elegantem Vitrinenschrank.",
+      "fr": "Design de pâtisserie moderne. Une atmosphère chaleureuse et accueillante créée avec un comptoir cannelé vert, des suspensions blanches et une vitrine élégante.",
+      "it": "Design pasticceria moderno. Un'atmosfera calda e accogliente creata con bancone scanalato verde, lampade a sospensione bianche ed elegante vetrina.",
+      "ru": "Современный дизайн кондитерской. Теплая и уютная атмосфера, созданная зеленой рифленой стойкой, белыми подвесными светильниками и элегантной витриной.",
+      "ar": "تصميم حلويات عصري. أجواء دافئة وجذابة تم إنشاؤها بطاولة خضراء مخددة ومصابيح معلقة بيضاء وخزانة عرض أنيقة."
+    },
+    "client": "Kafe Müşterisi",
+    "area": "85 m²",
+    "duration": "6 Hafta",
+    "createdAt": "2024-01-10",
+    "updatedAt": "2024-01-18"
+  },
+  {
+    "id": "3",
+    "title": {
+      "tr": "Kış Bahçesi Tasarımı",
+      "en": "Winter Garden Design",
+      "de": "Wintergarten-Design",
+      "fr": "Design de Jardin d'Hiver",
+      "it": "Design Giardino d'Inverno",
+      "ru": "Дизайн Зимнего Сада",
+      "ar": "تصميم الحديقة الشتوية"
+    },
+    "slug": "kis-bahcesi-tasarimi",
+    "category": "Kış Bahçesi Tasarımı",
+    "location": "Ankara",
+    "year": "2024",
+    "status": "published",
+    "featuredImage": "/images/winter-garden-1.png",
+    "images": [
+      "/images/winter-garden-1.png",
+      "/images/winter-garden-2.png"
+    ],
+    "description": {
+      "tr": "Modern cam kış bahçesi tasarımı. Beyaz çerçeveli büyük cam paneller ile doğal ışığın maksimize edildiği, dört mevsim kullanılabilen yaşam alanı.",
+      "en": "Modern glass winter garden design. Living space that can be used in all seasons, where natural light is maximized with large glass panels with white frames.",
+      "de": "Modernes Glas-Wintergarten-Design. Wohnraum, der zu allen Jahreszeiten genutzt werden kann und bei dem das natürliche Licht durch große Glasplatten mit weißen Rahmen maximiert wird.",
+      "fr": "Design de jardin d'hiver en verre moderne. Espace de vie utilisable en toutes saisons où la lumière naturelle est maximisée avec de grands panneaux de verre à cadres blancs.",
+      "it": "Design giardino d'inverno in vetro moderno. Spazio abitativo utilizzabile in tutte le stagioni dove la luce naturale è massimizzata con grandi pannelli di vetro con cornici bianche.",
+      "ru": "Современный дизайн стеклянного зимнего сада. Жилое пространство, которое можно использовать во все сезоны, где естественный свет максимизирован большими стеклянными панелями с белыми рамами.",
+      "ar": "تصميم حديقة شتوية زجاجية عصرية. مساحة معيشة يمكن استخدامها في جميع الفصول حيث يتم تعظيم الضوء الطبيعي بألواح زجاجية كبيرة بإطارات بيضاء."
+    },
+    "client": "Villa Müşterisi",
+    "area": "45 m²",
+    "duration": "4 Hafta",
+    "createdAt": "2024-01-05",
+    "updatedAt": "2024-01-15"
+  },
+  {
+    "id": "4",
+    "title": {
+      "tr": "Polonya Konut Tasarımı",
+      "en": "Poland Apartment Design",
+      "de": "Polen Wohnungsdesign",
+      "fr": "Design d'Appartement en Pologne",
+      "it": "Design Appartamento Polonia",
+      "ru": "Дизайн Квартиры в Польше",
+      "ar": "تصميم شقة في بولندا"
+    },
+    "slug": "polonya-konut-tasarimi",
+    "category": "Konut Tasarımı",
+    "location": "Polonya",
+    "year": "2024",
+    "status": "published",
+    "featuredImage": "/images/poland-apartment-1.png",
+    "images": [
+      "/images/poland-apartment-1.png",
+      "/images/poland-apartment-2.png",
+      "/images/poland-apartment-3.png",
+      "/images/poland-apartment-4.png",
+      "/images/poland-apartment-5.png",
+      "/images/poland-apartment-6.png",
+      "/images/poland-apartment-7.png",
+      "/images/poland-apartment-8.png",
+      "/images/poland-apartment-9.png",
+      "/images/poland-apartment-10.png"
+    ],
+    "description": {
+      "tr": "Modern Polonya dairesi tasarımı. Açık plan yaşam alanı, gri-beyaz renk paleti ve altın detaylar ile lüks bir yaşam alanı oluşturulmuştur.",
+      "en": "Modern Poland apartment design. A luxurious living space created with open plan living area, gray-white color palette and gold details.",
+      "de": "Modernes Polen-Wohnungsdesign. Ein luxuriöser Wohnraum mit offenem Wohnbereich, grau-weißer Farbpalette und goldenen Details.",
+      "fr": "Design d'appartement moderne en Pologne. Un espace de vie luxueux créé avec un salon ouvert, une palette de couleurs gris-blanc et des détails dorés.",
+      "it": "Design appartamento moderno in Polonia. Uno spazio abitativo lussuoso creato con zona giorno open space, palette di colori grigio-bianco e dettagli dorati.",
+      "ru": "Современный дизайн квартиры в Польше. Роскошное жилое пространство, созданное с открытой планировкой, серо-белой цветовой палитрой и золотыми деталями.",
+      "ar": "تصميم شقة عصرية في بولندا. مساحة معيشة فاخرة تم إنشاؤها بمنطقة معيشة مفتوحة ولوحة ألوان رمادية-بيضاء وتفاصيل ذهبية."
+    },
+    "client": "Polonya Müşterisi",
+    "area": "120 m²",
+    "duration": "8 Hafta",
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-12"
+  }
+]
