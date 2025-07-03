@@ -3,17 +3,22 @@ import { revalidatePath } from "next/cache"
 
 export async function POST(request: NextRequest) {
   try {
-    const { path } = await request.json()
+    const body = await request.json()
+    const { path } = body
 
-    if (!path) {
-      return NextResponse.json({ error: "Path is required" }, { status: 400 })
+    if (path) {
+      revalidatePath(path)
+      return NextResponse.json({ revalidated: true, path })
     }
 
-    revalidatePath(path)
+    // Revalidate common paths
+    revalidatePath("/")
+    revalidatePath("/projects")
+    revalidatePath("/admin")
 
-    return NextResponse.json({ message: "Revalidated successfully" })
+    return NextResponse.json({ revalidated: true, paths: ["/", "/projects", "/admin"] })
   } catch (error) {
-    console.error("Error revalidating:", error)
+    console.error("Revalidation error:", error)
     return NextResponse.json({ error: "Failed to revalidate" }, { status: 500 })
   }
 }

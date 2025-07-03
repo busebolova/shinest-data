@@ -1,51 +1,52 @@
-import { getServerSession } from "next-auth/next"
 import { type NextRequest, NextResponse } from "next/server"
+import { writeFile, mkdir } from "fs/promises"
+import { join } from "path"
+import { existsSync } from "fs"
 
-export async function POST(req: NextRequest) {
-  const session = await getServerSession()
-
-  if (!session) {
-    return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
-      status: 401,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-  }
-
+export async function POST(request: NextRequest) {
   try {
-    const formData = await req.formData()
-    const file = formData.get("file") as Blob | null
+    const formData = await request.formData()
+    const file = formData.get("file") as File
+    const customPath = formData.get("path") as string
 
     if (!file) {
-      return new NextResponse(JSON.stringify({ message: "No file uploaded" }), {
-        status: 400,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
 
-    // Implement your file upload logic here.  This is a placeholder.
-    // You'll likely want to upload to a cloud storage service like AWS S3,
-    // Google Cloud Storage, or Azure Blob Storage.
+    // Create filename with timestamp to avoid conflicts
+    const timestamp = Date.now()
+    const fileExtension = file.name.split(".").pop()
+    const fileName = customPath || `upload-${timestamp}.${fileExtension}`
 
-    // For demonstration purposes, we'll just return a success message.
-    return new NextResponse(JSON.stringify({ message: "File uploaded successfully" }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
+    // Ensure the public/images directory exists
+    const publicDir = join(process.cwd(), "public")
+    const imagesDir = join(publicDir, "images")
+
+    if (!existsSync(publicDir)) {
+      await mkdir(publicDir, { recursive: true })
+    }
+
+    if (!existsSync(imagesDir)) {
+      await mkdir(imagesDir, { recursive: true })
+    }
+
+    // Write the file
+    const filePath = join(imagesDir, fileName)
+    await writeFile(filePath, buffer)
+
+    // Return the public URL
+    const publicUrl = `/images/${fileName}`
+
+    return NextResponse.json({
+      success: true,
+      url: publicUrl,
+      filename: fileName,
     })
   } catch (error) {
-    console.error("Error uploading file:", error)
-    return new NextResponse(JSON.stringify({ message: "Error uploading file" }), {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
+    console.error("Upload error:", error)
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 })
   }
 }

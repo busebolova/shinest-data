@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { Bell, User, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,64 +10,67 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut, Settings, User, RefreshCw, ExternalLink } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { RealtimeStatus } from "./realtime-status"
 
 export function AdminHeader() {
   const router = useRouter()
-  const [user] = useState(() => {
-    if (typeof window !== "undefined") {
-      const userData = localStorage.getItem("admin-user")
-      return userData ? JSON.parse(userData) : { email: "admin" }
-    }
-    return { email: "admin" }
-  })
 
   const handleLogout = () => {
-    localStorage.removeItem("admin-authenticated")
-    localStorage.removeItem("admin-user")
+    localStorage.removeItem("admin-auth")
     router.push("/admin/login")
-  }
-
-  const handleRefresh = () => {
-    window.location.reload()
   }
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-semibold text-gray-900">SHINEST Yönetim Paneli</h1>
-          <Badge variant="secondary" className="bg-green-100 text-green-700">
-            Canlı
-          </Badge>
+        <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-semibold text-gray-900">SHINEST Admin</h1>
+          <RealtimeStatus />
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Site Link */}
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Siteyi Görüntüle
-            </Link>
-          </Button>
-
-          {/* Refresh Button */}
-          <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-2 bg-transparent">
-            <RefreshCw className="w-4 h-4" />
-            Yenile
-          </Button>
+        <div className="flex items-center space-x-4">
+          {/* Notifications */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="relative">
+                <Bell className="h-4 w-4" />
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">3</Badge>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Bildirimler</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm font-medium">Yeni proje eklendi</span>
+                  <span className="text-xs text-gray-500">5 dakika önce</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm font-medium">İçerik güncellendi</span>
+                  <span className="text-xs text-gray-500">1 saat önce</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm font-medium">Yeni mesaj</span>
+                  <span className="text-xs text-gray-500">2 saat önce</span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-blue-100 text-blue-700">
-                    {user.email.charAt(0).toUpperCase()}
-                  </AvatarFallback>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/images/admin-avatar.png" alt="Admin" />
+                  <AvatarFallback>AD</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -76,7 +78,7 @@ export function AdminHeader() {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">Admin</p>
-                  <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                  <p className="text-xs leading-none text-muted-foreground">admin@shinest.com</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

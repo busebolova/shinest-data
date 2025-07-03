@@ -6,127 +6,111 @@ export async function GET() {
     const isConfigured = githubAPI.isConfigured()
 
     if (!isConfigured) {
-      return NextResponse.json(
-        {
-          error: "GitHub API not configured",
-          configured: false,
-          repository: {
-            name: "shinest",
-            fullName: "shinest/shinest",
-            url: "https://github.com/shinest/shinest",
-            updatedAt: new Date().toISOString(),
-          },
-          lastCommit: {
-            sha: "local",
-            message: "Local development",
-            author: "System",
-            date: new Date().toISOString(),
-            url: "https://github.com/shinest/shinest",
-          },
-          stats: {
-            projects: 2,
-            blogPosts: 1,
-            commits: 1,
-            lastUpdate: new Date().toISOString(),
-          },
-        },
-        { status: 200 },
-      )
-    }
-
-    // Get repository info (with fallback)
-    let repository
-    try {
-      repository = await githubAPI.getRepositoryInfo()
-    } catch (error) {
-      console.log("Using fallback repository info")
-      repository = {
-        name: "shinest",
-        full_name: "shinest/shinest",
-        html_url: "https://github.com/shinest/shinest",
-        updated_at: new Date().toISOString(),
-      }
-    }
-
-    // Get latest commit (with fallback)
-    let lastCommit
-    try {
-      lastCommit = await githubAPI.getLatestCommit()
-    } catch (error) {
-      console.log("Using fallback commit info")
-      lastCommit = {
-        sha: "fallback",
-        commit: {
-          message: "Fallback commit",
-          author: {
-            name: "System",
-            date: new Date().toISOString(),
-          },
-        },
-        html_url: "https://github.com/shinest/shinest",
-      }
-    }
-
-    // Get content stats (with fallbacks)
-    const projects = await githubAPI.getProjects()
-    const blogPosts = await githubAPI.getBlogPosts()
-    const commits = await githubAPI.getCommits(10)
-
-    const stats = {
-      projects: projects.length,
-      blogPosts: blogPosts.length,
-      commits: commits.length,
-      lastUpdate: new Date().toISOString(),
-    }
-
-    return NextResponse.json({
-      configured: true,
-      repository: {
-        name: repository.name,
-        fullName: repository.full_name,
-        url: repository.html_url,
-        updatedAt: repository.updated_at,
-      },
-      lastCommit: {
-        sha: lastCommit.sha,
-        message: lastCommit.commit.message,
-        author: lastCommit.commit.author.name,
-        date: lastCommit.commit.author.date,
-        url: lastCommit.html_url,
-      },
-      stats,
-      timestamp: new Date().toISOString(),
-    })
-  } catch (error) {
-    console.error("GitHub status check failed:", error)
-
-    // Return fallback data instead of error
-    return NextResponse.json(
-      {
-        error: "GitHub API temporarily unavailable",
-        message: "Using local fallback data",
+      // Return mock data for development
+      return NextResponse.json({
         configured: false,
         repository: {
-          name: "shinest",
-          fullName: "shinest/shinest",
-          url: "https://github.com/shinest/shinest",
-          updatedAt: new Date().toISOString(),
+          name: "shinest-mock",
+          full_name: "shinest/shinest-mock",
+          html_url: "https://github.com/shinest/shinest",
+          updated_at: new Date().toISOString(),
         },
         lastCommit: {
-          sha: "local",
-          message: "Local development mode",
-          author: "System",
-          date: new Date().toISOString(),
-          url: "https://github.com/shinest/shinest",
+          sha: "mock-" + Date.now(),
+          commit: {
+            author: {
+              name: "Development",
+              email: "dev@shinest.com",
+              date: new Date().toISOString(),
+            },
+            message: "Development mode - mock commit",
+          },
+          html_url: "https://github.com/shinest/shinest",
         },
         stats: {
           projects: 2,
           blogPosts: 1,
           commits: 1,
-          lastUpdate: new Date().toISOString(),
         },
+      })
+    }
+
+    // Get real data from GitHub
+    const [repository, commits, projects, blogPosts] = await Promise.allSettled([
+      githubAPI.getRepositoryInfo(),
+      githubAPI.getCommits(1),
+      githubAPI.getProjects(),
+      githubAPI.getBlogPosts(),
+    ])
+
+    const repoData =
+      repository.status === "fulfilled"
+        ? repository.value
+        : {
+            name: "shinest",
+            full_name: "shinest/shinest",
+            html_url: "https://github.com/shinest/shinest",
+            updated_at: new Date().toISOString(),
+          }
+
+    const latestCommit =
+      commits.status === "fulfilled" && commits.value.length > 0
+        ? commits.value[0]
+        : {
+            sha: "default-" + Date.now(),
+            commit: {
+              author: {
+                name: "System",
+                email: "system@shinest.com",
+                date: new Date().toISOString(),
+              },
+              message: "Default commit",
+            },
+            html_url: repoData.html_url,
+          }
+
+    const projectsData = projects.status === "fulfilled" ? projects.value : []
+    const blogData = blogPosts.status === "fulfilled" ? blogPosts.value : []
+
+    return NextResponse.json({
+      configured: true,
+      repository: repoData,
+      lastCommit: latestCommit,
+      stats: {
+        projects: projectsData.length,
+        blogPosts: blogData.length,
+        commits: commits.status === "fulfilled" ? commits.value.length : 1,
       },
-      { status: 200 },
-    )
+    })
+  } catch (error) {
+    console.error("GitHub status check failed:", error)
+
+    // Return fallback data instead of error
+    return NextResponse.json({
+      configured: false,
+      repository: {
+        name: "shinest-fallback",
+        full_name: "shinest/shinest-fallback",
+        html_url: "https://github.com/shinest/shinest",
+        updated_at: new Date().toISOString(),
+      },
+      lastCommit: {
+        sha: "fallback-" + Date.now(),
+        commit: {
+          author: {
+            name: "Fallback",
+            email: "fallback@shinest.com",
+            date: new Date().toISOString(),
+          },
+          message: "Fallback mode active",
+        },
+        html_url: "https://github.com/shinest/shinest",
+      },
+      stats: {
+        projects: 0,
+        blogPosts: 0,
+        commits: 0,
+      },
+    })
   }
 }

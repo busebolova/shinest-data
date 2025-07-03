@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -9,14 +9,51 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Search, Filter, Calendar, MapPin, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useGitHubProjects } from "@/hooks/use-github-projects"
 import { Footer } from "@/components/footer"
 
+interface Project {
+  id: string
+  title: string
+  description: string
+  category: string
+  images: string[]
+  featured: boolean
+  year: string
+  location: string
+  area: string
+  status: string
+  tags: string[]
+  createdAt: string
+  updatedAt: string
+}
+
 export default function ProjectsPage() {
-  const { projects, loading, error } = useGitHubProjects()
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedYear, setSelectedYear] = useState("all")
+
+  useEffect(() => {
+    loadProjects()
+  }, [])
+
+  const loadProjects = async () => {
+    try {
+      const response = await fetch("/api/projects")
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data)
+      } else {
+        throw new Error("Failed to fetch projects")
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -41,6 +78,9 @@ export default function ProjectsPage() {
       <div className="min-h-screen pt-32 pb-20">
         <div className="container mx-auto px-6 text-center">
           <p className="text-red-600">Projeler yüklenirken bir hata oluştu: {error}</p>
+          <Button onClick={loadProjects} className="mt-4">
+            Tekrar Dene
+          </Button>
         </div>
       </div>
     )
@@ -72,7 +112,7 @@ export default function ProjectsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-shinest-blue mb-6">Projelerimiz</h1>
+            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-[#15415b] mb-6">Projelerimiz</h1>
             <p className="font-sans text-lg text-gray-600 max-w-2xl mx-auto">
               Gerçekleştirdiğimiz projeleri keşfedin ve ilham alın. Her proje, benzersiz bir hikaye anlatır.
             </p>
@@ -93,7 +133,7 @@ export default function ProjectsPage() {
                   placeholder="Proje ara..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 border-gray-200 focus:border-shinest-blue"
+                  className="pl-10 border-gray-200 focus:border-[#c4975a]"
                 />
               </div>
 
@@ -101,7 +141,7 @@ export default function ProjectsPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-shinest-blue"
+                className="px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#c4975a]"
               >
                 <option value="all">Tüm Kategoriler</option>
                 {categories.map((category) => (
@@ -115,7 +155,7 @@ export default function ProjectsPage() {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-shinest-blue"
+                className="px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#c4975a]"
               >
                 <option value="all">Tüm Yıllar</option>
                 {years.map((year) => (
@@ -187,7 +227,7 @@ export default function ProjectsPage() {
                         </div>
 
                         <CardContent className="p-6">
-                          <h3 className="font-display text-xl text-shinest-blue mb-2 group-hover:text-shinest-blue/80 transition-colors">
+                          <h3 className="font-display text-xl text-[#15415b] mb-2 group-hover:text-[#c4975a] transition-colors">
                             {project.title}
                           </h3>
                           <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>

@@ -10,12 +10,12 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 206 93% 32%; /* Updated primary color to a blue tone */
+    --primary: 206 93% 32%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96%;
-    --muted-foreground: 0 0% 0%; /* Updated muted-foreground to black */
+    --muted-foreground: 0 0% 0%;
     --accent: 210 40% 96%;
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
@@ -30,12 +30,17 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
 
-    /* Shinest özel renkleri - Yeni mavi renk */
-    --shinest-blue: 210 61% 22%; /* #15415b HSL değeri */
-    --shinest-gold: 38 55% 54%; /* #cfaf76 HSL değeri */
+    /* SHINEST Brand Colors */
+    --shinest-blue: 210 61% 22%; /* #15415b */
+    --shinest-gold: 38 55% 54%; /* #cfaf76 */
+    --shinest-gold-light: 42 65% 65%; /* #d4a76a */
+    --shinest-gold-dark: 35 50% 45%; /* #b8935a */
 
-    /* Didot font family */
+    /* Typography */
     --font-didot: "Didot", "Didot LT STD", "Hoefler Text", "Playfair Display", "Times New Roman", serif;
+    --font-poppins: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-cormorant: "Cormorant Garamond", Georgia, serif;
+    --font-allura: "Allura", cursive;
   }
 
   .dark {
@@ -45,12 +50,12 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 206 93% 32%; /* Updated primary color to a blue tone */
+    --primary: 206 93% 32%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 0 0% 0%; /* Updated muted-foreground to black */
+    --muted-foreground: 0 0% 0%;
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
@@ -64,12 +69,11 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
 
-    /* Shinest özel renkleri - Yeni mavi renk */
-    --shinest-blue: 210 61% 22%; /* #15415b HSL değeri */
-    --shinest-gold: 38 55% 54%; /* #cfaf76 HSL değeri */
-
-    /* Didot font family */
-    --font-didot: "Didot", "Didot LT STD", "Hoefler Text", "Playfair Display", "Times New Roman", serif;
+    /* SHINEST Brand Colors - Dark Mode */
+    --shinest-blue: 210 61% 22%;
+    --shinest-gold: 38 55% 54%;
+    --shinest-gold-light: 42 65% 65%;
+    --shinest-gold-dark: 35 50% 45%;
   }
 }
 
@@ -79,19 +83,31 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-poppins);
   }
 }
 
+/* Typography Classes */
 .font-display {
   font-family: var(--font-didot);
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .font-sans {
   font-family: var(--font-poppins);
   font-weight: 400;
   font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: 0.01em;
 }
 
 .font-serif {
@@ -102,8 +118,38 @@
   font-family: var(--font-allura);
   font-weight: 400;
   font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: 0.02em;
 }
 
+/* Brand Color Utilities */
+.text-shinest-blue {
+  color: hsl(var(--shinest-blue));
+}
+
+.text-shinest-gold {
+  color: hsl(var(--shinest-gold));
+}
+
+.bg-shinest-blue {
+  background-color: hsl(var(--shinest-blue));
+}
+
+.bg-shinest-gold {
+  background-color: hsl(var(--shinest-gold));
+}
+
+.border-shinest-blue {
+  border-color: hsl(var(--shinest-blue));
+}
+
+.border-shinest-gold {
+  border-color: hsl(var(--shinest-gold));
+}
+
+/* Smooth Scrolling */
 html {
   scroll-behavior: smooth;
 }
@@ -112,37 +158,62 @@ body {
   overflow-x: hidden;
 }
 
-/* Extra small devices (phones, 320px and up) */
-@screen xs {
-  /* Custom styles for very small screens */
+/* Hero Section Specific Styles */
+.hero-text-mask {
+  background: linear-gradient(135deg, #c4975a 0%, #d4a76a 50%, #b8935a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.1));
 }
 
-/* Didot font optimizations */
-.font-display {
-  letter-spacing: -0.02em;
-  font-weight: 400;
-  font-style: normal;
+/* Custom Animations */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
-/* High contrast and sharp rendering for Didot */
-.font-display {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }
 
-/* Allura font optimizations */
-.font-handwriting {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  letter-spacing: 0.02em;
+@keyframes pulse-gold {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 
-/* Poppins font optimizations */
-.font-sans {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  letter-spacing: 0.01em;
+.animate-pulse-gold {
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+/* Responsive Typography */
+@media (max-width: 640px) {
+  .font-display {
+    letter-spacing: -0.01em;
+  }
+}
+
+/* High DPI Display Optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .font-display {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .font-display {
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
 }
