@@ -25,6 +25,45 @@ interface GitHubCommit {
   html_url: string
 }
 
+interface GitHubProject {
+  id: string
+  title: string
+  description: string
+  category: string
+  images: string[]
+  featured: boolean
+  year: string
+  location: string
+  area: string
+  status: "completed" | "in-progress" | "planned"
+  tags: string[]
+  client?: string
+  duration?: string
+  budget?: string
+  team?: string[]
+  challenges?: string[]
+  solutions?: string[]
+  results?: string[]
+  testimonial?: {
+    text: string
+    author: string
+    position: string
+  }
+}
+
+interface GitHubBlogPost {
+  id: string
+  title: string
+  slug: string
+  content: string
+  excerpt: string
+  author: string
+  date: string
+  tags: string[]
+  featured: boolean
+  image?: string
+}
+
 class GitHubAPI {
   private baseUrl = "https://api.github.com"
   private owner: string
@@ -41,16 +80,14 @@ class GitHubAPI {
 
   private async request(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseUrl}${endpoint}`
-    const headers = {
-      Authorization: `token ${this.token}`,
-      Accept: "application/vnd.github.v3+json",
-      "Content-Type": "application/json",
-      ...options.headers,
-    }
-
     const response = await fetch(url, {
       ...options,
-      headers,
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        Accept: "application/vnd.github.v3+json",
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
     })
 
     if (!response.ok) {
@@ -102,10 +139,6 @@ class GitHubAPI {
     })
   }
 
-  async listFiles(path = ""): Promise<GitHubFile[]> {
-    return this.request(`/repos/${this.owner}/${this.repo}/contents/${path}?ref=${this.branch}`)
-  }
-
   async getCommits(limit = 10): Promise<GitHubCommit[]> {
     return this.request(`/repos/${this.owner}/${this.repo}/commits?per_page=${limit}&sha=${this.branch}`)
   }
@@ -115,29 +148,113 @@ class GitHubAPI {
       const existingFile = await this.getFile(path)
       return this.updateFile(path, content, message, existingFile.sha)
     } catch (error) {
-      // File doesn't exist, create it
       return this.createFile(path, content, message)
     }
   }
 
-  async uploadImage(file: File, path: string): Promise<string> {
-    const arrayBuffer = await file.arrayBuffer()
-    const base64Content = Buffer.from(arrayBuffer).toString("base64")
-
-    const message = `Upload image: ${file.name}`
-    await this.createOrUpdateFile(path, base64Content, message)
-
-    return `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${this.branch}/${path}`
+  // Projects methods
+  async getProjects(): Promise<GitHubProject[]> {
+    try {
+      const file = await this.getFile("data/projects.json")
+      if (file.content) {
+        const content = Buffer.from(file.content, "base64").toString("utf-8")
+        const data = JSON.parse(content)
+        return data.projects || []
+      }
+      return []
+    } catch (error) {
+      console.error("Error loading projects:", error)
+      return []
+    }
   }
 
-  async savePageContent(page: string, content: any): Promise<void> {
-    const path = `data/pages/${page}.json`
-    const jsonContent = JSON.stringify(content, null, 2)
-    const message = `Update ${page} page content`
+  async getProject(id: string): Promise<GitHubProject | null> {
+    const projects = await this.getProjects()
+    return projects.find((project) => project.id === id) || null
+  }
 
+  async saveProjects(projects: GitHubProject[]): Promise<void> {
+    const path = "data/projects.json"
+    const jsonContent = JSON.stringify({ projects }, null, 2)
+    const message = "Update projects data"
     await this.createOrUpdateFile(path, jsonContent, message)
   }
 
+  async createProject(project: GitHubProject): Promise<void> {
+    const projects = await this.getProjects()
+    projects.push(project)
+    await this.saveProjects(projects)
+  }
+
+  async updateProject(id: string, updatedProject: Partial<GitHubProject>): Promise<void> {
+    const projects = await this.getProjects()
+    const index = projects.findIndex((project) => project.id === id)
+    if (index !== -1) {
+      projects[index] = { ...projects[index], ...updatedProject }
+      await this.saveProjects(projects)
+    } else {
+      throw new Error(`Project with id ${id} not found`)
+    }
+  }
+
+  async deleteProject(id: string): Promise<void> {
+    const projects = await this.getProjects()
+    const filteredProjects = projects.filter((project) => project.id !== id)
+    await this.saveProjects(filteredProjects)
+  }
+
+  // Blog posts methods
+  async getBlogPosts(): Promise<GitHubBlogPost[]> {
+    try {
+      const file = await this.getFile("data/blog.json")
+      if (file.content) {
+        const content = Buffer.from(file.content, "base64").toString("utf-8")
+        const data = JSON.parse(content)
+        return data.posts || []
+      }
+      return []
+    } catch (error) {
+      console.error("Error loading blog posts:", error)
+      return []
+    }
+  }
+
+  async getBlogPost(id: string): Promise<GitHubBlogPost | null> {
+    const posts = await this.getBlogPosts()
+    return posts.find((post) => post.id === id) || null
+  }
+
+  async saveBlogPosts(posts: GitHubBlogPost[]): Promise<void> {
+    const path = "data/blog.json"
+    const jsonContent = JSON.stringify({ posts }, null, 2)
+    const message = "Update blog posts data"
+    await this.createOrUpdateFile(path, jsonContent, message)
+  }
+
+  async createBlogPost(post: GitHubBlogPost): Promise<void> {
+    const posts = await this.getBlogPosts()
+    posts.push(post)
+    await this.saveBlogPosts(posts)
+  }
+
+  async updateBlogPost(id: string, updatedPost: Partial<GitHubBlogPost>): Promise<void> {
+    const posts = await this.getBlogPosts()
+    const index = posts.findIndex((post) => post.id === id)
+    if (index !== -1) {
+      posts[index] = { ...posts[index], ...updatedPost }
+      await this.saveBlogPosts(posts)
+    } else {
+      throw new Error(`Blog post with id ${id} not found`)
+    }
+  }
+
+  async deleteBlogPost(id: string): Promise<void> {
+    const posts = await this.getBlogPosts()
+    const filteredPosts = posts.filter((post) => post.id !== id)
+    await this.saveBlogPosts(filteredPosts)
+  }
+
+  // Page content methods
   async getPageContent(page: string): Promise<any> {
     try {
       const file = await this.getFile(`data/pages/${page}.json`)
@@ -150,7 +267,58 @@ class GitHubAPI {
     }
     return null
   }
+
+  async savePageContent(page: string, content: any): Promise<void> {
+    const path = `data/pages/${page}.json`
+    const jsonContent = JSON.stringify(content, null, 2)
+    const message = `Update ${page} page content`
+    await this.createOrUpdateFile(path, jsonContent, message)
+  }
+
+  async uploadImage(file: File, path: string): Promise<string> {
+    const arrayBuffer = await file.arrayBuffer()
+    const base64Content = Buffer.from(arrayBuffer).toString("base64")
+    const message = `Upload image: ${file.name}`
+    await this.createOrUpdateFile(path, base64Content, message)
+    return `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${this.branch}/${path}`
+  }
+
+  async getContent(path: string): Promise<string> {
+    try {
+      const file = await this.getFile(path)
+      if (file.content) {
+        return Buffer.from(file.content, "base64").toString("utf-8")
+      }
+      return ""
+    } catch (error) {
+      console.error(`Error fetching content from ${path}:`, error)
+      return ""
+    }
+  }
+
+  async updateContent(path: string, content: string, message: string): Promise<void> {
+    await this.createOrUpdateFile(path, content, message)
+  }
+
+  async getRepositoryInfo(): Promise<any> {
+    return this.request(`/repos/${this.owner}/${this.repo}`)
+  }
+
+  async getLatestCommit(): Promise<GitHubCommit> {
+    const commits = await this.getCommits(1)
+    return commits[0]
+  }
+
+  isConfigured(): boolean {
+    return !!(this.owner && this.repo && this.token)
+  }
 }
 
-export const githubAPI = new GitHubAPI()
-export type { GitHubFile, GitHubCommit }
+const githubAPIInstance = new GitHubAPI()
+
+export const githubAPI = githubAPIInstance
+export const githubApi = githubAPIInstance
+export const getGitHubApi = () => githubAPIInstance
+
+export default GitHubAPI
+export type { GitHubFile, GitHubCommit, GitHubProject, GitHubBlogPost }

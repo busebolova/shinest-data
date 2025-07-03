@@ -1,107 +1,94 @@
 "use client"
 
-import { useState } from "react"
+import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Calendar, Eye } from "lucide-react"
+import { Calendar, MapPin, ArrowRight } from "lucide-react"
+import { useGitHubProjects } from "@/hooks/use-github-projects"
 
-interface Project {
-  id: string
-  title: {
-    tr: string
-    en: string
+export function ProjectsGrid() {
+  const { projects, loading, error } = useGitHubProjects()
+
+  if (loading) {
+    return (
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="bg-gray-200 aspect-[4/3] rounded-xl mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+          </div>
+        ))}
+      </div>
+    )
   }
-  description: {
-    tr: string
-    en: string
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600">Projeler yüklenirken bir hata oluştu: {error}</p>
+      </div>
+    )
   }
-  category: string
-  location: string
-  year: number
-  images: string[]
-  status: "draft" | "published"
-  featured: boolean
-}
 
-interface ProjectsGridProps {
-  projects: Project[]
-}
-
-export default function ProjectsGrid({ projects }: ProjectsGridProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
-
-  const categories = ["all", ...Array.from(new Set(projects.map((p) => p.category)))]
-
-  const filteredProjects =
-    selectedCategory === "all" ? projects : projects.filter((p) => p.category === selectedCategory)
+  const featuredProjects = projects.filter((project) => project.featured).slice(0, 6)
 
   return (
-    <div className="space-y-8">
-      {/* Category Filter */}
-      <div className="flex flex-wrap justify-center gap-2">
-        {categories.map((category) => (
-          <Button
-            key={category}
-            variant={selectedCategory === category ? "default" : "outline"}
-            onClick={() => setSelectedCategory(category)}
-            className="capitalize"
-          >
-            {category === "all" ? "Tümü" : category}
-          </Button>
-        ))}
-      </div>
-
-      {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredProjects.map((project) => (
-          <Card key={project.id} className="group overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="relative h-64 overflow-hidden">
-              <Image
-                src={project.images[0] || "/placeholder.svg?height=300&width=400"}
-                alt={project.title.tr}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              {project.featured && <Badge className="absolute top-4 left-4 bg-yellow-500">Öne Çıkan</Badge>}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <Link href={`/projects/${project.id}`}>
-                  <Button size="sm" className="bg-white text-black hover:bg-gray-100">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Detayları Gör
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            <CardContent className="p-6">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Badge variant="outline">{project.category}</Badge>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {project.year}
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {featuredProjects.map((project, index) => (
+        <motion.div
+          key={project.id}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: index * 0.1 }}
+          viewport={{ once: true }}
+        >
+          <Link href={`/projects/${project.id}`}>
+            <Card className="group overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <Image
+                  src={project.images[0] || "/placeholder.svg?height=300&width=400"}
+                  alt={project.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute bottom-4 left-4 right-4 transform translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="flex items-center justify-between text-white">
+                    <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                      {project.category}
+                    </Badge>
+                    <ArrowRight className="w-5 h-5" />
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 line-clamp-1">{project.title.tr}</h3>
-                <p className="text-gray-600 line-clamp-2">{project.description.tr}</p>
-                <div className="flex items-center text-sm text-gray-500">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {project.location}
-                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
-      {filteredProjects.length === 0 && (
-        <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">Bu kategoride henüz proje bulunmuyor.</p>
-        </div>
-      )}
+              <CardContent className="p-6">
+                <h3 className="font-display text-xl text-shinest-blue mb-2 group-hover:text-shinest-blue/80 transition-colors">
+                  {project.title}
+                </h3>
+                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>{project.year}</span>
+                  </div>
+                  {project.location && (
+                    <div className="flex items-center space-x-1">
+                      <MapPin className="w-4 h-4" />
+                      <span>{project.location}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </motion.div>
+      ))}
     </div>
   )
 }

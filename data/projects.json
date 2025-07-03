@@ -2,68 +2,160 @@
   "projects": [
     {
       "id": "1",
+      "slug": "modern-apartment-design",
       "title": {
-        "tr": "Modern Banyo Tasarımı",
-        "en": "Modern Bathroom Design"
+        "TR": "Modern Apartman Tasarımı",
+        "EN": "Modern Apartment Design",
+        "DE": "Modernes Apartment Design",
+        "FR": "Design d'Appartement Moderne",
+        "IT": "Design Appartamento Moderno",
+        "RU": "Дизайн Современной Квартиры",
+        "AR": "تصميم شقة حديثة"
       },
-      "category": "Banyo",
-      "location": "İzmir",
-      "year": 2024,
-      "images": ["/images/bathroom-design-1.png", "/images/bathroom-design-2.png", "/images/bathroom-design-3.png"],
       "description": {
-        "tr": "Modern ve şık banyo tasarımı projesi. Minimalist yaklaşım ve fonksiyonel çözümlerle hayata geçirilen bu projede, doğal malzemeler ve akıllı depolama çözümleri bir araya getirilmiştir.",
-        "en": "Modern and elegant bathroom design project. This project, realized with a minimalist approach and functional solutions, brings together natural materials and smart storage solutions."
-      }
+        "TR": "Minimalist yaklaşımla tasarlanan modern yaşam alanı",
+        "EN": "Modern living space designed with minimalist approach",
+        "DE": "Moderner Wohnraum mit minimalistischem Ansatz",
+        "FR": "Espace de vie moderne conçu avec une approche minimaliste",
+        "IT": "Spazio abitativo moderno progettato con approccio minimalista",
+        "RU": "Современное жилое пространство с минималистским подходом",
+        "AR": "مساحة معيشة حديثة مصممة بنهج بسيط"
+      },
+      "category": "residential",
+      "status": "published",
+      "featured": true,
+      "images": [
+        "/images/modern-living-room.jpeg",
+        "/images/modern-kitchen-living.png",
+        "/images/shinest-interior.jpg"
+      ],
+      "coverImage": "/images/modern-living-room.jpeg",
+      "year": "2024",
+      "location": {
+        "TR": "İstanbul, Türkiye",
+        "EN": "Istanbul, Turkey",
+        "DE": "Istanbul, Türkei",
+        "FR": "Istanbul, Turquie",
+        "IT": "Istanbul, Turchia",
+        "RU": "Стамбул, Турция",
+        "AR": "اسطنبول، تركيا"
+      },
+      "area": "120m²",
+      "client": "Private Client",
+      "tags": ["modern", "minimalist", "residential", "apartment"],
+      "content": {
+        "TR": "Bu projede, modern yaşamın gereksinimlerini karşılayan fonksiyonel ve estetik bir yaşam alanı tasarladık. Açık plan konsepti ile geniş ve ferah bir atmosfer yaratırken, doğal malzemeler ve nötr renk paleti kullanarak sıcak bir ortam oluşturduk.",
+        "EN": "In this project, we designed a functional and aesthetic living space that meets the requirements of modern life. We created a spacious and airy atmosphere with an open plan concept, while using natural materials and a neutral color palette to create a warm environment.",
+        "DE": "In diesem Projekt haben wir einen funktionalen und ästhetischen Wohnraum entworfen, der den Anforderungen des modernen Lebens entspricht. Wir schufen eine geräumige und luftige Atmosphäre mit einem offenen Plankonzept und verwendeten natürliche Materialien und eine neutrale Farbpalette, um eine warme Umgebung zu schaffen.",
+        "FR": "Dans ce projet, nous avons conçu un espace de vie fonctionnel et esthétique qui répond aux exigences de la vie moderne. Nous avons créé une atmosphère spacieuse et aérée avec un concept de plan ouvert, tout en utilisant des matériaux naturels et une palette de couleurs neutres pour créer un environnement chaleureux.",
+        "IT": "In questo progetto, abbiamo progettato uno spazio abitativo funzionale ed estetico che soddisfa i requisiti della vita moderna. Abbiamo creato un'atmosfera spaziosa e ariosa con un concetto di pianta aperta, utilizzando materiali naturali e una tavolozza di colori neutri per creare un ambiente caldo.",
+        "RU": "В этом проекте мы спроектировали функциональное и эстетичное жилое пространство, отвечающее требованиям современной жизни. Мы создали просторную и воздушную атмосферу с концепцией открытой планировки, используя натуральные материалы и нейтральную цветовую палитру для создания теплой среды.",
+        "AR": "في هذا المشروع، صممنا مساحة معيشة وظيفية وجمالية تلبي متطلبات الحياة العصرية. أنشأنا جواً واسعاً ومتجدد الهواء بمفهوم المخطط المفتوح، بينما استخدمنا المواد الطبيعية ولوحة ألوان محايدة لخلق بيئة دافئة."
+      },
+      "createdAt": "2024-01-15T10:00:00Z",
+      "updatedAt": "2024-01-15T10:00:00Z"
     },
     {
       "id": "2",
+      "slug": "luxury-hotel-lobby",
       "title": {
-        "tr": "Kafe İç Mekan Tasarımı",
-        "en": "Cafe Interior Design"
+        "TR": "Lüks Otel Lobisi",
+        "EN": "Luxury Hotel Lobby",
+        "DE": "Luxus Hotel Lobby",
+        "FR": "Hall d'Hôtel de Luxe",
+        "IT": "Lobby Hotel di Lusso",
+        "RU": "Лобби Роскошного Отеля",
+        "AR": "لوبي فندق فاخر"
       },
-      "category": "Ticari",
-      "location": "İstanbul",
-      "year": 2024,
-      "images": ["/images/cafe-design-1.png", "/images/cafe-design-2.png"],
       "description": {
-        "tr": "Sıcak ve davetkar atmosfere sahip kafe iç mekan tasarımı. Doğal ahşap malzemeler, endüstriyel detaylar ve rahat oturma alanları ile müşterilere unutulmaz bir deneyim sunuyor.",
-        "en": "Cafe interior design with a warm and inviting atmosphere. It offers customers an unforgettable experience with natural wood materials, industrial details and comfortable seating areas."
-      }
+        "TR": "Prestijli bir otel için tasarlanan etkileyici giriş alanı",
+        "EN": "Impressive entrance area designed for a prestigious hotel",
+        "DE": "Beeindruckender Eingangsbereich für ein prestigeträchtiges Hotel",
+        "FR": "Zone d'entrée impressionnante conçue pour un hôtel prestigieux",
+        "IT": "Area d'ingresso impressionante progettata per un hotel prestigioso",
+        "RU": "Впечатляющая входная зона, спроектированная для престижного отеля",
+        "AR": "منطقة مدخل مثيرة للإعجاب مصممة لفندق مرموق"
+      },
+      "category": "commercial",
+      "status": "published",
+      "featured": true,
+      "images": ["/luxury-hotel-lobby.png", "/images/modern-architecture.jpg"],
+      "coverImage": "/luxury-hotel-lobby.png",
+      "year": "2023",
+      "location": {
+        "TR": "Antalya, Türkiye",
+        "EN": "Antalya, Turkey",
+        "DE": "Antalya, Türkei",
+        "FR": "Antalya, Turquie",
+        "IT": "Antalya, Turchia",
+        "RU": "Анталья, Турция",
+        "AR": "أنطاليا، تركيا"
+      },
+      "area": "500m²",
+      "client": "Luxury Hotel Chain",
+      "tags": ["luxury", "hotel", "commercial", "lobby"],
+      "content": {
+        "TR": "Bu lüks otel lobisi projesi, misafirlere unutulmaz bir karşılama deneyimi sunmak amacıyla tasarlandı. Yüksek tavanlar, özel aydınlatma ve premium malzemeler kullanılarak prestijli bir atmosfer yaratıldı.",
+        "EN": "This luxury hotel lobby project was designed to provide guests with an unforgettable welcome experience. A prestigious atmosphere was created using high ceilings, custom lighting, and premium materials.",
+        "DE": "Dieses Luxushotel-Lobby-Projekt wurde entworfen, um den Gästen ein unvergessliches Willkommenserlebnis zu bieten. Eine prestigeträchtige Atmosphäre wurde durch hohe Decken, maßgeschneiderte Beleuchtung und Premium-Materialien geschaffen.",
+        "FR": "Ce projet de hall d'hôtel de luxe a été conçu pour offrir aux clients une expérience d'accueil inoubliable. Une atmosphère prestigieuse a été créée en utilisant de hauts plafonds, un éclairage personnalisé et des matériaux premium.",
+        "IT": "Questo progetto di lobby di hotel di lusso è stato progettato per fornire agli ospiti un'esperienza di benvenuto indimenticabile. Un'atmosfera prestigiosa è stata creata utilizzando soffitti alti, illuminazione personalizzata e materiali premium.",
+        "RU": "Этот проект лобби роскошного отеля был разработан, чтобы предоставить гостям незабываемый опыт приветствия. Престижная атмосфера была создана с использованием высоких потолков, индивидуального освещения и премиальных материалов.",
+        "AR": "تم تصميم مشروع لوبي الفندق الفاخر هذا لتوفير تجربة ترحيب لا تُنسى للضيوف. تم إنشاء جو مرموق باستخدام الأسقف العالية والإضاءة المخصصة والمواد المتميزة."
+      },
+      "createdAt": "2023-12-10T14:30:00Z",
+      "updatedAt": "2023-12-10T14:30:00Z"
     },
     {
       "id": "3",
+      "slug": "modern-office-space",
       "title": {
-        "tr": "Kış Bahçesi Tasarımı",
-        "en": "Winter Garden Design"
+        "TR": "Modern Ofis Alanı",
+        "EN": "Modern Office Space",
+        "DE": "Moderner Büroraum",
+        "FR": "Espace de Bureau Moderne",
+        "IT": "Spazio Ufficio Moderno",
+        "RU": "Современное Офисное Пространство",
+        "AR": "مساحة مكتب حديثة"
       },
-      "category": "Konut",
-      "location": "Ankara",
-      "year": 2024,
-      "images": ["/images/winter-garden-1.png", "/images/winter-garden-2.png"],
       "description": {
-        "tr": "Doğayla iç içe kış bahçesi tasarımı. Cam yüzeyler, doğal bitkiler ve rahat mobilyalarla dört mevsim kullanılabilir bir yaşam alanı oluşturulmuştur.",
-        "en": "Winter garden design integrated with nature. A living space that can be used in all four seasons has been created with glass surfaces, natural plants and comfortable furniture."
-      }
-    },
-    {
-      "id": "4",
-      "title": {
-        "tr": "Yatak Odası Tasarımı",
-        "en": "Bedroom Design"
+        "TR": "Verimlilik odaklı çağdaş çalışma ortamı tasarımı",
+        "EN": "Productivity-focused contemporary workspace design",
+        "DE": "Produktivitätsorientiertes zeitgenössisches Arbeitsplatz-Design",
+        "FR": "Conception d'espace de travail contemporain axé sur la productivité",
+        "IT": "Design dello spazio di lavoro contemporaneo focalizzato sulla produttività",
+        "RU": "Дизайн современного рабочего пространства, ориентированный на продуктивность",
+        "AR": "تصميم مساحة عمل معاصرة تركز على الإنتاجية"
       },
-      "category": "Konut",
-      "location": "İzmir",
-      "year": 2024,
-      "images": [
-        "/images/bedroom-design-1.png",
-        "/images/bedroom-design-2.png",
-        "/images/bedroom-design-3.png",
-        "/images/bedroom-design-4.png"
-      ],
-      "description": {
-        "tr": "Rahat ve huzurlu yatak odası tasarımı. Soft tonlar, kaliteli tekstiller ve akıllı aydınlatma çözümleri ile dinlendirici bir atmosfer yaratılmıştır.",
-        "en": "Comfortable and peaceful bedroom design. A relaxing atmosphere has been created with soft tones, quality textiles and smart lighting solutions."
-      }
+      "category": "commercial",
+      "status": "published",
+      "featured": false,
+      "images": ["/modern-wooden-office.png", "/images/modern-architecture.jpg"],
+      "coverImage": "/modern-wooden-office.png",
+      "year": "2024",
+      "location": {
+        "TR": "İstanbul, Türkiye",
+        "EN": "Istanbul, Turkey",
+        "DE": "Istanbul, Türkei",
+        "FR": "Istanbul, Turquie",
+        "IT": "Istanbul, Turchia",
+        "RU": "Стамбул, Турция",
+        "AR": "اسطنبول، تركيا"
+      },
+      "area": "300m²",
+      "client": "Tech Company",
+      "tags": ["modern", "office", "commercial", "workspace"],
+      "content": {
+        "TR": "Bu modern ofis projesi, çalışan verimliliğini artırmak ve yaratıcılığı teşvik etmek amacıyla tasarlandı. Açık çalışma alanları, sessiz odalar ve sosyal alanlar dengeli bir şekilde planlandı.",
+        "EN": "This modern office project was designed to increase employee productivity and encourage creativity. Open work areas, quiet rooms, and social spaces were planned in a balanced way.",
+        "DE": "Dieses moderne Büroprojekt wurde entworfen, um die Mitarbeiterproduktivität zu steigern und Kreativität zu fördern. Offene Arbeitsbereiche, ruhige Räume und soziale Bereiche wurden ausgewogen geplant.",
+        "FR": "Ce projet de bureau moderne a été conçu pour augmenter la productivité des employés et encourager la créativité. Les espaces de travail ouverts, les salles silencieuses et les espaces sociaux ont été planifiés de manière équilibrée.",
+        "IT": "Questo progetto di ufficio moderno è stato progettato per aumentare la produttività dei dipendenti e incoraggiare la creatività. Le aree di lavoro aperte, le stanze silenziose e gli spazi sociali sono stati pianificati in modo equilibrato.",
+        "RU": "Этот современный офисный проект был разработан для повышения производительности сотрудников и поощрения творчества. Открытые рабочие зоны, тихие комнаты и социальные пространства были спланированы сбалансированно.",
+        "AR": "تم تصميم مشروع المكتب الحديث هذا لزيادة إنتاجية الموظفين وتشجيع الإبداع. تم التخطيط لمناطق العمل المفتوحة والغرف الهادئة والمساحات الاجتماعية بطريقة متوازنة."
+      },
+      "createdAt": "2024-02-20T09:15:00Z",
+      "updatedAt": "2024-02-20T09:15:00Z"
     }
   ]
 }

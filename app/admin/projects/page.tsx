@@ -1,189 +1,118 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState } from "react"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Plus, Edit, Trash2, Eye, Filter, Calendar, MapPin } from "lucide-react"
+import { Plus, Search, Edit, Trash2, Eye, Calendar, MapPin, User, Tag, ImageIcon } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
-
-interface Project {
-  id: string
-  title: { tr: string; en: string }
-  category: string
-  location: string
-  year: number
-  images: string[]
-  description: { tr: string; en: string }
-}
+import { useProjects } from "@/hooks/use-projects"
 
 export default function AdminProjects() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([])
+  const { projects, loading, error, deleteProject } = useProjects()
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
-  const [isLoading, setIsLoading] = useState(true)
+  const [filterStatus, setFilterStatus] = useState<"all" | "draft" | "published" | "archived">("all")
+  const [filterCategory, setFilterCategory] = useState<string>("all")
 
-  // Fallback data
-  const fallbackProjects: Project[] = [
-    {
-      id: "1",
-      title: { tr: "Modern Banyo Tasarımı", en: "Modern Bathroom Design" },
-      category: "Banyo",
-      location: "İzmir",
-      year: 2024,
-      images: ["/images/bathroom-design-1.png", "/images/bathroom-design-2.png"],
-      description: { tr: "Modern ve şık banyo tasarımı", en: "Modern and elegant bathroom design" },
-    },
-    {
-      id: "2",
-      title: { tr: "Kafe İç Mekan Tasarımı", en: "Cafe Interior Design" },
-      category: "Ticari",
-      location: "İstanbul",
-      year: 2024,
-      images: ["/images/cafe-design-1.png", "/images/cafe-design-2.png"],
-      description: { tr: "Sıcak ve davetkar kafe tasarımı", en: "Warm and inviting cafe design" },
-    },
-    {
-      id: "3",
-      title: { tr: "Kış Bahçesi Tasarımı", en: "Winter Garden Design" },
-      category: "Konut",
-      location: "Ankara",
-      year: 2024,
-      images: ["/images/winter-garden-1.png", "/images/winter-garden-2.png"],
-      description: { tr: "Doğayla iç içe kış bahçesi", en: "Winter garden integrated with nature" },
-    },
-    {
-      id: "4",
-      title: { tr: "Yatak Odası Tasarımı", en: "Bedroom Design" },
-      category: "Konut",
-      location: "İzmir",
-      year: 2024,
-      images: ["/images/bedroom-design-1.png", "/images/bedroom-design-2.png"],
-      description: { tr: "Rahat ve huzurlu yatak odası", en: "Comfortable and peaceful bedroom" },
-    },
-  ]
+  // Ensure projects is always an array
+  const safeProjects = Array.isArray(projects) ? projects : []
 
-  useEffect(() => {
-    loadProjects()
-  }, [])
+  // Filter projects based on search and filters
+  const filteredProjects = safeProjects.filter((project) => {
+    const matchesSearch =
+      project?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project?.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project?.client?.toLowerCase().includes(searchTerm.toLowerCase())
 
-  useEffect(() => {
-    filterProjects()
-  }, [projects, searchTerm, selectedCategory])
+    const matchesStatus = filterStatus === "all" || project?.status === filterStatus
+    const matchesCategory = filterCategory === "all" || project?.category === filterCategory
 
-  const loadProjects = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch("/api/projects")
-      if (response.ok) {
-        const data = await response.json()
-        setProjects(data.projects || fallbackProjects)
-      } else {
-        setProjects(fallbackProjects)
+    return matchesSearch && matchesStatus && matchesCategory
+  })
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Bu projeyi silmek istediğinizden emin misiniz?")) {
+      try {
+        await deleteProject(id)
+      } catch (err) {
+        console.error("Error deleting project:", err)
+        alert("Proje silinirken bir hata oluştu")
       }
-    } catch (error) {
-      console.error("Projeler yüklenirken hata:", error)
-      setProjects(fallbackProjects)
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  const filterProjects = () => {
-    let filtered = projects
-
-    // Search filter with null safety
-    if (searchTerm) {
-      filtered = filtered.filter((project) => {
-        const titleTr = project.title?.tr?.toLowerCase() || ""
-        const titleEn = project.title?.en?.toLowerCase() || ""
-        const category = project.category?.toLowerCase() || ""
-        const location = project.location?.toLowerCase() || ""
-        const searchLower = searchTerm.toLowerCase()
-
-        return (
-          titleTr.includes(searchLower) ||
-          titleEn.includes(searchLower) ||
-          category.includes(searchLower) ||
-          location.includes(searchLower)
-        )
-      })
-    }
-
-    // Category filter
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter((project) => project.category === selectedCategory)
-    }
-
-    setFilteredProjects(filtered)
-  }
-
-  const deleteProject = async (id: string) => {
-    if (!confirm("Bu projeyi silmek istediğinizden emin misiniz?")) return
-
-    try {
-      const response = await fetch(`/api/projects/${id}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        setProjects((prev) => prev.filter((p) => p.id !== id))
-      }
-    } catch (error) {
-      console.error("Proje silinirken hata:", error)
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "published":
+        return "bg-green-100 text-green-800"
+      case "draft":
+        return "bg-yellow-100 text-yellow-800"
+      case "archived":
+        return "bg-gray-100 text-gray-800"
+      default:
+        return "bg-gray-100 text-gray-800"
     }
   }
 
-  const categories = ["all", ...Array.from(new Set(projects.map((p) => p.category)))]
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "published":
+        return "Yayında"
+      case "draft":
+        return "Taslak"
+      case "archived":
+        return "Arşivlendi"
+      default:
+        return status
+    }
+  }
 
-  if (isLoading) {
+  // Get unique categories for filter
+  const categories = Array.from(new Set(safeProjects.map((p) => p?.category).filter(Boolean)))
+
+  if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Projeler</h1>
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-shinest-blue"></div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <div className="h-48 bg-gray-200 rounded-t-lg"></div>
-              <CardContent className="p-4">
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded mb-4"></div>
-                <div className="flex gap-2">
-                  <div className="h-6 bg-gray-200 rounded w-16"></div>
-                  <div className="h-6 bg-gray-200 rounded w-20"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="text-center text-red-600">
+          <p>Projeler yüklenirken bir hata oluştu: {error}</p>
+          <p className="text-sm text-gray-500 mt-2">Mock veriler kullanılıyor.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Projeler</h1>
-          <p className="text-gray-600 mt-1">Tüm projelerinizi buradan yönetebilirsiniz</p>
+          <h1 className="text-2xl font-bold text-gray-900">Projeler</h1>
+          <p className="text-gray-600">Tüm projelerinizi yönetin</p>
         </div>
-        <Button asChild>
-          <Link href="/admin/projects/new">
+        <Link href="/admin/projects/new">
+          <Button className="bg-shinest-blue hover:bg-shinest-blue/90">
             <Plus className="w-4 h-4 mr-2" />
             Yeni Proje
-          </Link>
-        </Button>
+          </Button>
+        </Link>
       </div>
 
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -197,18 +126,26 @@ export default function AdminProjects() {
             </div>
             <div className="flex gap-2">
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-shinest-blue"
+              >
+                <option value="all">Tüm Durumlar</option>
+                <option value="published">Yayında</option>
+                <option value="draft">Taslak</option>
+                <option value="archived">Arşivlendi</option>
+              </select>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-shinest-blue"
               >
                 <option value="all">Tüm Kategoriler</option>
-                {categories
-                  .filter((cat) => cat !== "all")
-                  .map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -217,79 +154,150 @@ export default function AdminProjects() {
 
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProjects.map((project) => (
-          <Card key={project.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="relative h-48">
-              <Image
-                src={project.images[0] || "/placeholder.svg?height=200&width=300"}
-                alt={project.title.tr}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
+        {filteredProjects.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <ImageIcon className="w-12 h-12 mx-auto" />
             </div>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900 line-clamp-1">{project.title.tr}</h3>
-                  <p className="text-sm text-gray-600 line-clamp-2">{project.description.tr}</p>
-                </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Proje bulunamadı</h3>
+            <p className="text-gray-600 mb-4">
+              {searchTerm || filterStatus !== "all" || filterCategory !== "all"
+                ? "Arama kriterlerinize uygun proje bulunamadı."
+                : "Henüz hiç proje eklenmemiş."}
+            </p>
+            <Link href="/admin/projects/new">
+              <Button className="bg-shinest-blue hover:bg-shinest-blue/90">
+                <Plus className="w-4 h-4 mr-2" />
+                İlk Projeyi Ekle
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          filteredProjects.map((project) => (
+            <motion.div
+              key={project?.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-shadow">
+                <CardHeader className="p-0">
+                  {project?.images && project.images.length > 0 ? (
+                    <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
+                      <img
+                        src={project.images[0] || "/placeholder.svg"}
+                        alt={project?.title || "Project"}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = "/placeholder.svg?height=200&width=300"
+                        }}
+                      />
+                      {project?.featured && (
+                        <Badge className="absolute top-2 left-2 bg-shinest-gold text-white">Öne Çıkan</Badge>
+                      )}
+                      <Badge className={`absolute top-2 right-2 ${getStatusColor(project?.status || "draft")}`}>
+                        {getStatusText(project?.status || "draft")}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="h-48 bg-gray-100 rounded-t-lg flex items-center justify-center">
+                      <ImageIcon className="w-12 h-12 text-gray-400" />
+                    </div>
+                  )}
+                </CardHeader>
+                <CardContent className="p-4 flex-1 flex flex-col">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-2 line-clamp-1">{project?.title || "Başlıksız Proje"}</h3>
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      {project?.description || "Açıklama bulunmuyor"}
+                    </p>
 
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <MapPin className="w-4 h-4" />
-                  <span>{project.location}</span>
-                  <Calendar className="w-4 h-4 ml-2" />
-                  <span>{project.year}</span>
-                </div>
+                    <div className="space-y-2 text-xs text-gray-500">
+                      {project?.category && (
+                        <div className="flex items-center gap-1">
+                          <Tag className="w-3 h-3" />
+                          <span>{project.category}</span>
+                        </div>
+                      )}
+                      {project?.client && (
+                        <div className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          <span>{project.client}</span>
+                        </div>
+                      )}
+                      {project?.location && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>{project.location}</span>
+                        </div>
+                      )}
+                      {project?.created_at && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{new Date(project.created_at).toLocaleDateString("tr-TR")}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary">{project.category}</Badge>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/projects/${project.id}`} target="_blank">
-                        <Eye className="w-4 h-4" />
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/admin/projects/${project.id}/edit`}>
-                        <Edit className="w-4 h-4" />
-                      </Link>
-                    </Button>
+                  <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href={`/projects/${project?.slug || project?.id}`}>
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href={`/admin/projects/${project?.id}/edit`}>
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                    </div>
                     <Button
-                      variant="ghost"
                       size="sm"
-                      onClick={() => deleteProject(project.id)}
+                      variant="outline"
+                      onClick={() => project?.id && handleDelete(project.id)}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))
+        )}
       </div>
 
-      {filteredProjects.length === 0 && !isLoading && (
+      {/* Stats */}
+      {safeProjects.length > 0 && (
         <Card>
-          <CardContent className="p-12 text-center">
-            <div className="text-gray-400 mb-4">
-              <Filter className="w-12 h-12 mx-auto" />
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-shinest-blue">{safeProjects.length}</div>
+                <div className="text-sm text-gray-600">Toplam Proje</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600">
+                  {safeProjects.filter((p) => p?.status === "published").length}
+                </div>
+                <div className="text-sm text-gray-600">Yayında</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {safeProjects.filter((p) => p?.status === "draft").length}
+                </div>
+                <div className="text-sm text-gray-600">Taslak</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-shinest-gold">
+                  {safeProjects.filter((p) => p?.featured).length}
+                </div>
+                <div className="text-sm text-gray-600">Öne Çıkan</div>
+              </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Proje bulunamadı</h3>
-            <p className="text-gray-600 mb-4">
-              Arama kriterlerinize uygun proje bulunamadı. Farklı anahtar kelimeler deneyin.
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSearchTerm("")
-                setSelectedCategory("all")
-              }}
-            >
-              Filtreleri Temizle
-            </Button>
           </CardContent>
         </Card>
       )}

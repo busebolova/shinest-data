@@ -1,194 +1,119 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Client-side Supabase client (singleton pattern)
-let supabaseClient: ReturnType<typeof createClient> | null = null
-
-export function getSupabaseClient() {
-  if (!supabaseClient) {
-    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      },
-    })
-  }
-  return supabaseClient
+// Client for browser usage
+export const createClient = () => {
+  return createSupabaseClient(supabaseUrl, supabaseAnonKey)
 }
 
-// Server-side Supabase client
-export function createServerClient() {
-  return createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  })
-}
-
-// Database types
-export interface Project {
-  id: string
-  title: string
-  description: string
-  category: string
-  images: string[]
-  featured_image: string
-  status: "draft" | "published"
-  created_at: string
-  updated_at: string
-  slug: string
-  tags: string[]
-  client?: string
-  location?: string
-  year?: number
-  area?: string
-}
-
-export interface BlogPost {
-  id: string
-  title: string
-  content: string
-  excerpt: string
-  featured_image: string
-  status: "draft" | "published"
-  created_at: string
-  updated_at: string
-  slug: string
-  tags: string[]
-  author: string
-  read_time: number
-}
-
-export interface PageContent {
-  id: string
-  page: string
-  section: string
-  content: any
-  language: string
-  updated_at: string
-}
-
-export interface MediaFile {
-  id: string
-  filename: string
-  original_name: string
-  mime_type: string
-  size: number
-  url: string
-  alt_text?: string
-  created_at: string
-  folder?: string
-}
+// Admin client for server-side operations
+export const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+})
 
 // Helper functions
-export async function uploadFile(file: File, folder = "uploads"): Promise<string> {
-  const supabase = getSupabaseClient()
-  const fileExt = file.name.split(".").pop()
-  const fileName = `${Date.now()}.${fileExt}`
-  const filePath = `${folder}/${fileName}`
-
-  const { data, error } = await supabase.storage.from("media").upload(filePath, file)
+export async function getPageContent(page: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase.from("page_contents").select("*").eq("page", page).single()
 
   if (error) {
-    throw new Error(`Upload failed: ${error.message}`)
+    console.error("Error fetching page content:", error)
+    return null
   }
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("media").getPublicUrl(filePath)
-
-  return publicUrl
+  return data
 }
 
-export async function deleteFile(path: string): Promise<void> {
-  const supabase = getSupabaseClient()
-
-  const { error } = await supabase.storage.from("media").remove([path])
+export async function savePageContent(page: string, content: any) {
+  const { data, error } = await supabaseAdmin.from("page_contents").upsert({
+    page,
+    content,
+    updated_at: new Date().toISOString(),
+  })
 
   if (error) {
-    throw new Error(`Delete failed: ${error.message}`)
+    console.error("Error saving page content:", error)
+    throw error
   }
+
+  return data
 }
 
-export async function getProjects(limit?: number, category?: string): Promise<Project[]> {
-  const supabase = getSupabaseClient()
-
-  let query = supabase.from("projects").select("*").eq("status", "published").order("created_at", { ascending: false })
-
-  if (category) {
-    query = query.eq("category", category)
-  }
-
-  if (limit) {
-    query = query.limit(limit)
-  }
-
-  const { data, error } = await query
+export async function getProjects() {
+  const supabase = createClient()
+  const { data, error } = await supabase.from("projects").select("*").order("created_at", { ascending: false })
 
   if (error) {
-    throw new Error(`Failed to fetch projects: ${error.message}`)
+    console.error("Error fetching projects:", error)
+    return []
   }
 
   return data || []
 }
 
-export async function getBlogPosts(limit?: number): Promise<BlogPost[]> {
-  const supabase = getSupabaseClient()
-
-  let query = supabase
-    .from("blog_posts")
-    .select("*")
-    .eq("status", "published")
-    .order("created_at", { ascending: false })
-
-  if (limit) {
-    query = query.limit(limit)
-  }
-
-  const { data, error } = await query
+export async function getProject(id: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase.from("projects").select("*").eq("id", id).single()
 
   if (error) {
-    throw new Error(`Failed to fetch blog posts: ${error.message}`)
+    console.error("Error fetching project:", error)
+    return null
+  }
+
+  return data
+}
+
+export async function saveProject(project: any) {
+  const { data, error } = await supabaseAdmin.from("projects").upsert(project)
+
+  if (error) {
+    console.error("Error saving project:", error)
+    throw error
+  }
+
+  return data
+}
+
+export async function deleteProject(id: string) {
+  const { error } = await supabaseAdmin.from("projects").delete().eq("id", id)
+
+  if (error) {
+    console.error("Error deleting project:", error)
+    throw error
+  }
+}
+
+export async function getBlogPosts() {
+  const supabase = createClient()
+  const { data, error } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching blog posts:", error)
+    return []
   }
 
   return data || []
 }
 
-export async function getPageContent(page: string, language = "tr"): Promise<PageContent[]> {
-  const supabase = getSupabaseClient()
-
-  const { data, error } = await supabase.from("page_contents").select("*").eq("page", page).eq("language", language)
+export async function uploadFile(file: File, bucket: string, path: string) {
+  const { data, error } = await supabaseAdmin.storage.from(bucket).upload(path, file)
 
   if (error) {
-    throw new Error(`Failed to fetch page content: ${error.message}`)
+    console.error("Error uploading file:", error)
+    throw error
   }
 
-  return data || []
+  return data
 }
 
-export async function savePageContent(page: string, section: string, content: any, language = "tr"): Promise<void> {
-  const supabase = getSupabaseClient()
+export async function getFileUrl(bucket: string, path: string) {
+  const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path)
 
-  const { error } = await supabase.from("page_contents").upsert(
-    {
-      page,
-      section,
-      content,
-      language,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "page,section,language",
-    },
-  )
-
-  if (error) {
-    throw new Error(`Failed to save page content: ${error.message}`)
-  }
+  return data.publicUrl
 }
-
-// Default export
-export default getSupabaseClient

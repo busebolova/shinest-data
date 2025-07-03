@@ -1,60 +1,113 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Home, Settings, FileText, ImageIcon, MessageSquare, Edit } from "lucide-react"
+import {
+  Home,
+  FileText,
+  FolderOpen,
+  MessageSquare,
+  ImageIcon,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  LogOut,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-const navigation = [
-  { name: "Dashboard", href: "/admin", icon: Home },
-  { name: "İçerik Yönetimi", href: "/admin/content", icon: Edit },
-  { name: "Projeler", href: "/admin/projects", icon: ImageIcon },
-  { name: "Blog", href: "/admin/blog", icon: MessageSquare },
-  { name: "Medya", href: "/admin/media", icon: FileText },
-  { name: "Ayarlar", href: "/admin/settings", icon: Settings },
+const menuItems = [
+  { href: "/admin", icon: Home, label: "Dashboard" },
+  { href: "/admin/content/home", icon: FileText, label: "İçerik Yönetimi" },
+  { href: "/admin/projects", icon: FolderOpen, label: "Projeler" },
+  { href: "/admin/blog", icon: MessageSquare, label: "Blog" },
+  { href: "/admin/media", icon: ImageIcon, label: "Medya" },
+  { href: "/admin/messages", icon: MessageSquare, label: "Mesajlar" },
+  { href: "/admin/settings", icon: Settings, label: "Ayarlar" },
 ]
 
-export default function AdminSidebar() {
+export function AdminSidebar() {
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
 
+  const handleLogout = () => {
+    localStorage.removeItem("admin-auth")
+    window.location.href = "/admin/login"
+  }
+
   return (
-    <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-      <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4 shadow-sm border-r">
-        <div className="flex h-16 shrink-0 items-center">
-          <img className="h-8 w-auto" src="/images/logo1.png" alt="SHINEST" />
-          <span className="ml-2 text-xl font-bold text-gray-900">Admin</span>
+    <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${isCollapsed ? "w-16" : "w-64"}`}>
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            {!isCollapsed && (
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">S</span>
+                </div>
+                <span className="font-semibold text-gray-900">SHINEST Admin</span>
+              </div>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(!isCollapsed)} className="p-1.5">
+              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </Button>
+          </div>
         </div>
-        <nav className="flex flex-1 flex-col">
-          <ul role="list" className="flex flex-1 flex-col gap-y-7">
-            <li>
-              <ul role="list" className="-mx-2 space-y-1">
-                {navigation.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        pathname === item.href
-                          ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                          : "text-gray-700 hover:text-blue-600 hover:bg-gray-50",
-                        "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium transition-colors",
-                      )}
-                    >
-                      <item.icon
-                        className={cn(
-                          pathname === item.href ? "text-blue-600" : "text-gray-400 group-hover:text-blue-600",
-                          "h-5 w-5 shrink-0",
-                        )}
-                        aria-hidden="true"
-                      />
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </li>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            {menuItems.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                      isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    {!isCollapsed && <span className="font-medium">{item.label}</span>}
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         </nav>
+
+        {/* User Profile */}
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex items-center space-x-3">
+            <Avatar className="w-8 h-8">
+              <AvatarImage src="/placeholder.svg?height=32&width=32" />
+              <AvatarFallback>
+                <User className="w-4 h-4" />
+              </AvatarFallback>
+            </Avatar>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">Admin</p>
+                <p className="text-xs text-gray-500 truncate">admin@shinest.com</p>
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="p-1.5 text-gray-500 hover:text-red-600"
+              title="Çıkış Yap"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
+
+export default AdminSidebar

@@ -1,4 +1,4 @@
-import { apiClient } from "./api-client"
+import { githubAPI } from "./github-api"
 
 // Cache for client-side data
 let projectsCache: any[] | null = null
@@ -11,7 +11,7 @@ export async function getProjects() {
       return projectsCache
     }
 
-    const projects = await apiClient.getProjects()
+    const projects = await githubAPI.getProjects()
 
     if (typeof window !== "undefined") {
       projectsCache = projects
@@ -34,6 +34,38 @@ export async function getProject(slug: string) {
   }
 }
 
+export async function createProject(project: any) {
+  try {
+    await githubAPI.createProject(project)
+    clearProjectsCache()
+    return project
+  } catch (error) {
+    console.error("Error creating project:", error)
+    throw error
+  }
+}
+
+export async function updateProject(id: string, updates: any) {
+  try {
+    await githubAPI.updateProject(id, updates)
+    clearProjectsCache()
+    return updates
+  } catch (error) {
+    console.error("Error updating project:", error)
+    throw error
+  }
+}
+
+export async function deleteProject(id: string) {
+  try {
+    await githubAPI.deleteProject(id)
+    clearProjectsCache()
+  } catch (error) {
+    console.error("Error deleting project:", error)
+    throw error
+  }
+}
+
 // Content
 export async function getContent(type = "home") {
   try {
@@ -41,7 +73,7 @@ export async function getContent(type = "home") {
       return contentCache[type]
     }
 
-    const content = await apiClient.getContent(type)
+    const content = await githubAPI.getPageContent(type)
 
     if (typeof window !== "undefined") {
       contentCache[type] = content
@@ -54,7 +86,66 @@ export async function getContent(type = "home") {
   }
 }
 
-// Services (static for now, can be moved to API later)
+export async function saveContent(type: string, content: any) {
+  try {
+    await githubAPI.savePageContent(type, content)
+    clearContentCache(type)
+    return content
+  } catch (error) {
+    console.error(`Error saving ${type} content:`, error)
+    throw error
+  }
+}
+
+// Blog
+export async function getBlogPosts() {
+  try {
+    return await githubAPI.getBlogPosts()
+  } catch (error) {
+    console.error("Error fetching blog posts:", error)
+    return []
+  }
+}
+
+export async function getBlogPost(id: string) {
+  try {
+    return await githubAPI.getBlogPost(id)
+  } catch (error) {
+    console.error("Error fetching blog post:", error)
+    return null
+  }
+}
+
+export async function createBlogPost(post: any) {
+  try {
+    await githubAPI.createBlogPost(post)
+    return post
+  } catch (error) {
+    console.error("Error creating blog post:", error)
+    throw error
+  }
+}
+
+export async function updateBlogPost(id: string, updates: any) {
+  try {
+    await githubAPI.updateBlogPost(id, updates)
+    return updates
+  } catch (error) {
+    console.error("Error updating blog post:", error)
+    throw error
+  }
+}
+
+export async function deleteBlogPost(id: string) {
+  try {
+    await githubAPI.deleteBlogPost(id)
+  } catch (error) {
+    console.error("Error deleting blog post:", error)
+    throw error
+  }
+}
+
+// Services (static for now, can be moved to GitHub later)
 export const services = [
   {
     id: 1,
@@ -132,14 +223,6 @@ export const blogPosts = [
       "Sürdürülebilir tasarım prensipleri ve çevre dostu malzemelerle hem doğayı koruyun hem de sağlıklı yaşam alanları yaratın.",
   },
 ]
-
-export function getBlogPosts() {
-  return blogPosts
-}
-
-export function getBlogPost(slug: string) {
-  return blogPosts.find((p) => p.slug === slug) || null
-}
 
 // Form işlemleri
 export function createFormSubmission(type: string, data: any) {

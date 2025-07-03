@@ -1,365 +1,419 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, Calendar, MapPin, Tag } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { ArrowLeft, Calendar, MapPin, Users, Clock, DollarSign, ChevronLeft, ChevronRight, Quote } from "lucide-react"
+import { useGitHubProject } from "@/hooks/use-github-projects"
+import { Footer } from "@/components/footer"
 
-const projects = [
-  {
-    id: 1,
-    title: "Banyo Tasarımı",
-    location: "Türkiye",
-    slug: "banyo-tasarimi",
-    category: "Banyo Tasarımı",
-    year: "2024",
-    client: "Özel Müşteri",
-    area: "15 m²",
-    duration: "3 Hafta",
-    description:
-      "Modern ve minimalist banyo tasarımı projemizde, petrol yeşili dolap rengi ile altın detayların uyumu öne çıkmaktadır. Beyaz mermer tezgah ve oval ayna ile lüks bir atmosfer yaratılmıştır. LED aydınlatma sistemi ile hem fonksiyonel hem de estetik bir çözüm sunulmuştur. Mavi mermer duvar kaplaması ve cam duş kabini ile ferah bir alan oluşturulmuştur.",
-    features: [
-      "Petrol yeşili özel renk dolap",
-      "Beyaz mermer tezgah",
-      "Altın rengi armatürler",
-      "LED aydınlatma sistemi",
-      "Oval tasarım ayna",
-      "Mavi mermer duvar kaplaması",
-      "Cam duş kabini",
-      "Minimalist tasarım anlayışı",
-    ],
-    images: ["/images/bathroom-design-1.png", "/images/bathroom-design-2.png", "/images/bathroom-design-3.png"],
-  },
-  {
-    id: 2,
-    title: "Kafe Tasarımı",
-    location: "Türkiye",
-    slug: "kafe-tasarimi",
-    category: "Kafe Tasarımı",
-    year: "2024",
-    client: "Kafe Müşterisi",
-    area: "85 m²",
-    duration: "6 Hafta",
-    description:
-      "Modern patisserie tasarımı projemizde, yeşil fluted (oluklu) tezgah tasarımı ile sıcak ve davetkar bir atmosfer yaratılmıştır. Beyaz asma lambalar ve şık vitrin dolabı ile tatlıların sergilendiği özel alan tasarlanmıştır. Terracotta rengi duvar kaplaması ile doğal ve samimi bir hava elde edilmiştir. Pembe kadife koltuklar ve beyaz yuvarlak masalar ile konforlu oturma alanı oluşturulmuştur.",
-    features: [
-      "Yeşil fluted tezgah tasarımı",
-      "Beyaz asma lambalar",
-      "Özel vitrin dolabı",
-      "Terracotta duvar kaplaması",
-      "LED gizli aydınlatma",
-      "Modern sergileme alanları",
-      "Pembe kadife koltuklar",
-      "Büyük cam pencereler",
-    ],
-    images: ["/images/cafe-design-1.png", "/images/cafe-design-2.png"],
-  },
-  {
-    id: 3,
-    title: "Kış Bahçesi Tasarımı",
-    location: "Türkiye",
-    slug: "kis-bahcesi-tasarimi",
-    category: "Kış Bahçesi Tasarımı",
-    year: "2024",
-    client: "Özel Müşteri",
-    area: "45 m²",
-    duration: "4 Hafta",
-    description:
-      "Modern cam kış bahçesi tasarımı projemizde, beyaz çerçeveli büyük cam paneller ile doğal ışığın maksimize edildiği, dört mevsim kullanılabilen yaşam alanı oluşturulmuştur. Ahşap deck zemin ve modern mobilyalar ile konforlu bir dış mekan deneyimi sunulmaktadır. Gri koltuk takımı ve modern dekorasyon ile konforlu iç mekan tasarlanmıştır. Cam yapının şeffaflığı sayesinde iç ve dış mekan arasında kusursuz bir geçiş sağlanmıştır.",
-    features: [
-      "Büyük cam panel sistemi",
-      "Beyaz çerçeveli modern yapı",
-      "Ahşap deck zemin",
-      "Dört mevsim kullanım",
-      "Maksimum doğal ışık",
-      "Gri L şeklinde koltuk takımı",
-      "Dekoratif aksesuar düzenlemesi",
-      "İç-dış mekan uyumu",
-    ],
-    images: ["/images/winter-garden-1.png", "/images/winter-garden-2.png"],
-  },
-  {
-    id: 4,
-    title: "Polonya Konut Tasarımı",
-    location: "Polonya",
-    slug: "polonya-konut-tasarimi",
-    category: "Konut Tasarımı",
-    year: "2024",
-    client: "Özel Müşteri",
-    area: "120 m²",
-    duration: "8 Hafta",
-    description:
-      "Modern Polonya dairesi tasarımı projemizde, açık plan yaşam alanı ile gri-beyaz renk paleti ve altın detaylar kullanılmıştır. Yemek odasında büyük beyaz masa ve gri sandalyeler ile şık bir yemek alanı oluşturulmuştur. Oturma odasında gri modüler koltuk takımı ve modern TV ünitesi ile konforlu yaşam alanı tasarlanmıştır. Mutfakta L şeklinde düzenleme ile maksimum fonksiyonellik sağlanmış, gri alt dolap ve beyaz üst dolap kombinasyonu ile modern görünüm elde edilmiştir. Modern şömine ile sıcak ve davetkar bir atmosfer yaratılmıştır.",
-    features: [
-      "Açık plan yaşam alanı",
-      "Büyük beyaz yemek masası",
-      "Gri kadife sandalyeler",
-      "Altın rengi detaylar",
-      "Modern moleküler avize",
-      "Gri modüler koltuk takımı",
-      "L şeklinde mutfak düzeni",
-      "Modern köşe şömine",
-      "Mermer zemin kaplaması",
-      "İki renkli dolap sistemi",
-    ],
-    images: [
-      "/images/poland-apartment-1.png",
-      "/images/poland-apartment-2.png",
-      "/images/poland-apartment-3.png",
-      "/images/poland-apartment-4.png",
-      "/images/poland-apartment-5.png",
-      "/images/poland-apartment-6.png",
-      "/images/poland-apartment-7.png",
-      "/images/poland-apartment-8.png",
-      "/images/poland-apartment-9.png",
-      "/images/poland-apartment-10.png",
-    ],
-  },
-  {
-    id: 5,
-    title: "Modern Salon Tasarımı",
-    location: "Türkiye",
-    slug: "modern-salon-tasarimi",
-    category: "Salon Tasarımı",
-    year: "2024",
-    client: "Özel Müşteri",
-    area: "35 m²",
-    duration: "4 Hafta",
-    description:
-      "Modern salon tasarımı projemizde, nötr renk paleti ve minimalist detaylar ile şık ve konforlu bir yaşam alanı oluşturulmuştur. Krem rengi L şeklinde koltuk takımı ile ferah bir oturma alanı tasarlanmıştır. Koyu gri aksan duvarı üzerinde beyaz çerçeve detayları ile modern bir TV ünitesi yaratılmıştır. Yuvarlak ahşap orta sehpa ve dekoratif vazolar ile sıcak bir atmosfer elde edilmiştir. Minimalist aydınlatma ve duvar sanatı ile estetik bir görünüm sağlanmıştır.",
-    features: [
-      "Krem rengi L şeklinde koltuk takımı",
-      "Koyu gri aksan duvarı",
-      "Beyaz çerçeve detayları",
-      "Yuvarlak ahşap orta sehpa",
-      "Minimalist aydınlatma",
-      "Duvar sanatı",
-      "Beyaz TV ünitesi",
-      "Dekoratif vazolar ve bitkiler",
-    ],
-    images: ["/images/living-room-design-1.png", "/images/living-room-design-2.png"],
-  },
-  {
-    id: 6,
-    title: "Modern Yatak Odası Tasarımı",
-    location: "Türkiye",
-    slug: "modern-yatak-odasi-tasarimi",
-    category: "Yatak Odası Tasarımı",
-    year: "2024",
-    client: "Özel Müşteri",
-    area: "25 m²",
-    duration: "3 Hafta",
-    description:
-      "Modern yatak odası tasarımı projemizde, sıcak kahverengi aksan duvarı ve nötr renk paleti ile huzurlu bir uyku alanı oluşturulmuştur. Beyaz fluted (oluklu) TV ünitesi ve çalışma masası ile fonksiyonel bir alan tasarlanmıştır. Yuvarlak duvar aynası ve ahşap tavan detayları ile şık bir görünüm elde edilmiştir. Katmanlı yastıklar ve gri yatak örtüsü ile konforlu bir yatak düzeni yaratılmıştır. Beyaz kitaplık ünitesi ile depolama alanı sağlanmış, kahverengi perdeler ile sıcak bir atmosfer oluşturulmuştur.",
-    features: [
-      "Kahverengi aksan duvarı",
-      "Beyaz fluted TV ünitesi",
-      "Yuvarlak duvar aynası",
-      "Ahşap tavan detayları",
-      "Katmanlı yatak düzeni",
-      "Beyaz kitaplık ünitesi",
-      "Kahverengi perdeler",
-      "Gri-bej renk paleti",
-      "Modern aydınlatma sistemi",
-      "Ahşap zemin",
-    ],
-    images: [
-      "/images/bedroom-design-1.png",
-      "/images/bedroom-design-2.png",
-      "/images/bedroom-design-3.png",
-      "/images/bedroom-design-4.png",
-    ],
-  },
-]
-
-export default function ProjectDetailPage() {
-  const params = useParams()
-  const [isLoaded, setIsLoaded] = useState(false)
+export default function ProjectDetailPage({ params }: { params: { slug: string } }) {
+  const { project, loading, error } = useGitHubProject(params.slug)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-  const project = projects.find((p) => p.slug === params.slug)
-
-  useEffect(() => {
-    window.scrollTo(0, 0)
-    setIsLoaded(false)
-    const timer = setTimeout(() => {
-      setIsLoaded(true)
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [])
-
-  if (!project) {
+  if (loading) {
     return (
-      <main className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-display text-shinest-blue mb-4">Proje Bulunamadı</h1>
-          <Link href="/projects" className="text-[#c4975a] hover:underline">
-            Projelere Geri Dön
-          </Link>
+      <div className="min-h-screen pt-32 pb-20">
+        <div className="container mx-auto px-6">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
+            <div className="aspect-video bg-gray-200 rounded-xl mb-8"></div>
+            <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </div>
         </div>
-      </main>
+      </div>
     )
   }
 
+  if (error || !project) {
+    return (
+      <div className="min-h-screen pt-32 pb-20">
+        <div className="container mx-auto px-6 text-center">
+          <p className="text-red-600">Proje bulunamadı veya yüklenirken bir hata oluştu.</p>
+          <Link href="/projects">
+            <Button className="mt-4">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Projelere Dön
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev === project.images.length - 1 ? 0 : prev + 1))
+  }
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev === 0 ? project.images.length - 1 : prev - 1))
+  }
+
   return (
-    <main className="min-h-screen bg-[#f5f3f0]">
-      <Header />
-
-      <section className="pt-32 sm:pt-36 md:pt-40 pb-20">
-        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
-          {/* Geri Dön Butonu */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={isLoaded ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-            transition={{ duration: 0.6 }}
-            className="mb-8"
-          >
-            <Link
-              href="/projects"
-              className="inline-flex items-center gap-2 text-[#c4975a] hover:text-shinest-blue transition-colors duration-300"
-            >
-              <ArrowLeft size={20} />
-              <span className="font-sans">Projelere Geri Dön</span>
+    <div className="min-h-screen">
+      {/* Header */}
+      <section className="pt-32 pb-8">
+        <div className="container mx-auto px-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <Link href="/projects">
+              <Button variant="ghost" className="mb-6 text-shinest-blue hover:text-shinest-blue/80">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Projelere Dön
+              </Button>
             </Link>
-          </motion.div>
 
-          {/* Proje Başlığı */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-12"
-          >
-            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-shinest-blue mb-4">{project.title}</h1>
-            <div className="flex flex-wrap gap-6 text-[#2a2a2a]/70">
-              <div className="flex items-center gap-2">
-                <MapPin size={16} />
-                <span className="font-sans text-sm">{project.location}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar size={16} />
-                <span className="font-sans text-sm">{project.year}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Tag size={16} />
-                <span className="font-sans text-sm">{project.category}</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Ana Görsel */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="mb-16"
-          >
-            <div className="relative aspect-[16/10] overflow-hidden rounded-lg">
-              <Image
-                src={project.images[currentImageIndex] || "/placeholder.svg"}
-                alt={project.title}
-                fill
-                className="object-cover"
-                priority
-              />
+            <div className="flex flex-wrap items-center gap-4 mb-6">
+              <Badge variant="secondary" className="bg-shinest-blue/10 text-shinest-blue">
+                {project.category}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={`
+                ${
+                  project.status === "completed"
+                    ? "border-green-500 text-green-700"
+                    : project.status === "in-progress"
+                      ? "border-yellow-500 text-yellow-700"
+                      : "border-blue-500 text-blue-700"
+                }
+              `}
+              >
+                {project.status === "completed"
+                  ? "Tamamlandı"
+                  : project.status === "in-progress"
+                    ? "Devam Ediyor"
+                    : "Planlandı"}
+              </Badge>
             </div>
 
-            {/* Görsel Navigasyonu */}
+            <h1 className="font-display text-4xl md:text-5xl text-shinest-blue mb-4">{project.title}</h1>
+            <p className="font-sans text-lg text-gray-600 max-w-3xl">{project.description}</p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Image Gallery */}
+      <section className="pb-16">
+        <div className="container mx-auto px-6">
+          <motion.div
+            className="relative aspect-video rounded-xl overflow-hidden mb-8"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+          >
+            <Image
+              src={project.images[currentImageIndex] || "/placeholder.svg?height=600&width=800"}
+              alt={`${project.title} - Görsel ${currentImageIndex + 1}`}
+              fill
+              className="object-cover"
+              sizes="(max-width: 1200px) 100vw, 1200px"
+            />
+
             {project.images.length > 1 && (
-              <div className="flex gap-4 mt-6 justify-center flex-wrap">
-                {project.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`relative w-20 h-20 rounded-lg overflow-hidden transition-all duration-300 ${
-                      currentImageIndex === index ? "ring-2 ring-[#c4975a] scale-105" : "opacity-70 hover:opacity-100"
-                    }`}
-                  >
-                    <Image
-                      src={image || "/placeholder.svg"}
-                      alt={`${project.title} - ${index + 1}`}
-                      fill
-                      className="object-cover"
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-shinest-blue"
+                  onClick={prevImage}
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-shinest-blue"
+                  onClick={nextImage}
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </Button>
+
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                  {project.images.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        index === currentImageIndex ? "bg-white" : "bg-white/50"
+                      }`}
+                      onClick={() => setCurrentImageIndex(index)}
                     />
-                  </button>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             )}
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Proje Bilgileri */}
+          {/* Thumbnail Gallery */}
+          {project.images.length > 1 && (
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={isLoaded ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="lg:col-span-1"
+              className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <div className="bg-white p-8 rounded-lg shadow-sm">
-                <h3 className="font-display text-xl text-shinest-blue mb-6">Proje Detayları</h3>
-                <div className="space-y-4">
-                  <div>
-                    <span className="font-sans text-sm text-[#2a2a2a]/70 block">Müşteri</span>
-                    <span className="font-sans text-base text-[#2a2a2a]">{project.client}</span>
-                  </div>
-                  <div>
-                    <span className="font-sans text-sm text-[#2a2a2a]/70 block">Alan</span>
-                    <span className="font-sans text-base text-[#2a2a2a]">{project.area}</span>
-                  </div>
-                  <div>
-                    <span className="font-sans text-sm text-[#2a2a2a]/70 block">Süre</span>
-                    <span className="font-sans text-base text-[#2a2a2a]">{project.duration}</span>
-                  </div>
-                  <div>
-                    <span className="font-sans text-sm text-[#2a2a2a]/70 block">Kategori</span>
-                    <span className="font-sans text-base text-[#2a2a2a]">{project.category}</span>
-                  </div>
-                </div>
-
-                {/* Özellikler */}
-                <h4 className="font-display text-lg text-shinest-blue mt-8 mb-4">Özellikler</h4>
-                <ul className="space-y-2">
-                  {project.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-[#c4975a] mt-1">•</span>
-                      <span className="font-sans text-sm text-[#2a2a2a]">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </motion.div>
-
-            {/* Proje Açıklaması */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={isLoaded ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
-              className="lg:col-span-2"
-            >
-              <h3 className="font-display text-2xl text-shinest-blue mb-6">Proje Hakkında</h3>
-              <div className="prose prose-lg max-w-none">
-                <p className="font-sans text-[#2a2a2a] leading-relaxed text-lg">{project.description}</p>
-              </div>
-
-              {/* İletişim Butonu */}
-              <div className="mt-12">
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 bg-[#c4975a] text-white px-8 py-4 rounded-lg hover:bg-[#b8875a] transition-colors duration-300 font-sans"
+              {project.images.map((image, index) => (
+                <button
+                  key={index}
+                  className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                    index === currentImageIndex
+                      ? "border-shinest-blue shadow-lg"
+                      : "border-transparent hover:border-gray-300"
+                  }`}
+                  onClick={() => setCurrentImageIndex(index)}
                 >
-                  Benzer Bir Proje İçin İletişime Geçin
-                </Link>
-              </div>
+                  <Image
+                    src={image || "/placeholder.svg"}
+                    alt={`${project.title} - Thumbnail ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 25vw, (max-width: 1200px) 16vw, 12vw"
+                  />
+                </button>
+              ))}
             </motion.div>
+          )}
+        </div>
+      </section>
+
+      {/* Project Details */}
+      <section className="pb-16">
+        <div className="container mx-auto px-6">
+          <div className="grid lg:grid-cols-3 gap-12">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-12">
+              {/* Project Info */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="font-display text-2xl text-shinest-blue mb-6">Proje Detayları</h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Card className="border-0 shadow-lg">
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <Calendar className="w-5 h-5 text-shinest-gold" />
+                        <h3 className="font-medium text-shinest-blue">Tarih</h3>
+                      </div>
+                      <p className="text-gray-600">{project.year}</p>
+                    </CardContent>
+                  </Card>
+
+                  {project.location && (
+                    <Card className="border-0 shadow-lg">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <MapPin className="w-5 h-5 text-shinest-gold" />
+                          <h3 className="font-medium text-shinest-blue">Konum</h3>
+                        </div>
+                        <p className="text-gray-600">{project.location}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {project.area && (
+                    <Card className="border-0 shadow-lg">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div className="w-5 h-5 bg-shinest-gold rounded flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">m²</span>
+                          </div>
+                          <h3 className="font-medium text-shinest-blue">Alan</h3>
+                        </div>
+                        <p className="text-gray-600">{project.area}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {project.duration && (
+                    <Card className="border-0 shadow-lg">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <Clock className="w-5 h-5 text-shinest-gold" />
+                          <h3 className="font-medium text-shinest-blue">Süre</h3>
+                        </div>
+                        <p className="text-gray-600">{project.duration}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Challenges & Solutions */}
+              {(project.challenges || project.solutions) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                >
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {project.challenges && (
+                      <div>
+                        <h3 className="font-display text-xl text-shinest-blue mb-4">Zorluklar</h3>
+                        <ul className="space-y-2">
+                          {project.challenges.map((challenge, index) => (
+                            <li key={index} className="flex items-start space-x-2">
+                              <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-gray-600">{challenge}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {project.solutions && (
+                      <div>
+                        <h3 className="font-display text-xl text-shinest-blue mb-4">Çözümler</h3>
+                        <ul className="space-y-2">
+                          {project.solutions.map((solution, index) => (
+                            <li key={index} className="flex items-start space-x-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-gray-600">{solution}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Results */}
+              {project.results && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                >
+                  <h3 className="font-display text-xl text-shinest-blue mb-4">Sonuçlar</h3>
+                  <ul className="space-y-2">
+                    {project.results.map((result, index) => (
+                      <li key={index} className="flex items-start space-x-2">
+                        <div className="w-2 h-2 bg-shinest-gold rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-gray-600">{result}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-8">
+              {/* Project Tags */}
+              {project.tags && project.tags.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                >
+                  <Card className="border-0 shadow-lg">
+                    <CardContent className="p-6">
+                      <h3 className="font-display text-lg text-shinest-blue mb-4">Etiketler</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {project.tags.map((tag, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Team */}
+              {project.team && project.team.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                >
+                  <Card className="border-0 shadow-lg">
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <Users className="w-5 h-5 text-shinest-gold" />
+                        <h3 className="font-display text-lg text-shinest-blue">Ekip</h3>
+                      </div>
+                      <ul className="space-y-2">
+                        {project.team.map((member, index) => (
+                          <li key={index} className="text-gray-600 text-sm">
+                            {member}
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Client & Budget */}
+              {(project.client || project.budget) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                >
+                  <Card className="border-0 shadow-lg">
+                    <CardContent className="p-6 space-y-4">
+                      {project.client && (
+                        <div>
+                          <h4 className="font-medium text-shinest-blue mb-2">Müşteri</h4>
+                          <p className="text-gray-600 text-sm">{project.client}</p>
+                        </div>
+                      )}
+                      {project.budget && (
+                        <div>
+                          <div className="flex items-center space-x-2 mb-2">
+                            <DollarSign className="w-4 h-4 text-shinest-gold" />
+                            <h4 className="font-medium text-shinest-blue">Bütçe</h4>
+                          </div>
+                          <p className="text-gray-600 text-sm">{project.budget}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Testimonial */}
+              {project.testimonial && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                >
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-shinest-blue to-shinest-blue/90 text-white">
+                    <CardContent className="p-6">
+                      <Quote className="w-8 h-8 text-shinest-gold mb-4" />
+                      <blockquote className="text-sm mb-4 italic">"{project.testimonial.text}"</blockquote>
+                      <div className="text-xs">
+                        <div className="font-medium">{project.testimonial.author}</div>
+                        <div className="text-white/80">{project.testimonial.position}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
       <Footer />
-    </main>
+    </div>
   )
 }

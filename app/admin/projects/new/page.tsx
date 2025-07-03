@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Save, Upload, X, Plus, ArrowLeft, Eye } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
+import { useProjects } from "@/hooks/use-projects"
 
 interface ProjectForm {
   title: { tr: string; en: string; de: string; fr: string; it: string; ru: string; ar: string }
@@ -19,18 +20,20 @@ interface ProjectForm {
   location: string
   year: string
   status: "published" | "draft" | "archived"
-  featuredImage: string
+  featured_image: string
   images: string[]
   description: { tr: string; en: string; de: string; fr: string; it: string; ru: string; ar: string }
-  fullDescription: { tr: string; en: string; de: string; fr: string; it: string; ru: string; ar: string }
+  full_description: { tr: string; en: string; de: string; fr: string; it: string; ru: string; ar: string }
   client: string
   area: string
   duration: string
   tags: string[]
+  featured: boolean
 }
 
 export default function NewProject() {
   const router = useRouter()
+  const { createProject } = useProjects()
   const [currentLanguage, setCurrentLanguage] = useState<"tr" | "en" | "de" | "fr" | "it" | "ru" | "ar">("tr")
   const [saving, setSaving] = useState(false)
 
@@ -51,14 +54,15 @@ export default function NewProject() {
     location: "",
     year: "2024",
     status: "draft",
-    featuredImage: "",
+    featured_image: "",
     images: [],
     description: { tr: "", en: "", de: "", fr: "", it: "", ru: "", ar: "" },
-    fullDescription: { tr: "", en: "", de: "", fr: "", it: "", ru: "", ar: "" },
+    full_description: { tr: "", en: "", de: "", fr: "", it: "", ru: "", ar: "" },
     client: "",
     area: "",
     duration: "",
     tags: [],
+    featured: false,
   })
 
   const categories = [
@@ -99,7 +103,7 @@ export default function NewProject() {
     const url = URL.createObjectURL(file)
 
     if (type === "featured") {
-      setFormData((prev) => ({ ...prev, featuredImage: url }))
+      setFormData((prev) => ({ ...prev, featured_image: url }))
     } else {
       setFormData((prev) => ({ ...prev, images: [...prev.images, url] }))
     }
@@ -133,25 +137,16 @@ export default function NewProject() {
         return
       }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const projectData = { ...formData, status }
-
-      // Save to localStorage for demo
-      const existingProjects = JSON.parse(localStorage.getItem("projects") || "[]")
-      const newProject = {
-        ...projectData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString().split("T")[0],
-        updatedAt: new Date().toISOString().split("T")[0],
+      const projectData = {
+        ...formData,
+        status,
       }
 
-      localStorage.setItem("projects", JSON.stringify([...existingProjects, newProject]))
-
+      await createProject(projectData)
       toast.success(`Proje ${status === "published" ? "yayınlandı" : "taslak olarak kaydedildi"}!`)
       router.push("/admin/projects")
     } catch (error) {
+      console.error("Error saving project:", error)
       toast.error("Kaydetme sırasında hata oluştu")
     } finally {
       setSaving(false)
@@ -275,11 +270,11 @@ export default function NewProject() {
               <div>
                 <Label>Detaylı Açıklama ({currentLanguage.toUpperCase()})</Label>
                 <Textarea
-                  value={formData.fullDescription[currentLanguage]}
+                  value={formData.full_description[currentLanguage]}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      fullDescription: { ...prev.fullDescription, [currentLanguage]: e.target.value },
+                      full_description: { ...prev.full_description, [currentLanguage]: e.target.value },
                     }))
                   }
                   placeholder="Proje hakkında detaylı açıklama"
@@ -300,11 +295,11 @@ export default function NewProject() {
               <div>
                 <Label>Ana Görsel</Label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-                  {formData.featuredImage ? (
+                  {formData.featured_image ? (
                     <div className="relative">
                       <div className="relative h-48 w-full">
                         <Image
-                          src={formData.featuredImage || "/placeholder.svg"}
+                          src={formData.featured_image || "/placeholder.svg"}
                           alt="Ana Görsel"
                           fill
                           className="object-cover rounded-lg"
@@ -314,7 +309,7 @@ export default function NewProject() {
                         variant="destructive"
                         size="sm"
                         className="absolute top-2 right-2"
-                        onClick={() => setFormData((prev) => ({ ...prev, featuredImage: "" }))}
+                        onClick={() => setFormData((prev) => ({ ...prev, featured_image: "" }))}
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -432,6 +427,17 @@ export default function NewProject() {
                   onChange={(e) => setFormData((prev) => ({ ...prev, duration: e.target.value }))}
                   placeholder="8 hafta"
                 />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="featured"
+                  checked={formData.featured}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="featured">Öne Çıkan Proje</Label>
               </div>
             </CardContent>
           </Card>
