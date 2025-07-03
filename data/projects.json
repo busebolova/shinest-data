@@ -154,6 +154,17 @@
       "id": "1751571660392",
       "createdAt": "2025-07-03T19:41:00.392Z",
       "updatedAt": "2025-07-03T19:41:00.392Z"
+    },
+    {
+      "title": "deneme",
+      "description": "deneme",
+      "category": "office",
+      "status": "draft",
+      "images": [],
+      "featured": false,
+      "id": "1751573800839",
+      "createdAt": "2025-07-03T20:16:40.839Z",
+      "updatedAt": "2025-07-03T20:16:40.839Z"
     }
   ]
 }
