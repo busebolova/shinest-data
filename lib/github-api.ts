@@ -156,7 +156,6 @@ class GitHubAPI {
     }
   }
 
-  // Projects methods
   async getProjects(): Promise<GitHubProject[]> {
     try {
       const file = await this.getFile("data/projects.json")
@@ -220,7 +219,6 @@ class GitHubAPI {
     await this.saveProjects(filteredProjects)
   }
 
-  // Blog posts methods
   async getBlogPosts(): Promise<GitHubBlogPost[]> {
     try {
       const file = await this.getFile("data/blog.json")
@@ -284,7 +282,6 @@ class GitHubAPI {
     await this.saveBlogPosts(filteredPosts)
   }
 
-  // Page content methods
   async getPageContent(page: string): Promise<any> {
     try {
       const file = await this.getFile(`data/pages/${page}.json`)
@@ -346,7 +343,6 @@ class GitHubAPI {
 
 const githubAPIInstance = new GitHubAPI()
 
-// Export all required named exports
 export const githubAPI = githubAPIInstance
 export const githubApi = githubAPIInstance
 export const getGitHubApi = () => githubAPIInstance

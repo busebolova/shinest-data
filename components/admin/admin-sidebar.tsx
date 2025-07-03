@@ -4,17 +4,31 @@ import { Fragment } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Dialog, Transition } from "@headlessui/react"
-import { LayoutDashboard, FileText, FolderOpen, ImageIcon, Settings, MessageSquare, X, Activity } from "lucide-react"
+import {
+  LayoutDashboard,
+  FileText,
+  FolderOpen,
+  ImageIcon,
+  Settings,
+  MessageSquare,
+  X,
+  Activity,
+  Home,
+  Users,
+  BarChart3,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "İçerik Yönetimi", href: "/admin/content", icon: FileText },
-  { name: "Projeler", href: "/admin/projects", icon: FolderOpen },
+  { name: "Homepage", href: "/admin/content/home", icon: Home },
+  { name: "Projects", href: "/admin/projects", icon: FolderOpen },
   { name: "Blog", href: "/admin/blog", icon: FileText },
-  { name: "Medya", href: "/admin/media", icon: ImageIcon },
-  { name: "Mesajlar", href: "/admin/messages", icon: MessageSquare },
-  { name: "Ayarlar", href: "/admin/settings", icon: Settings },
+  { name: "Media", href: "/admin/media", icon: ImageIcon },
+  { name: "Messages", href: "/admin/messages", icon: MessageSquare },
+  { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+  { name: "Users", href: "/admin/users", icon: Users },
+  { name: "Settings", href: "/admin/settings", icon: Settings },
 ]
 
 interface AdminSidebarProps {

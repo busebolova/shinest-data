@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { WifiOff, RefreshCw, Clock, AlertCircle, Activity } from "lucide-react"
+import { WifiOff, RefreshCw, AlertCircle, Activity, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import githubRealtime, { type ConnectionStatus } from "@/lib/github-realtime"
 
 export function RealtimeIndicator() {
@@ -11,23 +12,27 @@ export function RealtimeIndicator() {
   const [updateCount, setUpdateCount] = useState(0)
   const [isForceSync, setIsForceSync] = useState(false)
   const [lastActivity, setLastActivity] = useState<Date | null>(null)
+  const [connectionInfo, setConnectionInfo] = useState<any>(null)
 
   useEffect(() => {
     const unsubscribeStatus = githubRealtime.onStatusChange(setStatus)
 
     const unsubscribeMessages = githubRealtime.onMessage((data) => {
-      if (data.type !== "heartbeat") {
+      if (data.type === "heartbeat") {
+        setLastActivity(new Date())
+        setConnectionInfo(data.data)
+      } else {
         setUpdateCount((prev) => prev + 1)
         setLastActivity(new Date())
       }
     })
 
-    githubRealtime.connect()
+    // Get initial status
+    setStatus(githubRealtime.getStatus())
 
     return () => {
       unsubscribeStatus()
       unsubscribeMessages()
-      githubRealtime.disconnect()
     }
   }, [])
 
@@ -47,7 +52,7 @@ export function RealtimeIndicator() {
       case "connected":
         return <Activity className="w-4 h-4 text-green-500 animate-pulse" />
       case "polling":
-        return <Clock className="w-4 h-4 text-blue-500" />
+        return <Zap className="w-4 h-4 text-blue-500" />
       case "connecting":
         return <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
       case "error":
@@ -64,7 +69,7 @@ export function RealtimeIndicator() {
       case "polling":
         return "bg-blue-50 border-blue-200 text-blue-800"
       case "connecting":
-        return "bg-blue-50 border-blue-200 text-blue-800"
+        return "bg-yellow-50 border-yellow-200 text-yellow-800"
       case "error":
         return "bg-red-50 border-red-200 text-red-800"
       default:
@@ -75,58 +80,91 @@ export function RealtimeIndicator() {
   const getStatusText = () => {
     switch (status.status) {
       case "connected":
-        return "Gerçek Zamanlı Aktif"
+        return "Real-time Active"
       case "polling":
-        return "Gerçek Zamanlı Polling"
+        return "Live Updates"
       case "connecting":
-        return "Bağlanıyor..."
+        return "Connecting..."
       case "error":
-        return "Bağlantı Hatası"
+        return "Connection Error"
       default:
-        return "Bağlantı Yok"
+        return "Disconnected"
     }
   }
 
   return (
-    <div className={`flex items-center justify-between p-3 rounded-lg border ${getStatusColor()}`}>
-      <div className="flex items-center space-x-3">
-        {getStatusIcon()}
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium">GitHub: {getStatusText()}</p>
-            {status.status === "connected" && (
-              <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                LIVE
+    <Card className={`${getStatusColor()} border`}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {getStatusIcon()}
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold">{getStatusText()}</p>
+                {status.status === "connected" && (
+                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 px-2 py-0.5">
+                    LIVE
+                  </Badge>
+                )}
+                {status.status === "polling" && (
+                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5">
+                    POLLING
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-4 text-xs opacity-75">
+                {status.message && <span>{status.message}</span>}
+                {status.attempts && <span>Attempts: {status.attempts}/3</span>}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            {updateCount > 0 && (
+              <Badge variant="outline" className="text-xs">
+                {updateCount} updates
               </Badge>
             )}
-          </div>
-          {status.message && <p className="text-xs opacity-75">{status.message}</p>}
-          {status.attempts && <p className="text-xs opacity-60">Deneme: {status.attempts}/3</p>}
-        </div>
-      </div>
 
-      <div className="flex items-center space-x-3">
-        {updateCount > 0 && (
-          <Badge variant="outline" className="text-xs">
-            {updateCount} güncelleme
-          </Badge>
+            <div className="text-right text-xs opacity-75">
+              {lastActivity && <div>Last: {lastActivity.toLocaleTimeString("tr-TR")}</div>}
+              {status.lastUpdate && <div>Sync: {status.lastUpdate.toLocaleTimeString("tr-TR")}</div>}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleForceSync}
+              disabled={isForceSync}
+              className="text-xs h-8 px-3 bg-transparent"
+            >
+              {isForceSync ? (
+                <RefreshCw className="w-3 h-3 animate-spin mr-1" />
+              ) : (
+                <RefreshCw className="w-3 h-3 mr-1" />
+              )}
+              Sync
+            </Button>
+          </div>
+        </div>
+
+        {/* Connection Details */}
+        {connectionInfo && (
+          <div className="mt-3 pt-3 border-t border-current/20">
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <span className="opacity-75">Repository:</span>
+                <div className="font-mono">{connectionInfo.repository?.name || "N/A"}</div>
+              </div>
+              <div>
+                <span className="opacity-75">Last Commit:</span>
+                <div className="font-mono">{connectionInfo.lastCommit?.sha || "N/A"}</div>
+              </div>
+            </div>
+          </div>
         )}
-        {lastActivity && <span className="text-xs opacity-60">Son: {lastActivity.toLocaleTimeString("tr-TR")}</span>}
-        {status.lastUpdate && (
-          <span className="text-xs opacity-60">Sync: {status.lastUpdate.toLocaleTimeString("tr-TR")}</span>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleForceSync}
-          disabled={isForceSync}
-          className="text-xs h-7 px-2 bg-transparent"
-        >
-          {isForceSync ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-          <span className="ml-1">Sync</span>
-        </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 

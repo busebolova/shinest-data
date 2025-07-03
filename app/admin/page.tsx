@@ -1,270 +1,360 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Home, FileText, ImageIcon, MessageSquare, TrendingUp, Calendar, Eye, Edit } from "lucide-react"
+import {
+  LayoutDashboard,
+  FileText,
+  FolderOpen,
+  ImageIcon,
+  Clock,
+  GitBranch,
+  Activity,
+  TrendingUp,
+  Eye,
+  RefreshCw,
+} from "lucide-react"
 import Link from "next/link"
+import { githubAPI } from "@/lib/github-api"
+import { useRealtimeContent } from "@/hooks/use-realtime-content"
 
 interface DashboardStats {
-  totalPages: number
-  totalProjects: number
-  totalBlogPosts: number
-  pendingMessages: number
-  totalImages: number
-  lastUpdate: string
+  projects: number
+  blogPosts: number
+  mediaFiles: number
+  pageViews: number
+  lastCommit?: {
+    sha: string
+    message: string
+    author: string
+    date: string
+  }
 }
 
 interface RecentActivity {
   id: string
-  type: "page" | "project" | "blog" | "message"
+  type: "project" | "blog" | "page" | "media"
   title: string
   action: string
-  timestamp: string
+  timestamp: Date
   user: string
 }
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
-    totalPages: 6,
-    totalProjects: 12,
-    totalBlogPosts: 8,
-    pendingMessages: 3,
-    totalImages: 45,
-    lastUpdate: "2 saat önce",
+    projects: 0,
+    blogPosts: 0,
+    mediaFiles: 0,
+    pageViews: 0,
+  })
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const { lastUpdate, updateCount, isConnected, refresh } = useRealtimeContent("dashboard", stats, async () => {
+    const [projects, blogPosts, latestCommit] = await Promise.all([
+      githubAPI.getProjects(),
+      githubAPI.getBlogPosts(),
+      githubAPI.getLatestCommit(),
+    ])
+
+    return {
+      projects: projects.length,
+      blogPosts: blogPosts.length,
+      mediaFiles: 0, // This would need to be implemented
+      pageViews: Math.floor(Math.random() * 10000), // Mock data
+      lastCommit: {
+        sha: latestCommit.sha.substring(0, 7),
+        message: latestCommit.commit.message,
+        author: latestCommit.commit.author.name,
+        date: latestCommit.commit.author.date,
+      },
+    }
   })
 
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const [projects, blogPosts, latestCommit] = await Promise.all([
+          githubAPI.getProjects(),
+          githubAPI.getBlogPosts(),
+          githubAPI.getLatestCommit(),
+        ])
+
+        const newStats = {
+          projects: projects.length,
+          blogPosts: blogPosts.length,
+          mediaFiles: 0,
+          pageViews: Math.floor(Math.random() * 10000),
+          lastCommit: {
+            sha: latestCommit.sha.substring(0, 7),
+            message: latestCommit.commit.message,
+            author: latestCommit.commit.author.name,
+            date: latestCommit.commit.author.date,
+          },
+        }
+
+        setStats(newStats)
+
+        // Mock recent activity
+        setRecentActivity([
+          {
+            id: "1",
+            type: "project",
+            title: "Modern Living Room",
+            action: "updated",
+            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+            user: "Admin",
+          },
+          {
+            id: "2",
+            type: "blog",
+            title: "Interior Design Trends 2024",
+            action: "published",
+            timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+            user: "Admin",
+          },
+          {
+            id: "3",
+            type: "page",
+            title: "Homepage",
+            action: "edited",
+            timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+            user: "Admin",
+          },
+          {
+            id: "4",
+            type: "media",
+            title: "Project Images",
+            action: "uploaded",
+            timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+            user: "Admin",
+          },
+        ])
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadInitialData()
+  }, [])
+
+  const quickActions = [
     {
-      id: "1",
-      type: "project",
-      title: "Banyo Tasarımı",
-      action: "güncellendi",
-      timestamp: "2 saat önce",
-      user: "Admin",
+      title: "Edit Homepage",
+      description: "Update hero, gallery, and content sections",
+      href: "/admin/content/home",
+      icon: LayoutDashboard,
+      color: "bg-blue-500",
     },
     {
-      id: "2",
-      type: "blog",
-      title: "Modern İç Mimarlık Trendleri",
-      action: "yayınlandı",
-      timestamp: "1 gün önce",
-      user: "Admin",
+      title: "Manage Projects",
+      description: "Add, edit, or remove portfolio projects",
+      href: "/admin/projects",
+      icon: FolderOpen,
+      color: "bg-green-500",
     },
     {
-      id: "3",
-      type: "message",
-      title: "Yeni proje talebi",
-      action: "alındı",
-      timestamp: "3 gün önce",
-      user: "Sistem",
+      title: "Write Blog Post",
+      description: "Create new blog content",
+      href: "/admin/blog/new",
+      icon: FileText,
+      color: "bg-purple-500",
     },
     {
-      id: "4",
-      type: "page",
-      title: "Ana Sayfa",
-      action: "düzenlendi",
-      timestamp: "1 hafta önce",
-      user: "Admin",
+      title: "Media Library",
+      description: "Upload and manage images",
+      href: "/admin/media",
+      icon: ImageIcon,
+      color: "bg-orange-500",
     },
-  ])
+  ]
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case "page":
-        return <FileText className="h-4 w-4" />
       case "project":
-        return <ImageIcon className="h-4 w-4" />
+        return <FolderOpen className="h-4 w-4" />
       case "blog":
         return <FileText className="h-4 w-4" />
-      case "message":
-        return <MessageSquare className="h-4 w-4" />
+      case "page":
+        return <LayoutDashboard className="h-4 w-4" />
+      case "media":
+        return <ImageIcon className="h-4 w-4" />
       default:
-        return <FileText className="h-4 w-4" />
+        return <Activity className="h-4 w-4" />
     }
   }
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case "page":
-        return "bg-blue-100 text-blue-600"
       case "project":
         return "bg-green-100 text-green-600"
       case "blog":
         return "bg-purple-100 text-purple-600"
-      case "message":
+      case "page":
+        return "bg-blue-100 text-blue-600"
+      case "media":
         return "bg-orange-100 text-orange-600"
       default:
         return "bg-gray-100 text-gray-600"
     }
   }
 
-  useEffect(() => {
-    // Load stats from localStorage or API
-    const savedStats = localStorage.getItem("dashboard_stats")
-    if (savedStats) {
-      setStats(JSON.parse(savedStats))
-    }
-  }, [])
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="pb-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">SHINEST İç Mimarlık içerik yönetim paneline hoş geldiniz</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Welcome back! Here's what's happening with your site.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {isConnected && (
+            <Badge variant="outline" className="text-green-600 border-green-200">
+              <Activity className="w-3 h-3 mr-1" />
+              Live Updates
+            </Badge>
+          )}
+          {updateCount > 0 && <Badge variant="secondary">{updateCount} updates</Badge>}
+          <Button variant="outline" size="sm" onClick={refresh}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Toplam Sayfa</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalPages}</p>
-              </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <FileText className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <Link href="/admin/content">
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  İçerik Yönet
-                </Button>
-              </Link>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
+            <FolderOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.projects}</div>
+            <p className="text-xs text-muted-foreground">Portfolio projects</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Projeler</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalProjects}</p>
-              </div>
-              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <ImageIcon className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <Link href="/admin/projects">
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  Projeleri Yönet
-                </Button>
-              </Link>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Blog Posts</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.blogPosts}</div>
+            <p className="text-xs text-muted-foreground">Published articles</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Blog Yazıları</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalBlogPosts}</p>
-              </div>
-              <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <FileText className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <Link href="/admin/blog">
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  Blog Yönet
-                </Button>
-              </Link>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Page Views</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.pageViews.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Bekleyen Mesaj</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pendingMessages}</p>
-              </div>
-              <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <MessageSquare className="h-6 w-6 text-orange-600" />
-              </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Site Status</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              <Badge variant="outline" className="text-green-600">
+                Live
+              </Badge>
             </div>
-            <div className="mt-4">
-              <Link href="/admin/messages">
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  Mesajları Gör
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Medya Dosyası</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalImages}</p>
-              </div>
-              <div className="h-12 w-12 bg-pink-100 rounded-lg flex items-center justify-center">
-                <ImageIcon className="h-6 w-6 text-pink-600" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <Link href="/admin/media">
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  Medya Yönet
-                </Button>
-              </Link>
-            </div>
+            <p className="text-xs text-muted-foreground">Real-time updates active</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Latest Commit */}
+      {stats.lastCommit && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GitBranch className="h-5 w-5" />
+              Latest Changes
+              {lastUpdate && (
+                <Badge variant="secondary" className="text-xs">
+                  Updated {lastUpdate.toLocaleTimeString()}
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">{stats.lastCommit.message}</p>
+                <p className="text-sm text-muted-foreground">
+                  by {stats.lastCommit.author} • {stats.lastCommit.sha}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">{new Date(stats.lastCommit.date).toLocaleDateString()}</p>
+                <p className="text-xs text-muted-foreground">{new Date(stats.lastCommit.date).toLocaleTimeString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick Actions & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Hızlı İşlemler
+              Quick Actions
             </CardTitle>
-            <CardDescription>Sık kullanılan işlemlere hızlı erişim</CardDescription>
+            <CardDescription>Frequently used admin tasks</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Link href="/admin/content">
-                <Button variant="outline" className="w-full h-20 flex flex-col gap-2 bg-transparent">
-                  <Home className="h-6 w-6" />
-                  <span className="text-sm">Ana Sayfa Düzenle</span>
+            {quickActions.map((action) => (
+              <div
+                key={action.title}
+                className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className={`p-2 rounded-lg ${action.color}`}>
+                  <action.icon className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-sm">{action.title}</h3>
+                  <p className="text-xs text-muted-foreground">{action.description}</p>
+                </div>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={action.href}>Go</Link>
                 </Button>
-              </Link>
-
-              <Link href="/admin/projects/new">
-                <Button variant="outline" className="w-full h-20 flex flex-col gap-2 bg-transparent">
-                  <ImageIcon className="h-6 w-6" />
-                  <span className="text-sm">Yeni Proje Ekle</span>
-                </Button>
-              </Link>
-
-              <Link href="/admin/blog/new">
-                <Button variant="outline" className="w-full h-20 flex flex-col gap-2 bg-transparent">
-                  <FileText className="h-6 w-6" />
-                  <span className="text-sm">Blog Yazısı Ekle</span>
-                </Button>
-              </Link>
-
-              <Link href="/admin/media">
-                <Button variant="outline" className="w-full h-20 flex flex-col gap-2 bg-transparent">
-                  <ImageIcon className="h-6 w-6" />
-                  <span className="text-sm">Görsel Yükle</span>
-                </Button>
-              </Link>
-            </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
 
@@ -272,22 +362,23 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Son Aktiviteler
+              <Clock className="h-5 w-5" />
+              Recent Activity
             </CardTitle>
-            <CardDescription>Son yapılan değişiklikler ve güncellemeler</CardDescription>
+            <CardDescription>Latest changes and updates</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                <div key={activity.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className={`p-2 rounded-lg ${getActivityColor(activity.type)}`}>
                     {getActivityIcon(activity.type)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{activity.title}</p>
                     <p className="text-sm text-gray-500">
-                      {activity.action} • {activity.timestamp}
+                      {activity.action} • {activity.timestamp.toLocaleDateString()} at{" "}
+                      {activity.timestamp.toLocaleTimeString()}
                     </p>
                   </div>
                   <Badge variant="outline" className="text-xs">
@@ -296,45 +387,9 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
-            <div className="mt-4">
-              <Button variant="outline" className="w-full bg-transparent">
-                Tüm Aktiviteleri Gör
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Site Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Eye className="h-5 w-5" />
-            Site Önizleme
-          </CardTitle>
-          <CardDescription>Sitenizin canlı halini görüntüleyin</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h3 className="font-medium text-gray-900">SHINEST İç Mimarlık</h3>
-              <p className="text-sm text-gray-500">Son güncelleme: {stats.lastUpdate}</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => window.open("/", "_blank")}>
-                <Eye className="h-4 w-4 mr-2" />
-                Siteyi Görüntüle
-              </Button>
-              <Link href="/admin/content">
-                <Button size="sm">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Düzenle
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

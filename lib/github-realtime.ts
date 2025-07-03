@@ -3,6 +3,7 @@ interface RealtimeConnection {
   lastUpdate: Date | null
   reconnectAttempts: number
   maxReconnectAttempts: number
+  lastCommitSha: string | null
 }
 
 interface ConnectionStatus {
@@ -25,6 +26,7 @@ class GitHubRealtime {
     lastUpdate: null,
     reconnectAttempts: 0,
     maxReconnectAttempts: 3,
+    lastCommitSha: null,
   }
 
   private listeners: Map<string, Set<(data: ContentUpdate) => void>> = new Map()
@@ -36,7 +38,7 @@ class GitHubRealtime {
   constructor() {
     if (typeof window !== "undefined") {
       setTimeout(() => {
-        this.startPolling()
+        this.connect()
       }, 1000)
     }
   }
@@ -52,7 +54,6 @@ class GitHubRealtime {
   }
 
   private notifyListeners(type: string, update: ContentUpdate) {
-    // Notify specific type listeners
     const typeListeners = this.listeners.get(type)
     if (typeListeners) {
       typeListeners.forEach((listener) => {
@@ -64,7 +65,6 @@ class GitHubRealtime {
       })
     }
 
-    // Notify global listeners
     const globalListeners = this.listeners.get("*")
     if (globalListeners) {
       globalListeners.forEach((listener) => {
@@ -76,7 +76,6 @@ class GitHubRealtime {
       })
     }
 
-    // Notify message listeners
     this.messageListeners.forEach((listener) => {
       try {
         listener(update)
@@ -91,9 +90,9 @@ class GitHubRealtime {
       clearInterval(this.pollingInterval)
     }
 
-    this.updateStatus({ status: "polling", message: "Starting real-time polling" })
+    this.updateStatus({ status: "polling", message: "Real-time polling active" })
 
-    // Poll every 10 seconds for updates
+    // Poll every 5 seconds for real-time updates
     this.pollingInterval = setInterval(async () => {
       try {
         await this.checkForUpdates()
@@ -110,7 +109,7 @@ class GitHubRealtime {
           this.stopPolling()
         }
       }
-    }, 10000)
+    }, 5000) // 5 second intervals for real-time feel
   }
 
   private async checkForUpdates() {
@@ -124,30 +123,54 @@ class GitHubRealtime {
         this.connection.lastUpdate = new Date()
         this.connection.reconnectAttempts = 0
 
+        // Check if there's a new commit
+        if (data.lastCommit && data.lastCommit.sha !== this.connection.lastCommitSha) {
+          const isFirstLoad = this.connection.lastCommitSha === null
+          this.connection.lastCommitSha = data.lastCommit.sha
+
+          if (!isFirstLoad) {
+            // Notify about new changes
+            this.notifyListeners("commits", {
+              type: "commits",
+              action: "update",
+              data: data.lastCommit,
+              timestamp: new Date(),
+            })
+
+            // Trigger content updates
+            this.notifyListeners("projects", {
+              type: "projects",
+              action: "update",
+              data: {},
+              timestamp: new Date(),
+            })
+
+            this.notifyListeners("blog", {
+              type: "blog",
+              action: "update",
+              data: {},
+              timestamp: new Date(),
+            })
+
+            this.notifyListeners("pages", {
+              type: "pages",
+              action: "update",
+              data: {},
+              timestamp: new Date(),
+            })
+          }
+        }
+
         this.updateStatus({
           status: "connected",
-          message: "Real-time connection active",
+          message: "Real-time updates active",
           lastUpdate: this.connection.lastUpdate,
         })
 
-        // Check for content updates
-        if (data.hasUpdates) {
-          const updates = data.updates || []
-          updates.forEach((update: any) => {
-            const contentUpdate: ContentUpdate = {
-              type: update.type || "general",
-              action: update.action || "update",
-              data: update.data || {},
-              timestamp: new Date(update.timestamp || Date.now()),
-            }
-            this.notifyListeners(contentUpdate.type, contentUpdate)
-          })
-        }
-
-        // Notify heartbeat
+        // Send heartbeat
         this.messageListeners.forEach((listener) => {
           try {
-            listener({ type: "heartbeat", timestamp: new Date() })
+            listener({ type: "heartbeat", timestamp: new Date(), data })
           } catch (error) {
             console.error("Heartbeat listener error:", error)
           }
@@ -187,6 +210,7 @@ class GitHubRealtime {
             clearTimeout(this.connectionTimeout)
             this.connectionTimeout = null
           }
+          this.startPolling()
           resolve()
         })
         .catch((error) => {
@@ -214,7 +238,7 @@ class GitHubRealtime {
 
     this.updateStatus({
       status: "disconnected",
-      message: "Disconnected from GitHub real-time",
+      message: "Disconnected from real-time updates",
     })
   }
 
@@ -255,13 +279,13 @@ class GitHubRealtime {
     if (this.connection.isConnected) {
       return {
         status: "connected",
-        message: "Real-time connection active",
+        message: "Real-time updates active",
         lastUpdate: this.connection.lastUpdate || undefined,
       }
     } else if (this.pollingInterval) {
       return {
         status: "polling",
-        message: "Using real-time polling",
+        message: "Real-time polling mode",
         attempts: this.connection.reconnectAttempts,
       }
     } else if (this.connection.reconnectAttempts > 0) {
