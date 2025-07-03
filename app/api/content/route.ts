@@ -1,66 +1,35 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { githubAPI } from "@/lib/github-api"
+import { NextResponse } from "next/server"
+import { db } from "@/lib/database"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const content = await githubAPI.getPageContent("home")
+    const { searchParams } = new URL(request.url)
+    const page = searchParams.get("page")
 
-    if (!content) {
-      // Fallback content
-      const fallbackContent = {
-        homepage: {
-          hero: {
-            title: { tr: "SHINEST İç Mimarlık", en: "SHINEST Interior Design" },
-            subtitle: { tr: "Yaşam alanlarınızı dönüştürüyoruz", en: "Transforming your living spaces" },
-            image: "/images/hero-image.png",
-          },
-          about: {
-            title: { tr: "Hakkımızda", en: "About Us" },
-            content: { tr: "Modern ve fonksiyonel tasarımlar...", en: "Modern and functional designs..." },
-          },
-        },
-      }
-      return NextResponse.json(fallbackContent)
+    if (!page) {
+      return NextResponse.json({ error: "Page parameter required" }, { status: 400 })
     }
 
+    const content = await db.getPageContent(page)
     return NextResponse.json(content)
   } catch (error) {
     console.error("Error fetching content:", error)
-
-    // Fallback content
-    const fallbackContent = {
-      homepage: {
-        hero: {
-          title: { tr: "SHINEST İç Mimarlık", en: "SHINEST Interior Design" },
-          subtitle: { tr: "Yaşam alanlarınızı dönüştürüyoruz", en: "Transforming your living spaces" },
-          image: "/images/hero-image.png",
-        },
-        about: {
-          title: { tr: "Hakkımızda", en: "About Us" },
-          content: { tr: "Modern ve fonksiyonel tasarımlar...", en: "Modern and functional designs..." },
-        },
-      },
-    }
-
-    return NextResponse.json(fallbackContent)
+    return NextResponse.json({ error: "Failed to fetch content" }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const content = await request.json()
-    await githubAPI.savePageContent("home", content)
+    const { page, content } = await request.json()
 
-    // Revalidate homepage
-    await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paths: ["/"] }),
-    })
+    if (!page || !content) {
+      return NextResponse.json({ error: "Page and content required" }, { status: 400 })
+    }
 
-    return NextResponse.json({ success: true, content })
+    const savedContent = await db.savePageContent(page, content)
+    return NextResponse.json(savedContent)
   } catch (error) {
-    console.error("Error updating content:", error)
-    return NextResponse.json({ error: "Failed to update content" }, { status: 500 })
+    console.error("Error saving content:", error)
+    return NextResponse.json({ error: "Failed to save content" }, { status: 500 })
   }
 }

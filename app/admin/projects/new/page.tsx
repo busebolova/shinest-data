@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Save, Upload, X, Plus, ArrowLeft, Eye } from "lucide-react"
-import { toast } from "sonner"
 import Image from "next/image"
 import { useProjects } from "@/hooks/use-projects"
 
@@ -108,7 +107,8 @@ export default function NewProject() {
       setFormData((prev) => ({ ...prev, images: [...prev.images, url] }))
     }
 
-    toast.success("Görsel yüklendi!")
+    // Show success message
+    alert("Görsel yüklendi!")
   }
 
   const removeImage = (index: number) => {
@@ -133,7 +133,7 @@ export default function NewProject() {
     try {
       // Validation
       if (!formData.title.tr || !formData.category) {
-        toast.error("Lütfen gerekli alanları doldurun")
+        alert("Lütfen gerekli alanları doldurun")
         return
       }
 
@@ -143,11 +143,11 @@ export default function NewProject() {
       }
 
       await createProject(projectData)
-      toast.success(`Proje ${status === "published" ? "yayınlandı" : "taslak olarak kaydedildi"}!`)
+      alert(`Proje ${status === "published" ? "yayınlandı" : "taslak olarak kaydedildi"}!`)
       router.push("/admin/projects")
     } catch (error) {
       console.error("Error saving project:", error)
-      toast.error("Kaydetme sırasında hata oluştu")
+      alert("Kaydetme sırasında hata oluştu")
     } finally {
       setSaving(false)
     }

@@ -1,9 +1,9 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { githubAPI } from "@/lib/github-api"
+import { NextResponse } from "next/server"
+import { db } from "@/lib/database"
 
 export async function GET() {
   try {
-    const posts = await githubAPI.getBlogPosts()
+    const posts = await db.getBlogPosts()
     return NextResponse.json(posts)
   } catch (error) {
     console.error("Error fetching blog posts:", error)
@@ -11,11 +11,11 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const post = await request.json()
-    await githubAPI.createBlogPost(post)
-    return NextResponse.json({ success: true })
+    const postData = await request.json()
+    const post = await db.createBlogPost(postData)
+    return NextResponse.json(post)
   } catch (error) {
     console.error("Error creating blog post:", error)
     return NextResponse.json({ error: "Failed to create blog post" }, { status: 500 })
