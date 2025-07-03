@@ -4,57 +4,58 @@ export interface User {
   role: string
 }
 
-export class SimpleAuth {
-  private static readonly ADMIN_EMAIL = "admin@shinesticmimarlik.com"
-  private static readonly ADMIN_PASSWORD = "shinest2024"
-  private static readonly SESSION_KEY = "shinest_admin_session"
+export const ADMIN_CREDENTIALS = {
+  email: "admin@shinesticmimarlik.com",
+  password: "shinest2024",
+  name: "Admin",
+  role: "admin",
+}
 
-  static login(email: string, password: string): User | null {
-    if (email === this.ADMIN_EMAIL && password === this.ADMIN_PASSWORD) {
-      const user: User = {
-        email: this.ADMIN_EMAIL,
-        name: "Admin",
-        role: "admin",
-      }
-
-      // Store session
-      if (typeof window !== "undefined") {
-        localStorage.setItem(this.SESSION_KEY, JSON.stringify(user))
-      }
-
-      return user
-    }
-    return null
-  }
-
-  static logout(): void {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(this.SESSION_KEY)
+export function authenticate(email: string, password: string): User | null {
+  if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
+    return {
+      email: ADMIN_CREDENTIALS.email,
+      name: ADMIN_CREDENTIALS.name,
+      role: ADMIN_CREDENTIALS.role,
     }
   }
+  return null
+}
 
-  static getCurrentUser(): User | null {
-    if (typeof window === "undefined") return null
+export function isAuthenticated(): boolean {
+  if (typeof window === "undefined") return false
 
-    try {
-      const session = localStorage.getItem(this.SESSION_KEY)
-      return session ? JSON.parse(session) : null
-    } catch {
-      return null
-    }
-  }
+  try {
+    const auth = localStorage.getItem("admin-auth")
+    if (!auth) return false
 
-  static isAuthenticated(): boolean {
-    return this.getCurrentUser() !== null
-  }
-
-  static requireAuth(): User {
-    const user = this.getCurrentUser()
-    if (!user) {
-      throw new Error("Authentication required")
-    }
-    return user
+    const authData = JSON.parse(auth)
+    return authData.email === ADMIN_CREDENTIALS.email
+  } catch {
+    return false
   }
 }
 
-export const auth = SimpleAuth
+export function login(email: string, password: string): boolean {
+  const user = authenticate(email, password)
+  if (user) {
+    localStorage.setItem("admin-auth", JSON.stringify(user))
+    return true
+  }
+  return false
+}
+
+export function logout(): void {
+  localStorage.removeItem("admin-auth")
+}
+
+export function getCurrentUser(): User | null {
+  if (typeof window === "undefined") return null
+
+  try {
+    const auth = localStorage.getItem("admin-auth")
+    return auth ? JSON.parse(auth) : null
+  } catch {
+    return null
+  }
+}

@@ -316,6 +316,7 @@ class GitHubAPI {
 
 const githubAPIInstance = new GitHubAPI()
 
+// Export both named and default exports
 export const githubAPI = githubAPIInstance
 export const githubApi = githubAPIInstance
 export const getGitHubApi = () => githubAPIInstance

@@ -1,35 +1,52 @@
-import { NextResponse } from "next/server"
-import { db } from "@/lib/database"
+import { type NextRequest, NextResponse } from "next/server"
+import { githubApi } from "@/lib/github-api"
+import { localDb } from "@/lib/database"
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const page = searchParams.get("page")
 
     if (!page) {
-      return NextResponse.json({ error: "Page parameter required" }, { status: 400 })
+      return NextResponse.json({ error: "Page parameter is required" }, { status: 400 })
     }
 
-    const content = await db.getPageContent(page)
-    return NextResponse.json(content)
+    let content
+
+    try {
+      content = await githubApi.getPageContent(page)
+    } catch (error) {
+      console.log("GitHub API not available, using localStorage")
+      content = await localDb.getPageContent(page)
+    }
+
+    return NextResponse.json(content || {})
   } catch (error) {
     console.error("Error fetching content:", error)
     return NextResponse.json({ error: "Failed to fetch content" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { page, content } = await request.json()
 
-    if (!page || !content) {
-      return NextResponse.json({ error: "Page and content required" }, { status: 400 })
+    if (!page) {
+      return NextResponse.json({ error: "Page parameter is required" }, { status: 400 })
     }
 
-    const savedContent = await db.savePageContent(page, content)
-    return NextResponse.json(savedContent)
+    let result
+
+    try {
+      result = await githubApi.updatePageContent(page, content)
+    } catch (error) {
+      console.log("GitHub API not available, using localStorage")
+      result = await localDb.updatePageContent(page, content)
+    }
+
+    return NextResponse.json(result)
   } catch (error) {
-    console.error("Error saving content:", error)
-    return NextResponse.json({ error: "Failed to save content" }, { status: 500 })
+    console.error("Error updating content:", error)
+    return NextResponse.json({ error: "Failed to update content" }, { status: 500 })
   }
 }
