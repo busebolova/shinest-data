@@ -1,0 +1,74 @@
+{
+  "hero": {
+    "title": {
+      "tr": "SHINEST2",
+      "en": "SHINEST"
+    },
+    "subtitle": {
+      "tr": "İÇ MİMARLIK",
+      "en": "INTERIOR DESIGN"
+    },
+    "description": {
+      "tr": "Hayalinizdeki mekanları gerçeğe dönüştürüyoruz",
+      "en": "We transform your dream spaces into reality"
+    },
+    "buttonText": {
+      "tr": "Keşfet",
+      "en": "Explore"
+    },
+    "backgroundImage": "/images/hero-image.png",
+    "isVisible": true
+  },
+  "textSection": {
+    "mainText1": {
+      "tr": "MEKANLARINIZ",
+      "en": "YOUR SPACES"
+    },
+    "mainText2": {
+      "tr": "YAŞAMINIZA",
+      "en": "BRING LIGHT TO"
+    },
+    "handwritingText": {
+      "tr": "ışık tutar!",
+      "en": "your life!"
+    },
+    "description": {
+      "tr": "SHINEST İç Mimarlık olarak, yaşam alanlarınızı sanat eserine dönüştürüyoruz. Modern tasarım anlayışımız ve deneyimli ekibimizle, her projeyi özenle hayata geçiriyoruz.",
+      "en": "As SHINEST Interior Architecture, we transform your living spaces into works of art. With our modern design approach and experienced team, we carefully bring each project to life."
+    },
+    "isVisible": true
+  },
+  "aboutSection": {
+    "title": {
+      "tr": "Hakkımızda",
+      "en": "About Us"
+    },
+    "subtitle": {
+      "tr": "Tasarım Felsefemiz",
+      "en": "Our Design Philosophy"
+    },
+    "description": {
+      "tr": "Yaşam alanlarınızı sanat eserine dönüştürüyoruz. Her proje, müşterilerimizin hayallerini gerçeğe dönüştüren benzersiz bir hikaye anlatır.",
+      "en": "We transform your living spaces into works of art. Each project tells a unique story that transforms our clients' dreams into reality."
+    },
+    "isVisible": true
+  },
+  "servicesSection": {
+    "title": {
+      "tr": "Hizmetlerimiz",
+      "en": "Our Services"
+    },
+    "subtitle": {
+      "tr": "SHINEST İç Mimarlık olarak müşterilerimize özel, yenilikçi ve fonksiyonel tasarım çözümleri sunuyoruz.",
+      "en": "As SHINEST Interior Architecture, we offer special, innovative and functional design solutions to our customers."
+    },
+    "isVisible": true
+  },
+  "gallerySection": {
+    "title": {
+      "tr": "Projelerimizden",
+      "en": "From Our Projects"
+    },
+    "isVisible": true
+  }
+}
