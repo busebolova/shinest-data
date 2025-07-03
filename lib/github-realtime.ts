@@ -12,6 +12,13 @@ interface ConnectionStatus {
   lastUpdate?: Date
 }
 
+interface ContentUpdate {
+  type: string
+  action: "create" | "update" | "delete"
+  data: any
+  timestamp: Date
+}
+
 class GitHubRealtime {
   private connection: RealtimeConnection = {
     isConnected: false,
@@ -20,13 +27,13 @@ class GitHubRealtime {
     maxReconnectAttempts: 3,
   }
 
-  private listeners: Set<(data: any) => void> = new Set()
+  private listeners: Map<string, Set<(data: ContentUpdate) => void>> = new Map()
   private statusListeners: Set<(status: ConnectionStatus) => void> = new Set()
+  private messageListeners: Set<(data: any) => void> = new Set()
   private pollingInterval: NodeJS.Timeout | null = null
   private connectionTimeout: NodeJS.Timeout | null = null
 
   constructor() {
-    // Auto-start polling in browser environment
     if (typeof window !== "undefined") {
       setTimeout(() => {
         this.startPolling()
@@ -44,14 +51,49 @@ class GitHubRealtime {
     })
   }
 
+  private notifyListeners(type: string, update: ContentUpdate) {
+    // Notify specific type listeners
+    const typeListeners = this.listeners.get(type)
+    if (typeListeners) {
+      typeListeners.forEach((listener) => {
+        try {
+          listener(update)
+        } catch (error) {
+          console.error("Error in content listener:", error)
+        }
+      })
+    }
+
+    // Notify global listeners
+    const globalListeners = this.listeners.get("*")
+    if (globalListeners) {
+      globalListeners.forEach((listener) => {
+        try {
+          listener(update)
+        } catch (error) {
+          console.error("Error in global listener:", error)
+        }
+      })
+    }
+
+    // Notify message listeners
+    this.messageListeners.forEach((listener) => {
+      try {
+        listener(update)
+      } catch (error) {
+        console.error("Error in message listener:", error)
+      }
+    })
+  }
+
   private startPolling() {
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval)
     }
 
-    this.updateStatus({ status: "polling", message: "Starting polling mode" })
+    this.updateStatus({ status: "polling", message: "Starting real-time polling" })
 
-    // Poll every 30 seconds for updates
+    // Poll every 10 seconds for updates
     this.pollingInterval = setInterval(async () => {
       try {
         await this.checkForUpdates()
@@ -68,7 +110,7 @@ class GitHubRealtime {
           this.stopPolling()
         }
       }
-    }, 30000)
+    }, 10000)
   }
 
   private async checkForUpdates() {
@@ -84,16 +126,30 @@ class GitHubRealtime {
 
         this.updateStatus({
           status: "connected",
-          message: "Polling active",
+          message: "Real-time connection active",
           lastUpdate: this.connection.lastUpdate,
         })
 
-        // Notify listeners
-        this.listeners.forEach((listener) => {
+        // Check for content updates
+        if (data.hasUpdates) {
+          const updates = data.updates || []
+          updates.forEach((update: any) => {
+            const contentUpdate: ContentUpdate = {
+              type: update.type || "general",
+              action: update.action || "update",
+              data: update.data || {},
+              timestamp: new Date(update.timestamp || Date.now()),
+            }
+            this.notifyListeners(contentUpdate.type, contentUpdate)
+          })
+        }
+
+        // Notify heartbeat
+        this.messageListeners.forEach((listener) => {
           try {
-            listener(data)
+            listener({ type: "heartbeat", timestamp: new Date() })
           } catch (error) {
-            console.error("Listener error:", error)
+            console.error("Heartbeat listener error:", error)
           }
         })
       } else {
@@ -119,14 +175,12 @@ class GitHubRealtime {
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.updateStatus({ status: "connecting", message: "Establishing connection..." })
+      this.updateStatus({ status: "connecting", message: "Establishing real-time connection..." })
 
-      // Set connection timeout
       this.connectionTimeout = setTimeout(() => {
         reject(new Error("Connection timeout"))
       }, 10000)
 
-      // Attempt immediate connection
       this.checkForUpdates()
         .then(() => {
           if (this.connectionTimeout) {
@@ -140,7 +194,6 @@ class GitHubRealtime {
             clearTimeout(this.connectionTimeout)
             this.connectionTimeout = null
           }
-          // Don't reject, just start polling
           this.startPolling()
           resolve()
         })
@@ -152,6 +205,7 @@ class GitHubRealtime {
     this.connection.isConnected = false
     this.listeners.clear()
     this.statusListeners.clear()
+    this.messageListeners.clear()
 
     if (this.connectionTimeout) {
       clearTimeout(this.connectionTimeout)
@@ -160,23 +214,38 @@ class GitHubRealtime {
 
     this.updateStatus({
       status: "disconnected",
-      message: "Disconnected from GitHub",
+      message: "Disconnected from GitHub real-time",
     })
   }
 
-  onMessage(callback: (data: any) => void) {
-    this.listeners.add(callback)
+  subscribe(type: string, callback: (data: ContentUpdate) => void) {
+    if (!this.listeners.has(type)) {
+      this.listeners.set(type, new Set())
+    }
+    this.listeners.get(type)!.add(callback)
 
-    // Return unsubscribe function
     return () => {
-      this.listeners.delete(callback)
+      const typeListeners = this.listeners.get(type)
+      if (typeListeners) {
+        typeListeners.delete(callback)
+        if (typeListeners.size === 0) {
+          this.listeners.delete(type)
+        }
+      }
+    }
+  }
+
+  onMessage(callback: (data: any) => void) {
+    this.messageListeners.add(callback)
+
+    return () => {
+      this.messageListeners.delete(callback)
     }
   }
 
   onStatusChange(callback: (status: ConnectionStatus) => void) {
     this.statusListeners.add(callback)
 
-    // Return unsubscribe function
     return () => {
       this.statusListeners.delete(callback)
     }
@@ -192,7 +261,7 @@ class GitHubRealtime {
     } else if (this.pollingInterval) {
       return {
         status: "polling",
-        message: "Using polling mode",
+        message: "Using real-time polling",
         attempts: this.connection.reconnectAttempts,
       }
     } else if (this.connection.reconnectAttempts > 0) {
@@ -216,13 +285,11 @@ class GitHubRealtime {
       if (response.ok) {
         const data = await response.json()
 
-        // Notify listeners
-        this.listeners.forEach((listener) => {
-          try {
-            listener({ type: "sync", data })
-          } catch (error) {
-            console.error("Listener error:", error)
-          }
+        this.notifyListeners("sync", {
+          type: "sync",
+          action: "update",
+          data,
+          timestamp: new Date(),
         })
 
         this.updateStatus({
@@ -248,20 +315,15 @@ class GitHubRealtime {
   getConnectionStatus() {
     return {
       ...this.connection,
-      listenerCount: this.listeners.size,
+      listenerCount: Array.from(this.listeners.values()).reduce((total, set) => total + set.size, 0),
       statusListenerCount: this.statusListeners.size,
+      messageListenerCount: this.messageListeners.size,
     }
   }
 }
 
-// Create singleton instance
 const githubRealtimeInstance = new GitHubRealtime()
 
-// Named export
 export const githubRealtime = githubRealtimeInstance
-
-// Default export
 export default githubRealtimeInstance
-
-// Type exports
-export type { ConnectionStatus }
+export type { ConnectionStatus, ContentUpdate }

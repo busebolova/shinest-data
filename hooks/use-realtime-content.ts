@@ -7,10 +7,11 @@ export function useRealtimeContent<T>(type: string, initialData: T, fetchFunctio
   const [data, setData] = useState<T>(initialData)
   const [loading, setLoading] = useState(false)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
     const unsubscribe = githubRealtime.subscribe(type, async (update: ContentUpdate) => {
-      console.log(`Content update received for ${type}:`, update)
+      console.log(`Real-time update received for ${type}:`, update)
 
       try {
         setLoading(true)
@@ -24,7 +25,6 @@ export function useRealtimeContent<T>(type: string, initialData: T, fetchFunctio
       }
     })
 
-    // Also listen for global updates
     const unsubscribeGlobal = githubRealtime.subscribe("*", async (update: ContentUpdate) => {
       if (update.type === type) {
         try {
@@ -40,9 +40,14 @@ export function useRealtimeContent<T>(type: string, initialData: T, fetchFunctio
       }
     })
 
+    const unsubscribeStatus = githubRealtime.onStatusChange((status) => {
+      setIsConnected(status.status === "connected" || status.status === "polling")
+    })
+
     return () => {
       unsubscribe()
       unsubscribeGlobal()
+      unsubscribeStatus()
     }
   }, [type, fetchFunction])
 
@@ -64,6 +69,7 @@ export function useRealtimeContent<T>(type: string, initialData: T, fetchFunctio
     data,
     loading,
     lastUpdate,
+    isConnected,
     refresh,
   }
 }
@@ -80,6 +86,14 @@ export function useRealtimePageContent(page: string) {
   return useRealtimeContent("pages", null, async () => {
     const response = await fetch(`/api/content/${page}`)
     if (!response.ok) throw new Error(`Failed to fetch ${page} content`)
+    return response.json()
+  })
+}
+
+export function useRealtimeBlogPosts() {
+  return useRealtimeContent("blog", [], async () => {
+    const response = await fetch("/api/blog")
+    if (!response.ok) throw new Error("Failed to fetch blog posts")
     return response.json()
   })
 }

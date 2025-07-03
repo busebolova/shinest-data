@@ -49,6 +49,8 @@ interface GitHubProject {
     author: string
     position: string
   }
+  createdAt: string
+  updatedAt: string
 }
 
 interface GitHubBlogPost {
@@ -62,6 +64,8 @@ interface GitHubBlogPost {
   tags: string[]
   featured: boolean
   image?: string
+  createdAt: string
+  updatedAt: string
 }
 
 class GitHubAPI {
@@ -180,18 +184,31 @@ class GitHubAPI {
     await this.createOrUpdateFile(path, jsonContent, message)
   }
 
-  async createProject(project: GitHubProject): Promise<void> {
+  async createProject(project: Omit<GitHubProject, "id" | "createdAt" | "updatedAt">): Promise<GitHubProject> {
+    const newProject: GitHubProject = {
+      ...project,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
     const projects = await this.getProjects()
-    projects.push(project)
+    projects.push(newProject)
     await this.saveProjects(projects)
+    return newProject
   }
 
-  async updateProject(id: string, updatedProject: Partial<GitHubProject>): Promise<void> {
+  async updateProject(id: string, updatedProject: Partial<GitHubProject>): Promise<GitHubProject> {
     const projects = await this.getProjects()
     const index = projects.findIndex((project) => project.id === id)
     if (index !== -1) {
-      projects[index] = { ...projects[index], ...updatedProject }
+      projects[index] = {
+        ...projects[index],
+        ...updatedProject,
+        updatedAt: new Date().toISOString(),
+      }
       await this.saveProjects(projects)
+      return projects[index]
     } else {
       throw new Error(`Project with id ${id} not found`)
     }
@@ -231,18 +248,31 @@ class GitHubAPI {
     await this.createOrUpdateFile(path, jsonContent, message)
   }
 
-  async createBlogPost(post: GitHubBlogPost): Promise<void> {
+  async createBlogPost(post: Omit<GitHubBlogPost, "id" | "createdAt" | "updatedAt">): Promise<GitHubBlogPost> {
+    const newPost: GitHubBlogPost = {
+      ...post,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
     const posts = await this.getBlogPosts()
-    posts.push(post)
+    posts.push(newPost)
     await this.saveBlogPosts(posts)
+    return newPost
   }
 
-  async updateBlogPost(id: string, updatedPost: Partial<GitHubBlogPost>): Promise<void> {
+  async updateBlogPost(id: string, updatedPost: Partial<GitHubBlogPost>): Promise<GitHubBlogPost> {
     const posts = await this.getBlogPosts()
     const index = posts.findIndex((post) => post.id === id)
     if (index !== -1) {
-      posts[index] = { ...posts[index], ...updatedPost }
+      posts[index] = {
+        ...posts[index],
+        ...updatedPost,
+        updatedAt: new Date().toISOString(),
+      }
       await this.saveBlogPosts(posts)
+      return posts[index]
     } else {
       throw new Error(`Blog post with id ${id} not found`)
     }

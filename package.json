@@ -1,5 +1,5 @@
 {
-  "name": "shinest-website",
+  "name": "shinest-admin",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,9 +11,9 @@
   "dependencies": {
     "@auth/core": "latest",
     "@emotion/is-prop-valid": "latest",
+    "@headlessui/react": "latest",
     "@hello-pangea/dnd": "latest",
     "@radix-ui/react-avatar": "latest",
-    "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "latest",
     "@radix-ui/react-label": "latest",
     "@radix-ui/react-select": "latest",

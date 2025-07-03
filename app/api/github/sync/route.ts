@@ -3,9 +3,8 @@ import { githubAPI } from "@/lib/github-api"
 
 export async function POST() {
   try {
-    console.log("Starting GitHub sync...")
+    console.log("Starting GitHub real-time sync...")
 
-    // Check if GitHub is configured
     if (!githubAPI.isConfigured()) {
       return NextResponse.json(
         {
@@ -81,16 +80,16 @@ export async function POST() {
       console.error("Error getting latest commit:", error)
     }
 
-    console.log("GitHub sync completed:", syncResults)
+    console.log("GitHub real-time sync completed:", syncResults)
 
     return NextResponse.json({
       success: true,
-      message: "GitHub sync completed successfully",
+      message: "GitHub real-time sync completed successfully",
       timestamp: new Date().toISOString(),
       results: syncResults,
     })
   } catch (error) {
-    console.error("GitHub sync error:", error)
+    console.error("GitHub real-time sync error:", error)
     return NextResponse.json(
       {
         success: false,

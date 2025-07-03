@@ -1,5 +1,8 @@
+"use client"
+
 import type React from "react"
-import { Suspense } from "react"
+
+import { useState } from "react"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { AdminHeader } from "@/components/admin/admin-header"
 import { RealtimeIndicator } from "@/components/admin/realtime-indicator"
@@ -9,18 +12,24 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminHeader />
-      <div className="flex">
-        <AdminSidebar />
-        <main className="flex-1 p-6">
-          <div className="mb-6">
-            <Suspense fallback={<div className="h-16 bg-gray-100 rounded-lg animate-pulse" />}>
+      <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+
+      <div className="lg:pl-64">
+        <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
+
+        <main className="py-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {/* Real-time Status Indicator */}
+            <div className="mb-6">
               <RealtimeIndicator />
-            </Suspense>
+            </div>
+
+            {children}
           </div>
-          <div className="bg-white rounded-lg shadow-sm">{children}</div>
         </main>
       </div>
     </div>
