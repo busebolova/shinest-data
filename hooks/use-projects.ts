@@ -1,44 +1,32 @@
 "use client"
 
 import { useState, useEffect } from "react"
-
-interface Project {
-  id: string
-  title: string
-  description: string
-  category: string
-  status: string
-  images: string[]
-  featured: boolean
-  createdAt: string
-  updatedAt: string
-}
+import type { GitHubProject } from "@/lib/github-api"
 
 export function useProjects() {
-  const [projects, setProjects] = useState<Project[]>([])
+  const [projects, setProjects] = useState<GitHubProject[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchProjects = async () => {
     try {
       setLoading(true)
+      setError(null)
       const response = await fetch("/api/projects")
-
       if (!response.ok) {
-        throw new Error("Failed to fetch projects")
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
-
       const data = await response.json()
       setProjects(data)
-      setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      console.error("Failed to fetch projects:", err)
+      setError(err instanceof Error ? err.message : "Failed to fetch projects")
     } finally {
       setLoading(false)
     }
   }
 
-  const createProject = async (projectData: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
+  const createProject = async (projectData: Omit<GitHubProject, "id" | "createdAt" | "updatedAt">) => {
     try {
       const response = await fetch("/api/projects", {
         method: "POST",
@@ -49,18 +37,19 @@ export function useProjects() {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to create project")
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
       const newProject = await response.json()
       setProjects((prev) => [...prev, newProject])
       return newProject
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Failed to create project")
+      console.error("Failed to create project:", err)
+      throw err
     }
   }
 
-  const updateProject = async (id: string, updates: Partial<Project>) => {
+  const updateProject = async (id: string, updates: Partial<GitHubProject>) => {
     try {
       const response = await fetch(`/api/projects/${id}`, {
         method: "PUT",
@@ -71,14 +60,15 @@ export function useProjects() {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to update project")
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
       const updatedProject = await response.json()
       setProjects((prev) => prev.map((p) => (p.id === id ? updatedProject : p)))
       return updatedProject
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Failed to update project")
+      console.error("Failed to update project:", err)
+      throw err
     }
   }
 
@@ -89,12 +79,13 @@ export function useProjects() {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to delete project")
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
       setProjects((prev) => prev.filter((p) => p.id !== id))
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Failed to delete project")
+      console.error("Failed to delete project:", err)
+      throw err
     }
   }
 
@@ -106,7 +97,7 @@ export function useProjects() {
     projects,
     loading,
     error,
-    fetchProjects,
+    refetch: fetchProjects,
     createProject,
     updateProject,
     deleteProject,

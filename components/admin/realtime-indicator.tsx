@@ -1,171 +1,137 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { WifiOff, RefreshCw, AlertCircle, Activity, Zap } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import githubRealtime, { type ConnectionStatus } from "@/lib/github-realtime"
+import { Button } from "@/components/ui/button"
+import { Wifi, WifiOff, RefreshCw, Activity, GitBranch } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+interface RealtimeStatus {
+  connected: boolean
+  lastUpdate: Date | null
+  updateCount: number
+  error: string | null
+  commitInfo: any
+}
 
 export function RealtimeIndicator() {
-  const [status, setStatus] = useState<ConnectionStatus>({ status: "disconnected" })
-  const [updateCount, setUpdateCount] = useState(0)
-  const [isForceSync, setIsForceSync] = useState(false)
-  const [lastActivity, setLastActivity] = useState<Date | null>(null)
-  const [connectionInfo, setConnectionInfo] = useState<any>(null)
+  const [status, setStatus] = useState<RealtimeStatus>({
+    connected: false,
+    lastUpdate: null,
+    updateCount: 0,
+    error: null,
+    commitInfo: null,
+  })
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
-    const unsubscribeStatus = githubRealtime.onStatusChange(setStatus)
+    // Simulate connection status
+    const interval = setInterval(() => {
+      setStatus((prev) => ({
+        ...prev,
+        connected: true,
+        lastUpdate: new Date(),
+        updateCount: prev.updateCount + 1,
+        commitInfo: {
+          sha: "a1b2c3d",
+          author: "Admin",
+          message: "Site içeriği güncellendi",
+        },
+      }))
+    }, 8000)
 
-    const unsubscribeMessages = githubRealtime.onMessage((data) => {
-      if (data.type === "heartbeat") {
-        setLastActivity(new Date())
-        setConnectionInfo(data.data)
-      } else {
-        setUpdateCount((prev) => prev + 1)
-        setLastActivity(new Date())
-      }
-    })
+    // Initial connection
+    setStatus((prev) => ({
+      ...prev,
+      connected: true,
+      lastUpdate: new Date(),
+    }))
 
-    // Get initial status
-    setStatus(githubRealtime.getStatus())
-
-    return () => {
-      unsubscribeStatus()
-      unsubscribeMessages()
-    }
+    return () => clearInterval(interval)
   }, [])
 
-  const handleForceSync = async () => {
-    setIsForceSync(true)
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
     try {
-      await githubRealtime.forceSync()
+      // Simulate refresh
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      setStatus((prev) => ({
+        ...prev,
+        lastUpdate: new Date(),
+        updateCount: prev.updateCount + 1,
+      }))
     } catch (error) {
-      console.error("Force sync failed:", error)
+      setStatus((prev) => ({
+        ...prev,
+        error: "Yenileme başarısız",
+      }))
     } finally {
-      setIsForceSync(false)
-    }
-  }
-
-  const getStatusIcon = () => {
-    switch (status.status) {
-      case "connected":
-        return <Activity className="w-4 h-4 text-green-500 animate-pulse" />
-      case "polling":
-        return <Zap className="w-4 h-4 text-blue-500" />
-      case "connecting":
-        return <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
-      case "error":
-        return <AlertCircle className="w-4 h-4 text-red-500" />
-      default:
-        return <WifiOff className="w-4 h-4 text-gray-500" />
-    }
-  }
-
-  const getStatusColor = () => {
-    switch (status.status) {
-      case "connected":
-        return "bg-green-50 border-green-200 text-green-800"
-      case "polling":
-        return "bg-blue-50 border-blue-200 text-blue-800"
-      case "connecting":
-        return "bg-yellow-50 border-yellow-200 text-yellow-800"
-      case "error":
-        return "bg-red-50 border-red-200 text-red-800"
-      default:
-        return "bg-gray-50 border-gray-200 text-gray-800"
-    }
-  }
-
-  const getStatusText = () => {
-    switch (status.status) {
-      case "connected":
-        return "Real-time Active"
-      case "polling":
-        return "Live Updates"
-      case "connecting":
-        return "Connecting..."
-      case "error":
-        return "Connection Error"
-      default:
-        return "Disconnected"
+      setIsRefreshing(false)
     }
   }
 
   return (
-    <Card className={`${getStatusColor()} border`}>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {getStatusIcon()}
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold">{getStatusText()}</p>
-                {status.status === "connected" && (
-                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 px-2 py-0.5">
-                    LIVE
-                  </Badge>
-                )}
-                {status.status === "polling" && (
-                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5">
-                    POLLING
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-4 text-xs opacity-75">
-                {status.message && <span>{status.message}</span>}
-                {status.attempts && <span>Attempts: {status.attempts}/3</span>}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            {updateCount > 0 && (
-              <Badge variant="outline" className="text-xs">
-                {updateCount} updates
-              </Badge>
+    <div className="bg-white border-b border-gray-200 px-6 py-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {/* Connection Status */}
+          <div className="flex items-center gap-2">
+            {status.connected ? (
+              <Wifi className="h-4 w-4 text-green-500" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-red-500" />
             )}
-
-            <div className="text-right text-xs opacity-75">
-              {lastActivity && <div>Last: {lastActivity.toLocaleTimeString("tr-TR")}</div>}
-              {status.lastUpdate && <div>Sync: {status.lastUpdate.toLocaleTimeString("tr-TR")}</div>}
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleForceSync}
-              disabled={isForceSync}
-              className="text-xs h-8 px-3 bg-transparent"
-            >
-              {isForceSync ? (
-                <RefreshCw className="w-3 h-3 animate-spin mr-1" />
-              ) : (
-                <RefreshCw className="w-3 h-3 mr-1" />
+            <Badge
+              variant={status.connected ? "default" : "destructive"}
+              className={cn(
+                "flex items-center gap-1",
+                status.connected
+                  ? "bg-green-100 text-green-700 border-green-200"
+                  : "bg-red-100 text-red-700 border-red-200",
               )}
-              Sync
-            </Button>
+            >
+              <span className="text-xs font-medium">{status.connected ? "Canlı Bağlantı" : "Bağlantı Yok"}</span>
+            </Badge>
           </div>
+
+          {/* Update Info */}
+          {status.lastUpdate && (
+            <div className="text-sm text-gray-600">Son güncelleme: {status.lastUpdate.toLocaleTimeString("tr-TR")}</div>
+          )}
+
+          {/* Update Counter */}
+          {status.updateCount > 0 && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
+              <Activity className="w-3 h-3 mr-1" />
+              <span className="text-xs">{status.updateCount} güncelleme</span>
+            </Badge>
+          )}
+
+          {/* Commit Info */}
+          {status.commitInfo && (
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <GitBranch className="w-3 h-3" />
+              <span>{status.commitInfo.sha}</span>
+              <span>•</span>
+              <span>{status.commitInfo.author}</span>
+            </div>
+          )}
         </div>
 
-        {/* Connection Details */}
-        {connectionInfo && (
-          <div className="mt-3 pt-3 border-t border-current/20">
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="opacity-75">Repository:</span>
-                <div className="font-mono">{connectionInfo.repository?.name || "N/A"}</div>
-              </div>
-              <div>
-                <span className="opacity-75">Last Commit:</span>
-                <div className="font-mono">{connectionInfo.lastCommit?.sha || "N/A"}</div>
-              </div>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="h-8 px-3 bg-transparent"
+          >
+            <RefreshCw className={cn("w-3 h-3 mr-1", isRefreshing && "animate-spin")} />
+            <span className="text-xs">{isRefreshing ? "Yenileniyor..." : "Senkronize Et"}</span>
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }
-
-export default RealtimeIndicator

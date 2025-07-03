@@ -1,42 +1,35 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { githubApi } from "@/lib/github-api"
-import { localDb } from "@/lib/database"
+import { NextResponse } from "next/server"
+import { githubAPI } from "@/lib/github-api"
 
 export async function GET() {
   try {
-    // Try GitHub first, fallback to localStorage
-    let projects = []
-
-    try {
-      projects = await githubApi.getProjects()
-    } catch (error) {
-      console.log("GitHub API not available, using localStorage")
-      projects = await localDb.getProjects()
-    }
-
+    const projects = await githubAPI.getProjects()
     return NextResponse.json(projects)
   } catch (error) {
-    console.error("Error fetching projects:", error)
-    return NextResponse.json({ error: "Failed to fetch projects" }, { status: 500 })
+    console.error("Projects fetch failed:", error)
+    return NextResponse.json(
+      {
+        error: "Projeler alınamadı",
+        message: error instanceof Error ? error.message : "Bilinmeyen hata",
+      },
+      { status: 500 },
+    )
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const projectData = await request.json()
-
-    let newProject
-
-    try {
-      newProject = await githubApi.createProject(projectData)
-    } catch (error) {
-      console.log("GitHub API not available, using localStorage")
-      newProject = await localDb.createProject(projectData)
-    }
-
+    const newProject = await githubAPI.createProject(projectData)
     return NextResponse.json(newProject, { status: 201 })
   } catch (error) {
-    console.error("Error creating project:", error)
-    return NextResponse.json({ error: "Failed to create project" }, { status: 500 })
+    console.error("Project creation failed:", error)
+    return NextResponse.json(
+      {
+        error: "Proje oluşturulamadı",
+        message: error instanceof Error ? error.message : "Bilinmeyen hata",
+      },
+      { status: 500 },
+    )
   }
 }

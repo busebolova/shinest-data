@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +21,7 @@ import {
 import Link from "next/link"
 import { githubAPI } from "@/lib/github-api"
 import { useRealtimeContent } from "@/hooks/use-realtime-content"
+import { className } from "@/utils/classname" // Importing className utility
 
 interface DashboardStats {
   projects: number
@@ -42,7 +45,25 @@ interface RecentActivity {
   user: string
 }
 
-export default function AdminDashboard() {
+export default function AdminPage() {
+  const router = useRouter()
+
+  useEffect(() => {
+    // Redirect to dashboard
+    router.push("/admin/dashboard")
+  }, [router])
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Dashboard'a yönlendiriliyor...</p>
+      </div>
+    </div>
+  )
+}
+
+function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     projects: 0,
     blogPosts: 0,
@@ -147,7 +168,7 @@ export default function AdminDashboard() {
       title: "Edit Homepage",
       description: "Update hero, gallery, and content sections",
       href: "/admin/content/home",
-      icon: LayoutDashboard,
+      icon: FolderOpen,
       color: "bg-blue-500",
     },
     {
@@ -341,11 +362,12 @@ export default function AdminDashboard() {
             {quickActions.map((action) => (
               <div
                 key={action.title}
-                className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                className={className(
+                  "flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors",
+                  action.color,
+                )}
               >
-                <div className={`p-2 rounded-lg ${action.color}`}>
-                  <action.icon className="h-4 w-4 text-white" />
-                </div>
+                <div className="p-2 rounded-lg">{action.icon({ className: "h-4 w-4 text-white" })}</div>
                 <div className="flex-1">
                   <h3 className="font-medium text-sm">{action.title}</h3>
                   <p className="text-xs text-muted-foreground">{action.description}</p>
@@ -371,9 +393,7 @@ export default function AdminDashboard() {
             <div className="space-y-3">
               {recentActivity.map((activity) => (
                 <div key={activity.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className={`p-2 rounded-lg ${getActivityColor(activity.type)}`}>
-                    {getActivityIcon(activity.type)}
-                  </div>
+                  <div className={getActivityColor(activity.type)}>{getActivityIcon(activity.type)}</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{activity.title}</p>
                     <p className="text-sm text-gray-500">

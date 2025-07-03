@@ -11,11 +11,11 @@
   "dependencies": {
     "@auth/core": "latest",
     "@emotion/is-prop-valid": "latest",
-    "@headlessui/react": "latest",
     "@hello-pangea/dnd": "latest",
     "@radix-ui/react-avatar": "latest",
     "@radix-ui/react-dropdown-menu": "latest",
     "@radix-ui/react-label": "latest",
+    "@radix-ui/react-progress": "latest",
     "@radix-ui/react-select": "latest",
     "@radix-ui/react-separator": "latest",
     "@radix-ui/react-slot": "^1.0.2",

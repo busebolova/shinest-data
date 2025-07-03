@@ -1,176 +1,96 @@
 "use client"
 
-import { Fragment } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Dialog, Transition } from "@headlessui/react"
+import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
-  FileText,
   FolderOpen,
+  FileText,
   ImageIcon,
   Settings,
-  MessageSquare,
-  X,
-  Activity,
   Home,
-  Users,
-  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  Globe,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 const navigation = [
-  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Homepage", href: "/admin/content/home", icon: Home },
-  { name: "Projects", href: "/admin/projects", icon: FolderOpen },
+  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Ana Sayfa Düzenle", href: "/admin/content/home", icon: Home },
+  { name: "Sayfa İçerikleri", href: "/admin/content/pages", icon: Edit },
+  { name: "Global İçerik", href: "/admin/content/global", icon: Globe },
+  { name: "Projeler", href: "/admin/projects", icon: FolderOpen },
   { name: "Blog", href: "/admin/blog", icon: FileText },
-  { name: "Media", href: "/admin/media", icon: ImageIcon },
-  { name: "Messages", href: "/admin/messages", icon: MessageSquare },
-  { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-  { name: "Users", href: "/admin/users", icon: Users },
-  { name: "Settings", href: "/admin/settings", icon: Settings },
+  { name: "Medya", href: "/admin/media", icon: ImageIcon },
+  { name: "Ayarlar", href: "/admin/settings", icon: Settings },
 ]
 
-interface AdminSidebarProps {
-  open: boolean
-  setOpen: (open: boolean) => void
-}
-
-export function AdminSidebar({ open, setOpen }: AdminSidebarProps) {
+export function AdminSidebar() {
   const pathname = usePathname()
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <>
-      {/* Mobile sidebar */}
-      <Transition.Root show={open} as={Fragment}>
-        <Dialog as="div" className="relative z-50 lg:hidden" onClose={setOpen}>
-          <Transition.Child
-            as={Fragment}
-            enter="transition-opacity ease-linear duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="transition-opacity ease-linear duration-300"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-gray-900/80" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 flex">
-            <Transition.Child
-              as={Fragment}
-              enter="transition ease-in-out duration-300 transform"
-              enterFrom="-translate-x-full"
-              enterTo="translate-x-0"
-              leave="transition ease-in-out duration-300 transform"
-              leaveFrom="translate-x-0"
-              leaveTo="-translate-x-full"
-            >
-              <Dialog.Panel className="relative mr-16 flex w-full max-w-xs flex-1">
-                <Transition.Child
-                  as={Fragment}
-                  enter="ease-in-out duration-300"
-                  enterFrom="opacity-0"
-                  enterTo="opacity-100"
-                  leave="ease-in-out duration-300"
-                  leaveFrom="opacity-100"
-                  leaveTo="opacity-0"
-                >
-                  <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
-                    <button type="button" className="-m-2.5 p-2.5" onClick={() => setOpen(false)}>
-                      <span className="sr-only">Close sidebar</span>
-                      <X className="h-6 w-6 text-white" aria-hidden="true" />
-                    </button>
-                  </div>
-                </Transition.Child>
-                <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-2">
-                  <div className="flex h-16 shrink-0 items-center">
-                    <div className="flex items-center gap-2">
-                      <Activity className="h-8 w-8 text-blue-600" />
-                      <span className="text-xl font-bold text-gray-900">SHINEST Admin</span>
-                    </div>
-                  </div>
-                  <nav className="flex flex-1 flex-col">
-                    <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                      <li>
-                        <ul role="list" className="-mx-2 space-y-1">
-                          {navigation.map((item) => (
-                            <li key={item.name}>
-                              <Link
-                                href={item.href}
-                                className={cn(
-                                  pathname === item.href
-                                    ? "bg-gray-50 text-blue-600"
-                                    : "text-gray-700 hover:text-blue-600 hover:bg-gray-50",
-                                  "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold",
-                                )}
-                                onClick={() => setOpen(false)}
-                              >
-                                <item.icon
-                                  className={cn(
-                                    pathname === item.href
-                                      ? "text-blue-600"
-                                      : "text-gray-400 group-hover:text-blue-600",
-                                    "h-6 w-6 shrink-0",
-                                  )}
-                                  aria-hidden="true"
-                                />
-                                {item.name}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </li>
-                    </ul>
-                  </nav>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </Dialog>
-      </Transition.Root>
-
-      {/* Static sidebar for desktop */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
-          <div className="flex h-16 shrink-0 items-center">
-            <div className="flex items-center gap-2">
-              <Activity className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">SHINEST Admin</span>
+    <div
+      className={cn(
+        "fixed left-0 top-0 z-40 h-screen bg-white border-r border-gray-200 transition-all duration-300",
+        collapsed ? "w-16" : "w-64",
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        {!collapsed && (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">S</span>
+            </div>
+            <div>
+              <h2 className="font-semibold text-gray-900">SHINEST</h2>
+              <p className="text-xs text-gray-500">Admin Panel</p>
             </div>
           </div>
-          <nav className="flex flex-1 flex-col">
-            <ul role="list" className="flex flex-1 flex-col gap-y-7">
-              <li>
-                <ul role="list" className="-mx-2 space-y-1">
-                  {navigation.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          pathname === item.href
-                            ? "bg-gray-50 text-blue-600"
-                            : "text-gray-700 hover:text-blue-600 hover:bg-gray-50",
-                          "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold",
-                        )}
-                      >
-                        <item.icon
-                          className={cn(
-                            pathname === item.href ? "text-blue-600" : "text-gray-400 group-hover:text-blue-600",
-                            "h-6 w-6 shrink-0",
-                          )}
-                          aria-hidden="true"
-                        />
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            </ul>
-          </nav>
-        </div>
+        )}
+        <Button variant="ghost" size="sm" onClick={() => setCollapsed(!collapsed)} className="p-1.5 h-auto">
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </Button>
       </div>
-    </>
+
+      {/* Navigation */}
+      <nav className="p-4 space-y-2">
+        {navigation.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                collapsed && "justify-center",
+              )}
+              title={collapsed ? item.name : undefined}
+            >
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && <span>{item.name}</span>}
+            </Link>
+          )
+        })}
+      </nav>
+
+      {/* Footer */}
+      {!collapsed && (
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+          <div className="text-xs text-gray-500 text-center">
+            <p>© 2024 SHINEST</p>
+            <p>Admin Panel v1.0</p>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

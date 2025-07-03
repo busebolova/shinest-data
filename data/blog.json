@@ -1,0 +1,46 @@
+{
+  "posts": [
+    {
+      "id": "1",
+      "title": "2024 İç Mimarlık Trendleri",
+      "slug": "2024-ic-mimarlik-trendleri",
+      "content": "2024 yılında iç mimarlık dünyasında hangi trendler öne çıkıyor? Bu yazımızda yılın en popüler tasarım akımlarını keşfedin.\n\n## Doğal Malzemeler\n\nDoğal ahşap, taş ve organik tekstiller bu yıl öne çıkan malzemeler arasında. Sürdürülebilirlik odaklı tasarımlar giderek daha popüler hale geliyor.\n\n## Minimalist Yaklaşım\n\n'Az çoktur' felsefesi 2024'te de geçerliliğini koruyor. Temiz çizgiler, işlevsel mobilyalar ve açık alanlar modern yaşamın vazgeçilmezi.\n\n## Renk Paleti\n\nBu yıl toprak tonları, sage yeşili ve warm beige gibi doğal renkler ön planda. Bu renkler hem huzur veriyor hem de zamansız bir estetik sunuyor.",
+      "excerpt": "2024 yılının en popüler iç mimarlık trendlerini keşfedin. Doğal malzemeler, minimalist tasarım ve sürdürülebilir yaklaşımlar.",
+      "author": "Shinest Tasarım Ekibi",
+      "date": "2024-01-15T10:00:00Z",
+      "tags": ["trendler", "2024", "iç mimarlık", "tasarım"],
+      "featured": true,
+      "image": "/images/modern-living-room.jpeg",
+      "createdAt": "2024-01-15T10:00:00Z",
+      "updatedAt": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "title": "Küçük Alanları Büyük Gösterme Sanatı",
+      "slug": "kucuk-alanlari-buyuk-gosterme-sanati",
+      "content": "Küçük yaşam alanlarınızı nasıl daha büyük ve ferah gösterebilirsiniz? İşte uzmanlarımızdan pratik ipuçları.\n\n## Ayna Kullanımı\n\nDoğru yerleştirilen aynalar alanı iki katına çıkarabilir. Özellikle doğal ışık kaynağının karşısına yerleştirilen büyük aynalar mucize yaratır.\n\n## Açık Renkler\n\nBeyaz, krem ve açık gri gibi renkler alanı genişletir. Duvarlardan mobilyalara kadar açık tonları tercih edin.\n\n## Çok Fonksiyonlu Mobilyalar\n\nDepolama alanı olan sehpalar, yatak altı çekmeceleri ve katlanabilir masalar küçük alanlarda altın değerinde.",
+      "excerpt": "Küçük yaşam alanlarınızı büyük göstermenin profesyonel ipuçlarını öğrenin. Ayna kullanımı, renk seçimi ve akıllı mobilya önerileri.",
+      "author": "Mimar Ayşe Demir",
+      "date": "2024-02-01T14:30:00Z",
+      "tags": ["küçük alan", "dekorasyon", "ipuçları", "tasarım"],
+      "featured": false,
+      "image": "/images/small-space-interior.png",
+      "createdAt": "2024-02-01T14:30:00Z",
+      "updatedAt": "2024-02-01T14:30:00Z"
+    },
+    {
+      "id": "3",
+      "title": "Sürdürülebilir İç Mimarlık: Çevre Dostu Tasarım",
+      "slug": "surdurulebilir-ic-mimarlik-cevre-dostu-tasarim",
+      "content": "Çevre dostu tasarım sadece bir trend değil, geleceğin zorunluluğu. Sürdürülebilir iç mimarlık nasıl uygulanır?\n\n## Geri Dönüştürülmüş Malzemeler\n\nEski mobilyaları yeniden değerlendirmek, vintage parçaları modern tasarımla birleştirmek hem çevreci hem de özgün.\n\n## Enerji Verimliliği\n\nLED aydınlatma, akıllı termostatlar ve enerji verimli cihazlar hem çevreyi hem de cebinizi korur.\n\n## Yerel Üretim\n\nYerel üreticilerden alışveriş yapmak karbon ayak izini azaltır ve yerel ekonomiyi destekler.",
+      "excerpt": "Sürdürülebilir iç mimarlık ile çevre dostu yaşam alanları yaratın. Geri dönüşüm, enerji verimliliği ve yerel üretim odaklı tasarım.",
+      "author": "Dr. Mehmet Kaya",
+      "date": "2024-02-15T09:15:00Z",
+      "tags": ["sürdürülebilirlik", "çevre", "yeşil tasarım", "eko"],
+      "featured": true,
+      "image": "/images/sustainable-interior.png",
+      "createdAt": "2024-02-15T09:15:00Z",
+      "updatedAt": "2024-02-15T09:15:00Z"
+    }
+  ]
+}

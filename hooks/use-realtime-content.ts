@@ -1,123 +1,119 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { githubRealtime, type ContentUpdate } from "@/lib/github-realtime"
 
+interface UseRealtimeContentResult<T> {
+  data: T
+  loading: boolean
+  error: string | null
+  lastUpdate: Date | null
+  updateCount: number
+  refresh: () => Promise<void>
+}
+
 export function useRealtimeContent<T>(
-  type: string,
+  endpoint: string,
   initialData: T,
-  fetchFunction: () => Promise<T>,
-  options: { autoRefresh?: boolean } = {},
-) {
-  const { autoRefresh = true } = options
+  contentType?: string,
+): UseRealtimeContentResult<T> {
   const [data, setData] = useState<T>(initialData)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
-  const [isConnected, setIsConnected] = useState(false)
   const [updateCount, setUpdateCount] = useState(0)
 
-  const refreshData = useCallback(async () => {
-    if (!fetchFunction) return
-
+  const fetchData = useCallback(async () => {
     try {
-      setLoading(true)
-      const newData = await fetchFunction()
-      setData(newData)
+      setError(null)
+      const response = await fetch(endpoint, {
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      setData(result)
       setLastUpdate(new Date())
-      setUpdateCount((prev) => prev + 1)
-    } catch (error) {
-      console.error(`Failed to refresh ${type} data:`, error)
+    } catch (err) {
+      console.error(`Failed to fetch ${endpoint}:`, err)
+      setError(err instanceof Error ? err.message : "Veri alınamadı")
     } finally {
       setLoading(false)
     }
-  }, [type, fetchFunction])
+  }, [endpoint])
+
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    await fetchData()
+  }, [fetchData])
 
   useEffect(() => {
-    const unsubscribe = githubRealtime.subscribe(type, async (update: ContentUpdate) => {
-      console.log(`Real-time update received for ${type}:`, update)
+    // Initial fetch
+    fetchData()
 
-      if (autoRefresh) {
-        await refreshData()
-      } else {
-        setLastUpdate(update.timestamp)
+    // Subscribe to real-time updates
+    let unsubscribe: (() => void) | undefined
+
+    if (contentType) {
+      unsubscribe = githubRealtime.subscribe(contentType, (update: ContentUpdate) => {
+        console.log(`Real-time update received for ${contentType}:`, update)
         setUpdateCount((prev) => prev + 1)
-      }
-    })
+        setLastUpdate(new Date())
 
-    const unsubscribeGlobal = githubRealtime.subscribe("*", async (update: ContentUpdate) => {
-      if (update.type === type && autoRefresh) {
-        await refreshData()
-      }
-    })
+        // Refresh data when update is received
+        fetchData()
+      })
+    }
 
-    const unsubscribeStatus = githubRealtime.onStatusChange((status) => {
-      setIsConnected(status.status === "connected" || status.status === "polling")
+    // Also subscribe to global updates
+    const globalUnsubscribe = githubRealtime.subscribe("*", (update: ContentUpdate) => {
+      if (update.type === "sync" || update.type === "commits") {
+        console.log("Global update received:", update)
+        setUpdateCount((prev) => prev + 1)
+        setLastUpdate(new Date())
+        fetchData()
+      }
     })
 
     return () => {
-      unsubscribe()
-      unsubscribeGlobal()
-      unsubscribeStatus()
+      if (unsubscribe) unsubscribe()
+      globalUnsubscribe()
     }
-  }, [type, autoRefresh, refreshData])
-
-  const refresh = useCallback(async () => {
-    await refreshData()
-  }, [refreshData])
-
-  const forceSync = useCallback(async () => {
-    try {
-      setLoading(true)
-      await githubRealtime.forceSync()
-      await refreshData()
-    } catch (error) {
-      console.error("Force sync failed:", error)
-      throw error
-    } finally {
-      setLoading(false)
-    }
-  }, [refreshData])
+  }, [fetchData, contentType])
 
   return {
     data,
-    setData,
     loading,
+    error,
     lastUpdate,
-    isConnected,
     updateCount,
     refresh,
-    forceSync,
   }
 }
 
+// Specific hooks for different content types
 export function useRealtimeProjects() {
-  return useRealtimeContent("projects", [], async () => {
-    const response = await fetch("/api/projects")
-    if (!response.ok) throw new Error("Failed to fetch projects")
-    return response.json()
-  })
-}
-
-export function useRealtimePageContent(page: string) {
-  return useRealtimeContent(`pages-${page}`, null, async () => {
-    const response = await fetch(`/api/content/${page}`)
-    if (!response.ok) throw new Error(`Failed to fetch ${page} content`)
-    return response.json()
-  })
+  return useRealtimeContent("/api/projects", [], "projects")
 }
 
 export function useRealtimeBlogPosts() {
-  return useRealtimeContent("blog", [], async () => {
-    const response = await fetch("/api/blog")
-    if (!response.ok) throw new Error("Failed to fetch blog posts")
-    return response.json()
-  })
+  return useRealtimeContent("/api/blog", [], "blog")
 }
 
 export function useRealtimeDashboard() {
-  return useRealtimeContent("dashboard", null, async () => {
-    const response = await fetch("/api/admin/dashboard")
-    if (!response.ok) throw new Error("Failed to fetch dashboard data")
-    return response.json()
-  })
+  return useRealtimeContent(
+    "/api/admin/dashboard",
+    {
+      stats: {},
+      recentActivity: [],
+      projects: [],
+      blogPosts: [],
+    },
+    "dashboard",
+  )
 }

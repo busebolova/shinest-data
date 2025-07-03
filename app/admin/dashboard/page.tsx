@@ -1,230 +1,301 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { LayoutDashboard, FileText, FolderOpen, PlusCircle, TrendingUp, ExternalLink } from "lucide-react"
+import { Users, FileText, FolderOpen, TrendingUp, Eye, Edit, Plus, RefreshCw, Activity, GitCommit } from "lucide-react"
 import Link from "next/link"
 
-interface DashboardStats {
-  projects: number
-  blogs: number
-  pages: number
+interface DashboardData {
+  stats: {
+    totalProjects: number
+    completedProjects: number
+    inProgressProjects: number
+    totalBlogPosts: number
+    featuredPosts: number
+    recentCommits: number
+    featuredProjects: number
+  }
+  recentActivity: Array<{
+    id: string
+    title: string
+    description: string
+    timestamp: string
+    type: string
+  }>
+  projects: Array<{
+    id: string
+    title: string
+    description: string
+    category: string
+    location: string
+  }>
 }
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
-    projects: 4,
-    blogs: 3,
-    pages: 6,
+export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData>({
+    stats: {
+      totalProjects: 12,
+      completedProjects: 8,
+      inProgressProjects: 4,
+      totalBlogPosts: 6,
+      featuredPosts: 3,
+      recentCommits: 15,
+      featuredProjects: 5,
+    },
+    recentActivity: [
+      {
+        id: "1",
+        title: "Yeni proje eklendi",
+        description: "Modern Banyo Tasarımı projesi oluşturuldu",
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        type: "project",
+      },
+      {
+        id: "2",
+        title: "Blog yazısı güncellendi",
+        description: "2024 İç Mimarlık Trendleri yazısı düzenlendi",
+        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+        type: "blog",
+      },
+      {
+        id: "3",
+        title: "Ana sayfa içeriği değiştirildi",
+        description: "Hero bölümü metni güncellendi",
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        type: "content",
+      },
+    ],
+    projects: [
+      {
+        id: "1",
+        title: "Modern Living Room",
+        description: "Contemporary living space with minimalist design",
+        category: "residential",
+        location: "Istanbul",
+      },
+      {
+        id: "2",
+        title: "Luxury Hotel Lobby",
+        description: "Elegant hotel lobby with premium finishes",
+        category: "hospitality",
+        location: "Ankara",
+      },
+      {
+        id: "3",
+        title: "Office Space Design",
+        description: "Modern office interior with collaborative spaces",
+        category: "commercial",
+        location: "Izmir",
+      },
+    ],
   })
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [updateCount, setUpdateCount] = useState(0)
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
-  const refreshStats = async () => {
-    setIsLoading(true)
+  const refresh = async () => {
+    setLoading(true)
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      setStats({
-        projects: 4,
-        blogs: 3,
-        pages: 6,
-      })
+      setUpdateCount((prev) => prev + 1)
+      setLastUpdate(new Date())
     } catch (error) {
-      console.error("İstatistik yenileme hatası:", error)
+      console.error("Refresh failed:", error)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const quickActions = [
-    {
-      title: "Yeni Proje Ekle",
-      description: "Yeni bir proje oluştur",
-      href: "/admin/projects/new",
-      icon: PlusCircle,
-      color: "bg-blue-500",
-    },
-    {
-      title: "Blog Yazısı Yaz",
-      description: "Yeni blog yazısı oluştur",
-      href: "/admin/blog/new",
-      icon: FileText,
-      color: "bg-green-500",
-    },
-    {
-      title: "İçerik Yönet",
-      description: "Sayfa içeriklerini düzenle",
-      href: "/admin/content",
-      icon: LayoutDashboard,
-      color: "bg-purple-500",
-    },
-    {
-      title: "Medya Yönet",
-      description: "Görselleri yönet",
-      href: "/admin/media",
-      icon: FolderOpen,
-      color: "bg-orange-500",
-    },
-  ]
+  useEffect(() => {
+    // Simulate real-time updates
+    const interval = setInterval(() => {
+      setUpdateCount((prev) => prev + 1)
+      setLastUpdate(new Date())
+    }, 10000)
 
-  const recentActivities = [
-    {
-      action: "Yeni proje eklendi",
-      item: "Modern Banyo Tasarımı",
-      time: "2 saat önce",
-      type: "project",
-    },
-    {
-      action: "Blog yazısı güncellendi",
-      item: "2024 İç Mimarlık Trendleri",
-      time: "5 saat önce",
-      type: "blog",
-    },
-    {
-      action: "Ana sayfa içeriği düzenlendi",
-      item: "Hero bölümü",
-      time: "1 gün önce",
-      type: "content",
-    },
-    {
-      action: "Yeni görsel yüklendi",
-      item: "proje-galeri-1.jpg",
-      time: "2 gün önce",
-      type: "media",
-    },
-  ]
+    return () => clearInterval(interval)
+  }, [])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">SHINEST İç Mimarlık içerik yönetim paneline hoş geldiniz</p>
+          <p className="text-gray-600">Yönetim paneli genel bakış</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={refreshStats} disabled={isLoading} size="sm">
-            <TrendingUp className="w-4 h-4 mr-2" />
-            {isLoading ? "Yenileniyor..." : "İstatistikleri Yenile"}
-          </Button>
-          <Button asChild size="sm">
-            <Link href="https://www.shinesticmimarlik.com" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Siteyi Görüntüle
-            </Link>
+          {updateCount > 0 && (
+            <Badge variant="secondary" className="bg-green-100 text-green-700">
+              <Activity className="w-3 h-3 mr-1" />
+              {updateCount} canlı güncelleme
+            </Badge>
+          )}
+          {lastUpdate && (
+            <span className="text-sm text-gray-500">Son güncelleme: {lastUpdate.toLocaleTimeString("tr-TR")}</span>
+          )}
+          <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Yenile
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="border-0 shadow-md bg-gradient-to-br from-blue-50 to-blue-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Projeler</CardTitle>
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <FolderOpen className="w-6 h-6 text-blue-600" />
-            </div>
+            <CardTitle className="text-sm font-medium text-blue-700">Toplam Projeler</CardTitle>
+            <FolderOpen className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-gray-900">{stats.projects}</div>
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-xs text-gray-600">Toplam proje sayısı</p>
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/admin/projects">Projeleri Yönet</Link>
-              </Button>
+            <div className="text-2xl font-bold text-blue-900">{data.stats.totalProjects}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary" className="text-xs bg-blue-200 text-blue-800">
+                {data.stats.completedProjects} tamamlandı
+              </Badge>
+              <Badge variant="secondary" className="text-xs bg-yellow-200 text-yellow-800">
+                {data.stats.inProgressProjects} devam ediyor
+              </Badge>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="border-0 shadow-md bg-gradient-to-br from-green-50 to-green-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Blog Yazıları</CardTitle>
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <FileText className="w-6 h-6 text-purple-600" />
-            </div>
+            <CardTitle className="text-sm font-medium text-green-700">Blog Yazıları</CardTitle>
+            <FileText className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-gray-900">{stats.blogs}</div>
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-xs text-gray-600">Yayınlanan yazı sayısı</p>
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/admin/blog">Blog Yönet</Link>
-              </Button>
+            <div className="text-2xl font-bold text-green-900">{data.stats.totalBlogPosts}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary" className="text-xs bg-green-200 text-green-800">
+                {data.stats.featuredPosts} öne çıkan
+              </Badge>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md bg-gradient-to-br from-purple-50 to-purple-100">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-purple-700">Son Commit'ler</CardTitle>
+            <GitCommit className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-900">{data.stats.recentCommits}</div>
+            <p className="text-xs text-purple-600 mt-2">GitHub aktivitesi</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md bg-gradient-to-br from-orange-50 to-orange-100">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-orange-700">Öne Çıkan</CardTitle>
+            <TrendingUp className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-900">{data.stats.featuredProjects}</div>
+            <p className="text-xs text-orange-600 mt-2">Öne çıkan projeler</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Quick Actions */}
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Hızlı İşlemler</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickActions.map((action, index) => (
-            <Card key={index} className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 ${action.color} rounded-lg flex items-center justify-center`}>
-                    <action.icon className="w-6 h-6 text-white" />
-                  </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            Hızlı İşlemler
+          </CardTitle>
+          <CardDescription>Sık kullanılan işlemlere hızlı erişim</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button asChild className="h-auto p-4 flex-col gap-2">
+              <Link href="/admin/projects/new">
+                <FolderOpen className="w-6 h-6" />
+                <span>Yeni Proje</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto p-4 flex-col gap-2 bg-transparent">
+              <Link href="/admin/blog/new">
+                <FileText className="w-6 h-6" />
+                <span>Yeni Blog Yazısı</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto p-4 flex-col gap-2 bg-transparent">
+              <Link href="/admin/media">
+                <Users className="w-6 h-6" />
+                <span>Medya Yönetimi</span>
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Projects */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Son Projeler</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/admin/projects">Tümünü Gör</Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data.projects.map((project) => (
+                <div key={project.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 text-sm">{action.title}</h3>
-                    <p className="text-xs text-gray-600 mt-1">{action.description}</p>
-                    <Button asChild variant="ghost" size="sm" className="mt-2 p-0 h-auto">
-                      <Link href={action.href}>Başlat →</Link>
+                    <h4 className="font-medium text-sm">{project.title}</h4>
+                    <p className="text-xs text-gray-500 line-clamp-1">{project.description}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="outline" className="text-xs">
+                        {project.category}
+                      </Badge>
+                      <span className="text-xs text-gray-400">{project.location}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0">
+                      <Link href={`/projects/${project.id}`}>
+                        <Eye className="w-3 h-3" />
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0">
+                      <Link href={`/admin/projects/${project.id}/edit`}>
+                        <Edit className="w-3 h-3" />
+                      </Link>
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Recent Activities */}
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Son Aktiviteler</h2>
+        {/* Recent Activity */}
         <Card>
-          <CardContent className="p-0">
-            <div className="divide-y divide-gray-200">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0">
-                        {activity.type === "project" && (
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <FolderOpen className="w-4 h-4 text-blue-600" />
-                          </div>
-                        )}
-                        {activity.type === "blog" && (
-                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                            <FileText className="w-4 h-4 text-purple-600" />
-                          </div>
-                        )}
-                        {activity.type === "content" && (
-                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <LayoutDashboard className="w-4 h-4 text-green-600" />
-                          </div>
-                        )}
-                        {activity.type === "media" && (
-                          <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                            <FolderOpen className="w-4 h-4 text-orange-600" />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                        <p className="text-sm text-gray-600">{activity.item}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {activity.time}
-                      </Badge>
-                    </div>
+          <CardHeader>
+            <CardTitle>Son Aktiviteler</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data.recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{activity.title}</p>
+                    <p className="text-xs text-gray-500">{activity.description}</p>
+                    <p className="text-xs text-gray-400 mt-1">{new Date(activity.timestamp).toLocaleString("tr-TR")}</p>
                   </div>
+                  <Badge variant="outline" className="text-xs">
+                    {activity.type}
+                  </Badge>
                 </div>
               ))}
             </div>

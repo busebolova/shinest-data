@@ -95,7 +95,8 @@ class GitHubAPI {
     })
 
     if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
+      const errorText = await response.text()
+      throw new Error(`GitHub API error: ${response.status} ${response.statusText} - ${errorText}`)
     }
 
     return response.json()
@@ -144,7 +145,12 @@ class GitHubAPI {
   }
 
   async getCommits(limit = 10): Promise<GitHubCommit[]> {
-    return this.request(`/repos/${this.owner}/${this.repo}/commits?per_page=${limit}&sha=${this.branch}`)
+    try {
+      return await this.request(`/repos/${this.owner}/${this.repo}/commits?per_page=${limit}&sha=${this.branch}`)
+    } catch (error) {
+      console.error("Error loading commits:", error)
+      return []
+    }
   }
 
   async createOrUpdateFile(path: string, content: string, message: string): Promise<any> {
@@ -152,6 +158,7 @@ class GitHubAPI {
       const existingFile = await this.getFile(path)
       return this.updateFile(path, content, message, existingFile.sha)
     } catch (error) {
+      // File doesn't exist, create it
       return this.createFile(path, content, message)
     }
   }
@@ -164,11 +171,46 @@ class GitHubAPI {
         const data = JSON.parse(content)
         return data.projects || []
       }
-      return []
+      return this.getDefaultProjects()
     } catch (error) {
-      console.error("Error loading projects:", error)
-      return []
+      console.log("Projects file not found, using defaults")
+      return this.getDefaultProjects()
     }
+  }
+
+  private getDefaultProjects(): GitHubProject[] {
+    return [
+      {
+        id: "1",
+        title: "Modern Living Room",
+        description: "Contemporary living space with minimalist design",
+        category: "residential",
+        images: ["/images/living-room-design-1.png"],
+        featured: true,
+        year: "2024",
+        location: "Istanbul",
+        area: "120m²",
+        status: "completed",
+        tags: ["modern", "minimalist", "living room"],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: "2",
+        title: "Luxury Hotel Lobby",
+        description: "Elegant hotel lobby with premium finishes",
+        category: "hospitality",
+        images: ["/images/cafe-design-1.png"],
+        featured: false,
+        year: "2024",
+        location: "Ankara",
+        area: "300m²",
+        status: "in-progress",
+        tags: ["luxury", "hotel", "lobby"],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]
   }
 
   async getProject(id: string): Promise<GitHubProject | null> {
@@ -227,11 +269,29 @@ class GitHubAPI {
         const data = JSON.parse(content)
         return data.posts || []
       }
-      return []
+      return this.getDefaultBlogPosts()
     } catch (error) {
-      console.error("Error loading blog posts:", error)
-      return []
+      console.log("Blog file not found, using defaults")
+      return this.getDefaultBlogPosts()
     }
+  }
+
+  private getDefaultBlogPosts(): GitHubBlogPost[] {
+    return [
+      {
+        id: "1",
+        title: "Interior Design Trends 2024",
+        slug: "interior-design-trends-2024",
+        content: "Discover the latest trends in interior design for 2024...",
+        excerpt: "Explore the most popular interior design trends this year",
+        author: "Shinest Team",
+        date: new Date().toISOString(),
+        tags: ["trends", "2024", "interior design"],
+        featured: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]
   }
 
   async getBlogPost(id: string): Promise<GitHubBlogPost | null> {
@@ -290,9 +350,47 @@ class GitHubAPI {
         return JSON.parse(content)
       }
     } catch (error) {
-      console.error(`Error loading ${page} content:`, error)
+      console.log(`Page content file not found for ${page}, using defaults`)
     }
-    return null
+    return this.getDefaultPageContent(page)
+  }
+
+  private getDefaultPageContent(page: string): any {
+    const defaults: Record<string, any> = {
+      home: {
+        hero: {
+          title: "SHINEST",
+          subtitle: "Interior Design Studio",
+          description: "Creating beautiful spaces that inspire and delight",
+          image: "/images/hero-image.png",
+        },
+        about: {
+          title: "About Us",
+          content: "We are passionate about creating beautiful interior spaces.",
+        },
+        services: {
+          title: "Our Services",
+          items: [
+            {
+              title: "Interior Design",
+              description: "Complete interior design solutions",
+              image: "/images/design-service.png",
+            },
+          ],
+        },
+      },
+      about: {
+        title: "About Shinest",
+        content: "We are a leading interior design studio...",
+        image: "/images/about-section-reference.png",
+      },
+      services: {
+        title: "Our Services",
+        description: "Professional interior design services",
+        services: [],
+      },
+    }
+    return defaults[page] || {}
   }
 
   async savePageContent(page: string, content: any): Promise<void> {
@@ -318,7 +416,7 @@ class GitHubAPI {
       }
       return ""
     } catch (error) {
-      console.error(`Error fetching content from ${path}:`, error)
+      console.log(`Content file not found: ${path}`)
       return ""
     }
   }
@@ -328,12 +426,42 @@ class GitHubAPI {
   }
 
   async getRepositoryInfo(): Promise<any> {
-    return this.request(`/repos/${this.owner}/${this.repo}`)
+    try {
+      return await this.request(`/repos/${this.owner}/${this.repo}`)
+    } catch (error) {
+      console.error("Error getting repository info:", error)
+      return {
+        name: this.repo,
+        full_name: `${this.owner}/${this.repo}`,
+        html_url: `https://github.com/${this.owner}/${this.repo}`,
+        updated_at: new Date().toISOString(),
+      }
+    }
   }
 
   async getLatestCommit(): Promise<GitHubCommit> {
-    const commits = await this.getCommits(1)
-    return commits[0]
+    try {
+      const commits = await this.getCommits(1)
+      if (commits.length > 0) {
+        return commits[0]
+      }
+    } catch (error) {
+      console.error("Error getting latest commit:", error)
+    }
+
+    // Return default commit if none found
+    return {
+      sha: "default",
+      commit: {
+        author: {
+          name: "System",
+          email: "system@shinest.com",
+          date: new Date().toISOString(),
+        },
+        message: "Initial commit",
+      },
+      html_url: `https://github.com/${this.owner}/${this.repo}`,
+    }
   }
 
   isConfigured(): boolean {

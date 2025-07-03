@@ -1,5 +1,6 @@
 import type React from "react"
-export default function LoginLayout({
+
+export default function AdminLoginLayout({
   children,
 }: {
   children: React.ReactNode
