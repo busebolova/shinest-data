@@ -1,219 +1,192 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { revalidatePath } from "next/cache"
+import { NextResponse } from "next/server"
 
-// Fallback projeler
-const fallbackProjects = [
+// Mock projects data - this would normally come from a database
+const projects = [
   {
     id: "1",
-    title: { tr: "Modern Villa Tasarımı", en: "Modern Villa Design" },
-    description: {
-      tr: "Lüks yaşam alanları ve modern estetik anlayışının mükemmel birleşimi. Doğal ışığın maksimum kullanıldığı, açık plan konseptiyle tasarlanmış villa projesi.",
-      en: "Perfect combination of luxury living spaces and modern aesthetic understanding.",
+    title: {
+      tr: "Modern Yaşam Alanı",
+      en: "Modern Living Space",
     },
-    category: "Villa",
-    location: "İstanbul",
-    year: "2024",
-    status: "published",
+    description: {
+      tr: "Minimalist tasarım anlayışıyla modern yaşam alanı projesi. Açık plan konsepti ile geniş ve ferah bir atmosfer yaratılmıştır.",
+      en: "Modern living space project with minimalist design approach. An open plan concept creates a spacious and airy atmosphere.",
+    },
+    category: {
+      tr: "Konut",
+      en: "Residential",
+    },
+    images: ["/images/poland-apartment-1.png", "/images/poland-apartment-2.png"],
     featured: true,
-    images: ["/images/poland-apartment-1.png"],
-    slug: "modern-villa-tasarimi",
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
+    status: "published",
+    year: "2024",
+    location: "İstanbul",
+    area: "120m²",
+    slug: "modern-yasam-alani",
+    features: {
+      tr: ["Açık Plan Konsept", "Modern Mobilyalar", "Doğal Aydınlatma"],
+      en: ["Open Plan Concept", "Modern Furniture", "Natural Lighting"],
+    },
   },
   {
     id: "2",
-    title: { tr: "Lüks Otel Lobisi", en: "Luxury Hotel Lobby" },
-    description: {
-      tr: "Misafirleri karşılayan etkileyici giriş alanı tasarımı. Yüksek tavanlar, özel aydınlatma ve seçkin malzemelerle oluşturulmuş prestijli mekan.",
-      en: "Impressive entrance area design that welcomes guests.",
+    title: {
+      tr: "Lüks Ofis Tasarımı",
+      en: "Luxury Office Design",
     },
-    category: "Otel",
-    location: "Antalya",
-    year: "2023",
-    status: "published",
+    description: {
+      tr: "Profesyonel ve şık ofis iç mekan tasarımı projesi. Çalışan verimliliğini artıran ergonomik çözümler uygulanmıştır.",
+      en: "Professional and elegant office interior design project. Ergonomic solutions that increase employee productivity have been implemented.",
+    },
+    category: {
+      tr: "Ofis",
+      en: "Office",
+    },
+    images: ["/images/modern-wooden-office.png"],
     featured: true,
-    images: ["/images/poland-apartment-2.png"],
-    slug: "luks-otel-lobisi",
-    createdAt: "2023-01-01T00:00:00Z",
-    updatedAt: "2023-01-01T00:00:00Z",
+    status: "published",
+    year: "2024",
+    location: "Ankara",
+    area: "200m²",
+    slug: "luks-ofis-tasarimi",
+    features: {
+      tr: ["Ergonomik Tasarım", "Akıllı Sistemler", "Toplantı Odaları"],
+      en: ["Ergonomic Design", "Smart Systems", "Meeting Rooms"],
+    },
   },
   {
     id: "3",
-    title: { tr: "Minimalist Ofis Tasarımı", en: "Minimalist Office Design" },
-    description: {
-      tr: "Çalışan verimliliğini artıran, temiz çizgiler ve fonksiyonel çözümlerle tasarlanmış modern ofis alanı. Ergonomik mobilya ve akıllı depolama sistemleri.",
-      en: "Modern office space designed with clean lines and functional solutions.",
+    title: {
+      tr: "Butik Otel Lobisi",
+      en: "Boutique Hotel Lobby",
     },
-    category: "Ofis",
-    location: "Ankara",
-    year: "2024",
+    description: {
+      tr: "Konforlu ve etkileyici otel lobisi tasarım projesi. Misafirlere unutulmaz bir karşılama deneyimi sunmaktadır.",
+      en: "Comfortable and impressive hotel lobby design project. It offers guests an unforgettable welcome experience.",
+    },
+    category: {
+      tr: "Ticari",
+      en: "Commercial",
+    },
+    images: ["/images/luxury-hotel-lobby.png"],
+    featured: false,
     status: "published",
-    featured: true,
-    images: ["/images/poland-apartment-3.png"],
-    slug: "minimalist-ofis-tasarimi",
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
+    year: "2024",
+    location: "İzmir",
+    area: "300m²",
+    slug: "butik-otel-lobisi",
+    features: {
+      tr: ["Lüks Mobilyalar", "Özel Aydınlatma", "Karşılama Alanı"],
+      en: ["Luxury Furniture", "Special Lighting", "Reception Area"],
+    },
   },
   {
     id: "4",
-    title: { tr: "Butik Cafe İç Mekan", en: "Boutique Cafe Interior" },
-    description: {
-      tr: "Sıcak ve davetkar atmosferiyle müşterileri cezbeden cafe tasarımı. Doğal malzemeler, özel aydınlatma ve rahat oturma alanları.",
-      en: "Cafe design that attracts customers with its warm and inviting atmosphere.",
+    title: {
+      tr: "Yatak Odası Tasarımı",
+      en: "Bedroom Design",
     },
-    category: "Cafe",
-    location: "İzmir",
-    year: "2023",
+    description: {
+      tr: "Rahat ve şık yatak odası iç mekan tasarımı. Dinlendirici renkler ve fonksiyonel mobilyalar kullanılmıştır.",
+      en: "Comfortable and elegant bedroom interior design. Relaxing colors and functional furniture are used.",
+    },
+    category: {
+      tr: "Konut",
+      en: "Residential",
+    },
+    images: ["/images/bedroom-design-1.png", "/images/bedroom-design-2.png"],
+    featured: false,
     status: "published",
-    featured: true,
-    images: ["/images/poland-apartment-4.png"],
-    slug: "butik-cafe-ic-mekan",
-    createdAt: "2023-01-01T00:00:00Z",
-    updatedAt: "2023-01-01T00:00:00Z",
+    year: "2023",
+    location: "Bursa",
+    area: "25m²",
+    slug: "yatak-odasi-tasarimi",
+    features: {
+      tr: ["Özel Dolap Tasarımı", "Yumuşak Aydınlatma", "Konforlu Yatak"],
+      en: ["Custom Wardrobe Design", "Soft Lighting", "Comfortable Bed"],
+    },
   },
   {
     id: "5",
-    title: { tr: "Lüks Yatak Odası", en: "Luxury Bedroom" },
-    description: {
-      tr: "Dinlendirici ve şık yatak odası tasarımı. Premium kumaşlar, özel yapım mobilyalar ve mükemmel renk uyumu ile tasarlanmış kişisel alan.",
-      en: "Relaxing and elegant bedroom design with premium fabrics.",
+    title: {
+      tr: "Cafe İç Mekan",
+      en: "Cafe Interior",
     },
-    category: "Yatak Odası",
-    location: "Bodrum",
-    year: "2024",
+    description: {
+      tr: "Modern ve sıcak cafe iç mekan tasarım projesi. Müşterilerin rahat edebileceği samimi bir atmosfer yaratılmıştır.",
+      en: "Modern and warm cafe interior design project. An intimate atmosphere has been created where customers can relax.",
+    },
+    category: {
+      tr: "Ticari",
+      en: "Commercial",
+    },
+    images: ["/images/cafe-design-1.png", "/images/cafe-design-2.png"],
+    featured: false,
     status: "published",
-    featured: true,
-    images: ["/images/poland-apartment-5.png"],
-    slug: "luks-yatak-odasi",
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
+    year: "2023",
+    location: "Antalya",
+    area: "80m²",
+    slug: "cafe-ic-mekan",
+    features: {
+      tr: ["Sıcak Atmosfer", "Özel Bar Tasarımı", "Rahat Oturma"],
+      en: ["Warm Atmosphere", "Custom Bar Design", "Comfortable Seating"],
+    },
   },
   {
     id: "6",
-    title: { tr: "Modern Mutfak Tasarımı", en: "Modern Kitchen Design" },
-    description: {
-      tr: "Fonksiyonellik ve estetiğin buluştuğu mutfak tasarımı. Yüksek kaliteli beyaz eşyalar, akıllı depolama çözümleri ve şık detaylar.",
-      en: "Kitchen design where functionality meets aesthetics.",
+    title: {
+      tr: "Banyo Tasarımı",
+      en: "Bathroom Design",
     },
-    category: "Mutfak",
-    location: "Bursa",
-    year: "2023",
+    description: {
+      tr: "Lüks ve fonksiyonel banyo tasarım projesi. Modern donanımlar ve kaliteli malzemeler kullanılmıştır.",
+      en: "Luxury and functional bathroom design project. Modern equipment and quality materials are used.",
+    },
+    category: {
+      tr: "Konut",
+      en: "Residential",
+    },
+    images: ["/images/bathroom-design-1.png", "/images/bathroom-design-2.png"],
+    featured: false,
     status: "published",
-    featured: true,
-    images: ["/images/poland-apartment-6.png"],
-    slug: "modern-mutfak-tasarimi",
-    createdAt: "2023-01-01T00:00:00Z",
-    updatedAt: "2023-01-01T00:00:00Z",
+    year: "2023",
+    location: "İstanbul",
+    area: "15m²",
+    slug: "banyo-tasarimi",
+    features: {
+      tr: ["Mermer Detaylar", "Akıllı Aynalar", "Lüks Armatürler"],
+      en: ["Marble Details", "Smart Mirrors", "Luxury Fixtures"],
+    },
   },
 ]
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // GitHub'dan projeleri çekmeye çalış
-    if (process.env.GITHUB_TOKEN && process.env.GITHUB_OWNER && process.env.GITHUB_REPO) {
-      try {
-        const response = await fetch(
-          `https://api.github.com/repos/${process.env.GITHUB_OWNER}/${process.env.GITHUB_REPO}/contents/data/projects.json`,
-          {
-            headers: {
-              Authorization: `token ${process.env.GITHUB_TOKEN}`,
-              Accept: "application/vnd.github.v3+json",
-            },
-            next: { revalidate: 60 }, // 1 dakika cache
-          },
-        )
+    // Filter only published projects
+    const publishedProjects = projects.filter((project) => project.status === "published")
 
-        if (response.ok) {
-          const data = await response.json()
-          const content = Buffer.from(data.content, "base64").toString("utf-8")
-          const projects = JSON.parse(content)
-          return NextResponse.json({ projects: projects.projects || [] })
-        }
-      } catch (error) {
-        console.error("GitHub API error:", error)
-      }
-    }
-
-    // Fallback projeler
-    return NextResponse.json({ projects: fallbackProjects })
+    return NextResponse.json(publishedProjects)
   } catch (error) {
-    console.error("Projects API error:", error)
-    return NextResponse.json({ projects: fallbackProjects })
+    console.error("Error fetching projects:", error)
+    return NextResponse.json({ error: "Failed to fetch projects" }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const body = await request.json()
+
+    // Here you would normally save to a database
+    // For now, we'll just return the created project
     const newProject = {
-      ...body,
       id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      ...body,
+      status: "published",
     }
 
-    // GitHub'a kaydetmeye çalış
-    if (process.env.GITHUB_TOKEN && process.env.GITHUB_OWNER && process.env.GITHUB_REPO) {
-      try {
-        // Mevcut projeleri al
-        const getResponse = await fetch(
-          `https://api.github.com/repos/${process.env.GITHUB_OWNER}/${process.env.GITHUB_REPO}/contents/data/projects.json`,
-          {
-            headers: {
-              Authorization: `token ${process.env.GITHUB_TOKEN}`,
-              Accept: "application/vnd.github.v3+json",
-            },
-          },
-        )
-
-        let currentProjects = []
-        let sha = ""
-
-        if (getResponse.ok) {
-          const data = await getResponse.json()
-          const content = Buffer.from(data.content, "base64").toString("utf-8")
-          const parsed = JSON.parse(content)
-          currentProjects = parsed.projects || []
-          sha = data.sha
-        }
-
-        // Yeni projeyi ekle
-        const updatedProjects = [newProject, ...currentProjects]
-        const newContent = JSON.stringify({ projects: updatedProjects }, null, 2)
-
-        // GitHub'a kaydet
-        const updateResponse = await fetch(
-          `https://api.github.com/repos/${process.env.GITHUB_OWNER}/${process.env.GITHUB_REPO}/contents/data/projects.json`,
-          {
-            method: "PUT",
-            headers: {
-              Authorization: `token ${process.env.GITHUB_TOKEN}`,
-              Accept: "application/vnd.github.v3+json",
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: `Add new project: ${newProject.title.tr}`,
-              content: Buffer.from(newContent).toString("base64"),
-              sha: sha,
-            }),
-          },
-        )
-
-        if (updateResponse.ok) {
-          // Cache'i temizle
-          revalidatePath("/projects")
-          revalidatePath("/api/projects")
-          return NextResponse.json({ success: true, project: newProject })
-        }
-      } catch (error) {
-        console.error("GitHub save error:", error)
-      }
-    }
-
-    // Local storage fallback
-    return NextResponse.json({ success: true, project: newProject })
+    return NextResponse.json(newProject, { status: 201 })
   } catch (error) {
-    console.error("Create project error:", error)
-    return NextResponse.json({ success: false, error: "Failed to create project" }, { status: 500 })
+    console.error("Error creating project:", error)
+    return NextResponse.json({ error: "Failed to create project" }, { status: 500 })
   }
 }

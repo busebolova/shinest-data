@@ -4,15 +4,13 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, X, ChevronDown } from "lucide-react"
+import { Menu, X } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
-import { useQuoteForm } from "@/contexts/quote-form-context"
 
 export function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { language, setLanguage, t } = useLanguage()
-  const { openQuoteForm } = useQuoteForm()
+  const { language, setLanguage } = useLanguage()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,130 +21,135 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const navigation = [
-    { name: "Ana Sayfa", href: "/", nameEn: "Home" },
-    { name: "Hakkımızda", href: "/about", nameEn: "About" },
-    { name: "Hizmetler", href: "/services", nameEn: "Services" },
-    { name: "Projeler", href: "/projects", nameEn: "Projects" },
-    { name: "Blog", href: "/blog", nameEn: "Blog" },
-    { name: "İletişim", href: "/contact", nameEn: "Contact" },
-  ]
+  const navigation = {
+    tr: [
+      { name: "Ana Sayfa", href: "/" },
+      { name: "Hakkımızda", href: "/about" },
+      { name: "Hizmetlerimiz", href: "/services" },
+      { name: "Projelerimiz", href: "/projects" },
+      { name: "Blog", href: "/blog" },
+      { name: "İletişim", href: "/contact" },
+    ],
+    en: [
+      { name: "Home", href: "/" },
+      { name: "About", href: "/about" },
+      { name: "Services", href: "/services" },
+      { name: "Projects", href: "/projects" },
+      { name: "Blog", href: "/blog" },
+      { name: "Contact", href: "/contact" },
+    ],
+  }
+
+  const currentNavigation = navigation[language]
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-sans ${
-        isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg" : "bg-transparent"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg" : "bg-white"
       }`}
+      style={{ fontFamily: "Poppins, sans-serif" }}
     >
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-24">
+          {/* Logo - Bigger */}
           <Link href="/" className="flex items-center">
-            <div className="relative w-10 h-10 md:w-12 md:h-12">
+            <div className="relative w-20 h-20 overflow-hidden">
               <Image
                 src="/images/shinest-logo.png"
-                alt="SHINEST"
+                alt="SHINEST Logo"
                 fill
-                className="object-contain"
-                sizes="(max-width: 768px) 40px, 48px"
+                className="object-contain hover:scale-110 transition-transform duration-300"
+                sizes="80px"
               />
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-8">
-            {navigation.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`font-medium transition-colors hover:text-[#c4975a] ${
-                  isScrolled ? "text-gray-700" : "text-gray-700"
-                }`}
-              >
-                {language === "tr" ? item.name : item.nameEn}
-              </Link>
-            ))}
+          {/* Navigation - Centered */}
+          <nav className="hidden lg:flex items-center justify-center flex-1">
+            <div className="flex items-center space-x-8">
+              {currentNavigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-gray-700 hover:text-[#c4975a] font-medium transition-colors duration-300 relative group"
+                >
+                  {item.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#c4975a] transition-all duration-300 group-hover:w-full"></span>
+                </Link>
+              ))}
+            </div>
           </nav>
 
-          {/* Desktop Actions */}
+          {/* Language Switcher - Right */}
           <div className="hidden lg:flex items-center space-x-4">
-            {/* Language Switcher */}
-            <div className="relative">
-              <button
-                className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-colors ${
-                  isScrolled ? "text-gray-700 hover:bg-gray-100" : "text-gray-700 hover:bg-gray-100/10"
-                }`}
-                onClick={() => setLanguage(language === "tr" ? "en" : "tr")}
-              >
-                <span className="text-sm font-medium">{language.toUpperCase()}</span>
-                <ChevronDown className="w-3 h-3" />
-              </button>
-            </div>
-
-            {/* Quote Button */}
             <button
-              onClick={openQuoteForm}
-              className="bg-[#c4975a] text-white px-6 py-2 rounded-full font-medium hover:bg-[#b8864d] transition-colors"
+              onClick={() => setLanguage("tr")}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
+                language === "tr" ? "bg-[#c4975a] text-white" : "text-gray-600 hover:text-[#c4975a]"
+              }`}
             >
-              {language === "tr" ? "Teklif Al" : "Get Quote"}
+              TR
+            </button>
+            <button
+              onClick={() => setLanguage("en")}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
+                language === "en" ? "bg-[#c4975a] text-white" : "text-gray-600 hover:text-[#c4975a]"
+              }`}
+            >
+              EN
             </button>
           </div>
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden p-2"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle mobile menu"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="lg:hidden p-2 text-gray-700 hover:text-[#c4975a] transition-colors duration-300"
           >
-            {isMobileMenuOpen ? (
-              <X className={`w-6 h-6 ${isScrolled ? "text-gray-700" : "text-gray-700"}`} />
-            ) : (
-              <Menu className={`w-6 h-6 ${isScrolled ? "text-gray-700" : "text-gray-700"}`} />
-            )}
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       <AnimatePresence>
-        {isMobileMenuOpen && (
+        {isMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-white border-t shadow-lg"
+            className="lg:hidden bg-white border-t border-gray-200"
           >
             <div className="container mx-auto px-4 py-4">
-              <nav className="space-y-4">
-                {navigation.map((item) => (
+              <nav className="flex flex-col space-y-4">
+                {currentNavigation.map((item) => (
                   <Link
-                    key={item.href}
+                    key={item.name}
                     href={item.href}
-                    className="block py-2 text-gray-700 hover:text-[#c4975a] font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-gray-700 hover:text-[#c4975a] font-medium transition-colors duration-300 py-2"
+                    onClick={() => setIsMenuOpen(false)}
                   >
-                    {language === "tr" ? item.name : item.nameEn}
+                    {item.name}
                   </Link>
                 ))}
+                <div className="flex items-center space-x-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => setLanguage("tr")}
+                    className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
+                      language === "tr" ? "bg-[#c4975a] text-white" : "text-gray-600 hover:text-[#c4975a]"
+                    }`}
+                  >
+                    TR
+                  </button>
+                  <button
+                    onClick={() => setLanguage("en")}
+                    className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
+                      language === "en" ? "bg-[#c4975a] text-white" : "text-gray-600 hover:text-[#c4975a]"
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
               </nav>
-              <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                <button
-                  className="flex items-center space-x-1 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                  onClick={() => setLanguage(language === "tr" ? "en" : "tr")}
-                >
-                  <span className="text-sm font-medium">{language.toUpperCase()}</span>
-                  <ChevronDown className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={() => {
-                    openQuoteForm()
-                    setIsMobileMenuOpen(false)
-                  }}
-                  className="bg-[#c4975a] text-white px-6 py-2 rounded-full font-medium hover:bg-[#b8864d] transition-colors"
-                >
-                  {language === "tr" ? "Teklif Al" : "Get Quote"}
-                </button>
-              </div>
             </div>
           </motion.div>
         )}
@@ -154,5 +157,3 @@ export function Header() {
     </header>
   )
 }
-
-export default Header

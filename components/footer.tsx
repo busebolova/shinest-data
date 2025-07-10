@@ -1,234 +1,202 @@
 "use client"
 
+import { motion } from "framer-motion"
 import Link from "next/link"
 import Image from "next/image"
-import { MapPin, Phone, Mail, Instagram, Facebook, Twitter, Linkedin } from "lucide-react"
+import { Phone, Mail, MapPin, Instagram, Facebook, Linkedin } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
-import { useQuoteForm } from "@/contexts/quote-form-context"
 
 export function Footer() {
   const { language } = useLanguage()
-  const { openQuoteForm } = useQuoteForm()
 
-  const footerLinks = {
+  const content = {
     tr: {
-      company: "Şirket",
-      services: "Hizmetler",
-      projects: "Projeler",
+      company: "SHINEST İç Mimarlık",
+      description: "Yaşam alanlarınızı hayallerinizle buluşturan profesyonel iç mimarlık hizmetleri.",
+      quickLinks: "Hızlı Bağlantılar",
+      services: "Hizmetlerimiz",
       contact: "İletişim",
-      links: {
-        about: "Hakkımızda",
-        team: "Ekibimiz",
-        career: "Kariyer",
-        news: "Haberler",
-        consulting: "Danışmanlık",
-        design: "Tasarım",
-        implementation: "Uygulama",
-        maintenance: "Bakım",
-        residential: "Konut",
-        commercial: "Ticari",
-        office: "Ofis",
-        hotel: "Otel",
-        address: "Adres",
-        phone: "Telefon",
-        email: "E-posta",
-        getQuote: "Teklif Al",
-        followUs: "Bizi Takip Edin",
-        allRightsReserved: "Tüm hakları saklıdır.",
-      },
+      address: "Adres",
+      phone: "Telefon",
+      email: "E-posta",
+      followUs: "Bizi Takip Edin",
+      rights: "Tüm hakları saklıdır.",
+      links: [
+        { name: "Ana Sayfa", href: "/" },
+        { name: "Hakkımızda", href: "/about" },
+        { name: "Projelerimiz", href: "/projects" },
+        { name: "Blog", href: "/blog" },
+        { name: "İletişim", href: "/contact" },
+      ],
+      servicesList: [
+        { name: "Danışmanlık", href: "/services/consulting" },
+        { name: "Tasarım", href: "/services/design" },
+        { name: "Uygulama", href: "/services/implementation" },
+      ],
     },
     en: {
-      company: "Company",
+      company: "SHINEST Interior Architecture",
+      description:
+        "Professional interior architecture services that bring your living spaces together with your dreams.",
+      quickLinks: "Quick Links",
       services: "Services",
-      projects: "Projects",
       contact: "Contact",
-      links: {
-        about: "About Us",
-        team: "Our Team",
-        career: "Career",
-        news: "News",
-        consulting: "Consulting",
-        design: "Design",
-        implementation: "Implementation",
-        maintenance: "Maintenance",
-        residential: "Residential",
-        commercial: "Commercial",
-        office: "Office",
-        hotel: "Hotel",
-        address: "Address",
-        phone: "Phone",
-        email: "Email",
-        getQuote: "Get Quote",
-        followUs: "Follow Us",
-        allRightsReserved: "All rights reserved.",
-      },
+      address: "Address",
+      phone: "Phone",
+      email: "Email",
+      followUs: "Follow Us",
+      rights: "All rights reserved.",
+      links: [
+        { name: "Home", href: "/" },
+        { name: "About", href: "/about" },
+        { name: "Projects", href: "/projects" },
+        { name: "Blog", href: "/blog" },
+        { name: "Contact", href: "/contact" },
+      ],
+      servicesList: [
+        { name: "Consulting", href: "/services/consulting" },
+        { name: "Design", href: "/services/design" },
+        { name: "Implementation", href: "/services/implementation" },
+      ],
     },
   }
 
-  const t = footerLinks[language]
+  const currentContent = content[language]
 
   return (
-    <footer className="bg-[#15415b] text-white">
+    <footer className="bg-[#15415b] text-white" style={{ fontFamily: "Poppins, sans-serif" }}>
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
-          <div className="space-y-6">
-            <div className="flex items-center space-x-2">
-              <div className="relative w-8 h-8">
-                <Image src="/images/shinest-logo.png" alt="SHINEST" fill className="object-contain" />
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <div className="flex items-center space-x-3">
+              <div className="relative w-12 h-12">
+                <Image
+                  src="/images/shinest-logo.png"
+                  alt="SHINEST Logo"
+                  fill
+                  className="object-contain brightness-0 invert"
+                  sizes="48px"
+                />
               </div>
-              <span className="font-bold text-xl">SHINEST</span>
+              <h3 className="font-bold text-xl">{currentContent.company}</h3>
             </div>
-            <p className="text-gray-300 leading-relaxed">
-              {language === "tr"
-                ? "Yaşam alanlarınızı sanat eserine dönüştüren profesyonel iç mimarlık hizmetleri."
-                : "Professional interior design services that transform your living spaces into works of art."}
-            </p>
-            <button
-              onClick={openQuoteForm}
-              className="bg-[#c4975a] text-white px-6 py-3 rounded-full font-medium hover:bg-[#b8864d] transition-colors"
-            >
-              {t.links.getQuote}
-            </button>
-          </div>
+            <p className="text-gray-300 leading-relaxed">{currentContent.description}</p>
+          </motion.div>
 
-          {/* Company Links */}
-          <div>
-            <h3 className="font-semibold text-lg mb-6">{t.company}</h3>
-            <ul className="space-y-3">
-              <li>
-                <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
-                  {t.links.about}
-                </Link>
-              </li>
-              <li>
-                <Link href="/team" className="text-gray-300 hover:text-white transition-colors">
-                  {t.links.team}
-                </Link>
-              </li>
-              <li>
-                <Link href="/career" className="text-gray-300 hover:text-white transition-colors">
-                  {t.links.career}
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="text-gray-300 hover:text-white transition-colors">
-                  {t.links.news}
-                </Link>
-              </li>
+          {/* Quick Links */}
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            viewport={{ once: true }}
+          >
+            <h4 className="font-semibold text-lg">{currentContent.quickLinks}</h4>
+            <ul className="space-y-2">
+              {currentContent.links.map((link) => (
+                <li key={link.name}>
+                  <Link href={link.href} className="text-gray-300 hover:text-[#c4975a] transition-colors duration-300">
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
-          </div>
+          </motion.div>
 
-          {/* Services Links */}
-          <div>
-            <h3 className="font-semibold text-lg mb-6">{t.services}</h3>
-            <ul className="space-y-3">
-              <li>
-                <Link href="/services#consulting" className="text-gray-300 hover:text-white transition-colors">
-                  {t.links.consulting}
-                </Link>
-              </li>
-              <li>
-                <Link href="/services#design" className="text-gray-300 hover:text-white transition-colors">
-                  {t.links.design}
-                </Link>
-              </li>
-              <li>
-                <Link href="/services#implementation" className="text-gray-300 hover:text-white transition-colors">
-                  {t.links.implementation}
-                </Link>
-              </li>
-              <li>
-                <Link href="/services#maintenance" className="text-gray-300 hover:text-white transition-colors">
-                  {t.links.maintenance}
-                </Link>
-              </li>
+          {/* Services */}
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
+            <h4 className="font-semibold text-lg">{currentContent.services}</h4>
+            <ul className="space-y-2">
+              {currentContent.servicesList.map((service) => (
+                <li key={service.name}>
+                  <Link
+                    href={service.href}
+                    className="text-gray-300 hover:text-[#c4975a] transition-colors duration-300"
+                  >
+                    {service.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
-          </div>
+          </motion.div>
 
           {/* Contact Info */}
-          <div>
-            <h3 className="font-semibold text-lg mb-6">{t.contact}</h3>
-            <div className="space-y-4">
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true }}
+          >
+            <h4 className="font-semibold text-lg">{currentContent.contact}</h4>
+            <div className="space-y-3">
               <div className="flex items-start space-x-3">
                 <MapPin className="w-5 h-5 text-[#c4975a] mt-1 flex-shrink-0" />
                 <div>
-                  <p className="text-gray-300 text-sm">{t.links.address}</p>
-                  <p className="text-white">
-                    Maslak Mahallesi, Büyükdere Caddesi
-                    <br />
-                    No: 123, Sarıyer/İstanbul
-                  </p>
+                  <p className="font-medium">{currentContent.address}</p>
+                  <p className="text-gray-300 text-sm">Ataşehir, İstanbul, Türkiye</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-[#c4975a] flex-shrink-0" />
                 <div>
-                  <p className="text-gray-300 text-sm">{t.links.phone}</p>
-                  <a href="tel:+902121234567" className="text-white hover:text-[#c4975a] transition-colors">
-                    +90 (212) 123 45 67
-                  </a>
+                  <p className="font-medium">{currentContent.phone}</p>
+                  <p className="text-gray-300 text-sm">+90 (212) 555 0123</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-[#c4975a] flex-shrink-0" />
                 <div>
-                  <p className="text-gray-300 text-sm">{t.links.email}</p>
-                  <a href="mailto:info@shinest.com.tr" className="text-white hover:text-[#c4975a] transition-colors">
-                    info@shinest.com.tr
-                  </a>
+                  <p className="font-medium">{currentContent.email}</p>
+                  <p className="text-gray-300 text-sm">info@shinest.com</p>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Social Media & Copyright */}
-        <div className="border-t border-gray-700 mt-12 pt-8">
-          <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
-            <div className="flex items-center space-x-6">
-              <span className="text-gray-300 text-sm">{t.links.followUs}</span>
-              <div className="flex items-center space-x-4">
-                <a
-                  href="https://instagram.com/shinest"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-[#c4975a] transition-colors"
-                >
-                  <Instagram className="w-5 h-5" />
+            {/* Social Media */}
+            <div className="pt-4">
+              <p className="font-medium mb-3">{currentContent.followUs}</p>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-300 hover:text-[#c4975a] transition-colors duration-300">
+                  <Instagram className="w-6 h-6" />
                 </a>
-                <a
-                  href="https://facebook.com/shinest"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-[#c4975a] transition-colors"
-                >
-                  <Facebook className="w-5 h-5" />
+                <a href="#" className="text-gray-300 hover:text-[#c4975a] transition-colors duration-300">
+                  <Facebook className="w-6 h-6" />
                 </a>
-                <a
-                  href="https://twitter.com/shinest"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-[#c4975a] transition-colors"
-                >
-                  <Twitter className="w-5 h-5" />
-                </a>
-                <a
-                  href="https://linkedin.com/company/shinest"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-[#c4975a] transition-colors"
-                >
-                  <Linkedin className="w-5 h-5" />
+                <a href="#" className="text-gray-300 hover:text-[#c4975a] transition-colors duration-300">
+                  <Linkedin className="w-6 h-6" />
                 </a>
               </div>
             </div>
-            <p className="text-gray-400 text-sm">© 2024 SHINEST İç Mimarlık. {t.links.allRightsReserved}</p>
-          </div>
+          </motion.div>
         </div>
+
+        {/* Bottom Bar */}
+        <motion.div
+          className="border-t border-gray-600 mt-12 pt-8 text-center"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          viewport={{ once: true }}
+        >
+          <p className="text-gray-300">
+            © 2024 {currentContent.company}. {currentContent.rights}
+          </p>
+        </motion.div>
       </div>
     </footer>
   )
 }
-
-export default Footer
