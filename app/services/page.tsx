@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import Image from "next/image"
 import Link from "next/link"
 import { useLanguage } from "@/contexts/language-context"
@@ -18,22 +18,25 @@ export default function ServicesPage() {
   const services = [
     {
       id: "consulting",
-      title: t("services.consulting"),
-      description: t("services.consulting.desc"),
+      title: "Danışmanlık",
+      description:
+        "Profesyonel iç mimarlık danışmanlığı ile hayalinizdeki mekanı planlayın. Uzman ekibimiz, projenizin her aşamasında size rehberlik eder.",
       image: "/images/consulting-service.jpeg",
       slug: "consulting",
     },
     {
       id: "design",
-      title: t("services.design"),
-      description: t("services.design.desc"),
+      title: "Tasarım",
+      description:
+        "Yaratıcı ve işlevsel tasarım çözümleri ile mekanlarınızı dönüştürün. Modern estetik anlayışımızla kişisel tarzınızı yansıtan mekanlar yaratıyoruz.",
       image: "/images/design-service.jpeg",
       slug: "design",
     },
     {
       id: "implementation",
-      title: t("services.implementation"),
-      description: t("services.implementation.desc"),
+      title: "Uygulama",
+      description:
+        "Tasarımdan uygulamaya kadar tüm süreçleri profesyonelce yönetiyoruz. Kaliteli işçilik ve zamanında teslimat garantisi ile projelerinizi hayata geçiriyoruz.",
       image: "/images/implementation-service.jpeg",
       slug: "implementation",
     },
@@ -91,7 +94,7 @@ export default function ServicesPage() {
 
             {/* Hizmetlerimiz Başlığı - Kelime olarak animasyon */}
             <motion.div
-              className="text-[#c4975a] text-[8vw] sm:text-[6vw] md:text-[5vw] lg:text-[4vw] xl:text-[3vw] flex justify-center"
+              className="text-[#c4975a] text-[8vw] sm:text-[6vw] md:text-[5vw] lg:text-[4vw] xl:text-[3vw] flex justify-center font-display"
               initial={{ opacity: 0, y: -30, scale: 0.8 }}
               animate={isLoaded ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -30, scale: 0.8 }}
               transition={{
@@ -164,7 +167,7 @@ export default function ServicesPage() {
               onClick={openQuoteForm}
               className="inline-flex items-center gap-2 bg-shinest-blue text-white px-8 py-4 rounded-full font-sans font-medium hover:bg-shinest-blue/80 transition-colors duration-300"
             >
-              <span>{t("services.getQuote")}</span>
+              <span>Teklif Al</span>
             </button>
           </motion.div>
         </div>

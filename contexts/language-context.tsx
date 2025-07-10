@@ -1,57 +1,70 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, type ReactNode } from "react"
 
-type Language = "TR" | "EN"
+type Language = "tr" | "en"
 
 interface LanguageContextType {
-  currentLanguage: Language
+  language: Language
   setLanguage: (lang: Language) => void
   t: (key: string) => string
 }
 
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
+
 const translations = {
-  TR: {
-    "nav.home": "Ana Sayfa",
-    "nav.about": "Hakkımızda",
-    "nav.services": "Hizmetler",
-    "nav.projects": "Projeler",
-    "nav.blog": "Blog",
-    "nav.contact": "İletişim",
+  tr: {
+    home: "Ana Sayfa",
+    about: "Hakkımızda",
+    services: "Hizmetler",
+    projects: "Projeler",
+    blog: "Blog",
+    contact: "İletişim",
+    getQuote: "Teklif Al",
+    ourServices: "Hizmetlerimiz",
+    consulting: "Danışmanlık",
+    design: "Tasarım",
+    implementation: "Uygulama",
+    viewDetails: "Detayları Gör",
+    allProjects: "Tüm Projeler",
+    readMore: "Devamını Oku",
+    contactUs: "Bize Ulaşın",
+    phone: "Telefon",
+    email: "E-posta",
+    address: "Adres",
+    followUs: "Bizi Takip Edin",
   },
-  EN: {
-    "nav.home": "Home",
-    "nav.about": "About",
-    "nav.services": "Services",
-    "nav.projects": "Projects",
-    "nav.blog": "Blog",
-    "nav.contact": "Contact",
+  en: {
+    home: "Home",
+    about: "About",
+    services: "Services",
+    projects: "Projects",
+    blog: "Blog",
+    contact: "Contact",
+    getQuote: "Get Quote",
+    ourServices: "Our Services",
+    consulting: "Consulting",
+    design: "Design",
+    implementation: "Implementation",
+    viewDetails: "View Details",
+    allProjects: "All Projects",
+    readMore: "Read More",
+    contactUs: "Contact Us",
+    phone: "Phone",
+    email: "Email",
+    address: "Address",
+    followUs: "Follow Us",
   },
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
-
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [currentLanguage, setCurrentLanguage] = useState<Language>("TR")
-
-  useEffect(() => {
-    const saved = localStorage.getItem("language") as Language
-    if (saved && (saved === "TR" || saved === "EN")) {
-      setCurrentLanguage(saved)
-    }
-  }, [])
-
-  const setLanguage = (lang: Language) => {
-    setCurrentLanguage(lang)
-    localStorage.setItem("language", lang)
-  }
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguage] = useState<Language>("tr")
 
   const t = (key: string): string => {
-    return translations[currentLanguage][key as keyof typeof translations.TR] || key
+    return translations[language][key as keyof typeof translations.tr] || key
   }
 
-  return <LanguageContext.Provider value={{ currentLanguage, setLanguage, t }}>{children}</LanguageContext.Provider>
+  return <LanguageContext.Provider value={{ language, setLanguage, t }}>{children}</LanguageContext.Provider>
 }
 
 export function useLanguage() {

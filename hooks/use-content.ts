@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { githubRealtime } from "@/lib/github-realtime"
 
 interface ContentData {
   [key: string]: any
@@ -18,30 +17,73 @@ export function useContent(page: string) {
       setError(null)
 
       const response = await fetch(`/api/content/${page}`, {
-        method: "GET",
+        cache: "no-store",
         headers: {
           "Cache-Control": "no-cache",
         },
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      if (response.ok) {
+        const data = await response.json()
+        setContent(data)
+      } else {
+        throw new Error(`Failed to fetch content for ${page}`)
       }
-
-      const data = await response.json()
-      setContent(data)
     } catch (err) {
-      console.error(`Failed to fetch ${page} content:`, err)
-      setError(err instanceof Error ? err.message : "Failed to fetch content")
+      console.error(`Error fetching content for ${page}:`, err)
+      setError(err instanceof Error ? err.message : "Unknown error")
 
-      // Set default content on error
-      setContent(getDefaultContent(page))
+      // Set fallback content for home page
+      if (page === "home") {
+        setContent({
+          hero: {
+            title: "SHINEST",
+            subtitle: "İÇ MİMARLIK",
+            description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
+            image: "/images/hero-image.png",
+          },
+          bigText: {
+            line1: "MEKANLARINIZ",
+            line2: "YAŞAMINIZA",
+            line3: "IŞIK TUTAR!",
+          },
+          gallery: {
+            images: [
+              "/images/gallery-1.png",
+              "/images/gallery-2.png",
+              "/images/gallery-3.png",
+              "/images/gallery-4.png",
+              "/images/gallery-5.png",
+            ],
+          },
+          services: {
+            title: "Hizmetlerimiz",
+            items: [
+              {
+                title: "Danışmanlık",
+                description: "Profesyonel iç mimarlık danışmanlığı",
+                image: "/images/consulting-service.png",
+              },
+              {
+                title: "Tasarım",
+                description: "Yaratıcı ve fonksiyonel tasarım çözümleri",
+                image: "/images/design-service.png",
+              },
+              {
+                title: "Uygulama",
+                description: "Tasarımdan uygulamaya kadar tüm süreçler",
+                image: "/images/implementation-service.png",
+              },
+            ],
+          },
+        })
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  const saveContent = async (newContent: ContentData) => {
+  const updateContent = async (newContent: ContentData) => {
     try {
       const response = await fetch(`/api/content/${page}`, {
         method: "POST",
@@ -51,38 +93,38 @@ export function useContent(page: string) {
         body: JSON.stringify(newContent),
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
+      if (response.ok) {
+        const result = await response.json()
+        setContent(newContent)
 
-      const savedData = await response.json()
-      setContent(savedData)
-      return savedData
+        // Trigger cache revalidation
+        await fetch("/api/revalidate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            path: `/${page === "home" ? "" : page}`,
+            all: true,
+          }),
+        })
+
+        return { success: true, message: result.message }
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Update failed")
+      }
     } catch (err) {
-      console.error(`Failed to save ${page} content:`, err)
-      throw err
+      console.error(`Error updating content for ${page}:`, err)
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }
     }
   }
 
   useEffect(() => {
     fetchContent()
-
-    // Subscribe to real-time updates
-    const unsubscribe = githubRealtime.subscribe(page, (update) => {
-      console.log(`Content update received for ${page}:`, update)
-      fetchContent() // Refetch content when updates are received
-    })
-
-    // Also subscribe to general content updates
-    const unsubscribeGeneral = githubRealtime.subscribe("content", (update) => {
-      console.log(`General content update received:`, update)
-      fetchContent()
-    })
-
-    return () => {
-      unsubscribe()
-      unsubscribeGeneral()
-    }
   }, [page])
 
   return {
@@ -90,88 +132,6 @@ export function useContent(page: string) {
     loading,
     error,
     refetch: fetchContent,
-    saveContent,
+    updateContent,
   }
-}
-
-function getDefaultContent(page: string): ContentData {
-  const defaults: Record<string, ContentData> = {
-    home: {
-      hero: {
-        title: "SHINEST",
-        subtitle: "Interior Design Studio",
-        description: "Creating beautiful spaces that inspire and delight",
-        image: "/images/hero-image.png",
-      },
-      about: {
-        title: "About Us",
-        content: "We are passionate about creating beautiful interior spaces.",
-        image: "/images/about-section-reference.png",
-      },
-      services: {
-        title: "Our Services",
-        items: [
-          {
-            title: "Interior Design",
-            description: "Complete interior design solutions",
-            image: "/images/design-service.png",
-          },
-          {
-            title: "Consulting",
-            description: "Professional design consulting",
-            image: "/images/consulting-service.png",
-          },
-          {
-            title: "Implementation",
-            description: "Full project implementation",
-            image: "/images/implementation-service.png",
-          },
-        ],
-      },
-      gallery: {
-        title: "Our Work",
-        images: [
-          "/images/gallery-1.png",
-          "/images/gallery-2.png",
-          "/images/gallery-3.png",
-          "/images/gallery-4.png",
-          "/images/gallery-5.png",
-        ],
-      },
-    },
-    global: {
-      header: {
-        logo: "/images/shinest-logo.png",
-        navigation: [
-          { label: "Ana Sayfa", href: "/" },
-          { label: "Hakkımızda", href: "/about" },
-          { label: "Hizmetler", href: "/services" },
-          { label: "Projeler", href: "/projects" },
-          { label: "Blog", href: "/blog" },
-          { label: "İletişim", href: "/contact" },
-        ],
-        social: {
-          instagram: "https://instagram.com/shinest",
-          youtube: "https://youtube.com/shinest",
-          linkedin: "https://linkedin.com/company/shinest",
-        },
-      },
-      footer: {
-        logo: "/images/shinest-logo.png",
-        description: "Professional interior design services",
-        contact: {
-          phone: "+90 555 123 4567",
-          email: "info@shinest.com",
-          address: "Istanbul, Turkey",
-        },
-        social: {
-          instagram: "https://instagram.com/shinest",
-          youtube: "https://youtube.com/shinest",
-          linkedin: "https://linkedin.com/company/shinest",
-        },
-      },
-    },
-  }
-
-  return defaults[page] || {}
 }

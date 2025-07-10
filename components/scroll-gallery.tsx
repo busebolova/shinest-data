@@ -37,7 +37,7 @@ const projects = [
   },
 ]
 
-export default function ScrollGallery() {
+export function ScrollGallery() {
   const containerRef = useRef(null)
 
   const { scrollYProgress } = useScroll({
@@ -187,3 +187,5 @@ export default function ScrollGallery() {
     </section>
   )
 }
+
+export default ScrollGallery

@@ -1,33 +1,40 @@
 import { NextResponse } from "next/server"
-import { githubAPI } from "@/lib/github-api"
+import { dataManager } from "@/lib/data-manager"
+import { revalidatePath } from "next/cache"
 
 export async function GET(request: Request, { params }: { params: { page: string } }) {
   try {
-    const content = await githubAPI.getPageContent(params.page)
-    return NextResponse.json(content || {})
+    const { page } = params
+    const content = await dataManager.getPageContent(page)
+    return NextResponse.json(content)
   } catch (error) {
-    console.error(`Page content fetch failed for ${params.page}:`, error)
-    return NextResponse.json(
-      {
-        error: "Sayfa içeriği alınamadı",
-        message: error instanceof Error ? error.message : "Bilinmeyen hata",
-      },
-      { status: 500 },
-    )
+    console.error(`Error fetching content for ${params.page}:`, error)
+    return NextResponse.json({})
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { page: string } }) {
+export async function POST(request: Request, { params }: { params: { page: string } }) {
   try {
+    const { page } = params
     const content = await request.json()
-    await githubAPI.savePageContent(params.page, content)
-    return NextResponse.json({ success: true, message: "İçerik kaydedildi" })
+
+    await dataManager.savePageContent(page, content)
+
+    // Revalidate the specific page and admin page
+    revalidatePath(`/${page === "home" ? "" : page}`)
+    revalidatePath(`/admin/content/${page}`)
+
+    return NextResponse.json({
+      success: true,
+      message: `${page} sayfası içeriği başarıyla güncellendi`,
+    })
   } catch (error) {
-    console.error(`Page content save failed for ${params.page}:`, error)
+    console.error(`Error updating content for ${params.page}:`, error)
     return NextResponse.json(
       {
-        error: "İçerik kaydedilemedi",
-        message: error instanceof Error ? error.message : "Bilinmeyen hata",
+        success: false,
+        message: "İçerik güncellenirken hata oluştu",
+        error: error instanceof Error ? error.message : "Bilinmeyen hata",
       },
       { status: 500 },
     )

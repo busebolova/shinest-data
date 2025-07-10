@@ -1,157 +1,169 @@
 "use client"
 
-import { motion, useInView } from "framer-motion"
+import { motion } from "framer-motion"
+import { useInView } from "framer-motion"
 import { useRef } from "react"
-import { useLanguage } from "@/contexts/language-context"
-import Link from "next/link"
 import { useQuoteForm } from "@/contexts/quote-form-context"
 import Image from "next/image"
 
-export default function ServiceCards() {
-  const { t } = useLanguage()
-  const { openQuoteForm } = useQuoteForm()
+// Animated text component for letter-by-letter animation
+function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
+  const letters = text.split("")
+
+  return (
+    <span className="inline-block">
+      {letters.map((letter, index) => (
+        <motion.span
+          key={index}
+          className="inline-block"
+          initial={{ opacity: 0, y: 50, rotateX: -90, scale: 0.8 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+          transition={{
+            duration: 0.6,
+            delay: delay + index * 0.05,
+            ease: [0.25, 0.46, 0.45, 0.94],
+          }}
+        >
+          {letter === " " ? "\u00A0" : letter}
+        </motion.span>
+      ))}
+    </span>
+  )
+}
+
+export function ServiceCards() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
+  const { openQuoteForm } = useQuoteForm()
 
   const services = [
     {
-      id: "consulting",
-      title: t("services.consulting"),
-      description: t("services.consulting.desc"),
-      slug: "consulting",
-      image: "/images/consulting-service.png", // .jpeg'den .png'ye değiştirildi
+      id: 1,
+      title: "Danışmanlık",
+      description: "Profesyonel iç mimarlık danışmanlığı ile hayalinizdeki mekanı planlayın.",
+      image: "/images/consulting-service.png",
+      features: ["Mekan Analizi", "Konsept Geliştirme", "Bütçe Planlama"],
     },
     {
-      id: "design",
-      title: t("services.design"),
-      description: t("services.design.desc"),
-      slug: "design",
-      image: "/images/design-service.png", // .jpeg'den .png'ye değiştirildi
+      id: 2,
+      title: "Tasarım",
+      description: "Yaratıcı ve işlevsel tasarım çözümleri ile mekanlarınızı dönüştürün.",
+      image: "/images/design-service.png",
+      features: ["3D Görselleştirme", "Teknik Çizimler", "Malzeme Seçimi"],
     },
     {
-      id: "implementation",
-      title: t("services.implementation"),
-      description: t("services.implementation.desc"),
-      slug: "implementation",
-      image: "/images/implementation-service.png", // .jpeg'den .png'ye değiştirildi
+      id: 3,
+      title: "Uygulama",
+      description: "Tasarımdan uygulamaya kadar tüm süreçleri profesyonelce yönetiyoruz.",
+      image: "/images/implementation-service.png",
+      features: ["Proje Yönetimi", "Kalite Kontrolü", "Zamanında Teslimat"],
     },
   ]
 
   return (
-    <section ref={ref} className="py-20 bg-white">
-      <div className="container mx-auto px-4 sm:px-6">
+    <section ref={ref} className="py-16 bg-white">
+      <div className="container mx-auto px-4">
+        {/* Services Title */}
         <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 50 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
           transition={{ duration: 0.8 }}
         >
-          <motion.h2
-            className="font-display text-3xl sm:text-4xl md:text-5xl text-shinest-blue mb-6"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            {t("services.title")}
-          </motion.h2>
-          <motion.p
-            className="font-sans text-base sm:text-lg text-[#2a2a2a] max-w-2xl mx-auto px-4"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            SHINEST İç Mimarlık olarak müşterilerimize özel, yenilikçi ve fonksiyonel tasarım çözümleri sunuyoruz.
-          </motion.p>
+          <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-[#15415b] mb-8">Hizmetlerimiz</h2>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10 max-w-6xl mx-auto">
+        {/* Service Cards */}
+        <div className="grid md:grid-cols-3 gap-8 mb-20">
           {services.map((service, index) => (
             <motion.div
               key={service.id}
-              className="group flex flex-col h-full overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
+              className="group bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
               initial={{ opacity: 0, y: 50 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-              transition={{ duration: 0.8, delay: 0.6 + index * 0.2 }}
+              transition={{ duration: 0.6, delay: index * 0.2 }}
               whileHover={{ y: -5 }}
             >
-              {/* Görsel */}
-              <div className="relative h-64 w-full overflow-hidden">
+              <div className="relative h-64 overflow-hidden">
                 <Image
                   src={service.image || "/placeholder.svg"}
                   alt={service.title}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-110"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-70"></div>
-                <h3 className="absolute bottom-4 left-4 right-4 font-display text-xl sm:text-2xl text-white">
-                  {service.title}
-                </h3>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
               </div>
 
-              {/* İçerik */}
-              <div className="flex flex-col flex-grow p-6 bg-white">
-                <p className="font-sans text-[#2a2a2a] mb-6 leading-relaxed text-sm md:text-base flex-grow">
-                  {service.description}
-                </p>
+              <div className="p-6">
+                <h3 className="font-display text-2xl text-[#15415b] mb-3">{service.title}</h3>
+                <p className="font-sans text-gray-600 mb-4 leading-relaxed">{service.description}</p>
 
-                {/* Link */}
-                <div className="mt-auto">
-                  <Link
-                    href={`/services/${service.slug}`}
-                    className="inline-flex items-center gap-2 bg-transparent border-2 border-shinest-blue text-shinest-blue px-6 py-3 rounded-full font-sans font-medium transition-colors duration-200 hover:bg-shinest-blue/10"
-                  >
-                    <span>Detaylar</span>
-                  </Link>
-                </div>
+                <ul className="space-y-2">
+                  {service.features.map((feature, idx) => (
+                    <li key={idx} className="font-sans text-sm text-gray-500 flex items-center">
+                      <span className="w-2 h-2 bg-[#c4975a] rounded-full mr-3"></span>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Ana Teklif Al Butonu */}
+        {/* Large Animated Text */}
         <motion.div
-          className="text-center mt-20 px-4"
+          className="text-center mb-16"
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 1, delay: 1.5 }}
+        >
+          <div className="font-display text-6xl md:text-7xl lg:text-8xl xl:text-9xl text-[#15415b] leading-tight tracking-tight flex justify-center flex-wrap">
+            <div className="w-full">
+              <AnimatedText text="MEKANLARINIZ" delay={1.6} />
+            </div>
+            <div className="w-full">
+              <AnimatedText text="YAŞAMINIZA" delay={2.2} />
+            </div>
+            <div className="w-full">
+              <AnimatedText text="IŞIK" delay={2.8} />
+              <span className="mx-4"></span>
+              <AnimatedText text="TUTAR!" delay={3.0} />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Subtitle */}
+        <motion.div
+          className="text-center mb-16"
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
+          transition={{ duration: 0.8, delay: 3.5 }}
         >
-          <div className="w-full max-w-2xl mx-auto">
-            {/* Üst çizgi */}
-            <motion.div
-              className="h-px bg-gradient-to-r from-transparent via-shinest-blue/40 to-transparent mb-8"
-              initial={{ scaleX: 0 }}
-              animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
-              transition={{ duration: 1.5, delay: 1.4 }}
-            />
+          <p className="font-sans text-sm sm:text-base md:text-lg text-gray-600 max-w-4xl mx-auto leading-relaxed">
+            SHINEST İç Mimarlık, tam kapsamlı lüks iç mekan tasarım hizmetleri sunar — ilk konsept ve estetik
+            danışmanlıktan koordinasyon, uygulama ve dergiye layık son dokunuşlara kadar.
+          </p>
+        </motion.div>
 
-            {/* Ana Teklif Al Butonu */}
-            <motion.button
-              onClick={openQuoteForm}
-              className="group relative bg-transparent border-2 border-shinest-blue text-shinest-blue px-12 py-4 rounded-full font-display text-xl md:text-2xl font-normal tracking-[0.05em] uppercase overflow-hidden transition-colors duration-200 ease-out hover:text-white"
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              transition={{ duration: 0.8, delay: 1.6 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {/* Arka plan fill animasyonu */}
-              <div className="absolute inset-0 bg-shinest-blue rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-400 ease-out origin-center delay-75" />
-
-              {/* Metin */}
-              <span className="relative z-10 transition-colors duration-200">{t("services.getQuote")}</span>
-            </motion.button>
-
-            {/* Alt çizgi */}
-            <motion.div
-              className="h-px bg-gradient-to-r from-transparent via-shinest-blue/40 to-transparent mt-8"
-              initial={{ scaleX: 0 }}
-              animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
-              transition={{ duration: 1.5, delay: 1.8 }}
-            />
-          </div>
+        {/* CTA Button */}
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.8, delay: 4.0 }}
+        >
+          <button
+            onClick={openQuoteForm}
+            className="font-display bg-[#15415b] text-white px-12 py-4 rounded-full text-lg font-semibold hover:bg-[#1a4a66] transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+          >
+            Teklif Al
+          </button>
         </motion.div>
       </div>
     </section>
   )
 }
+
+export default ServiceCards

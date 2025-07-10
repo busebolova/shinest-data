@@ -43,9 +43,7 @@ export default function AboutInfoSection() {
             animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Yaşam alanlarınızı sanat eserine dönüştürüyoruz. Her projede özgün tasarım anlayışımızla, işlevsellik ve
-            estetiği mükemmel bir uyumda birleştirerek, sizin hikayenizi mekanlarınızda yaşatıyoruz. Hayallerinizden
-            gerçeğe uzanan bu yolculukta, her detay özenle tasarlanır.
+            Yeni projeler, tasarım trendleri ve özel içerikler için bültenimize katılın
           </motion.p>
 
           {/* İlham Bülteni Başlığı */}
@@ -57,15 +55,6 @@ export default function AboutInfoSection() {
           >
             İlham Bülteni
           </motion.h3>
-
-          <motion.p
-            className="font-sans text-base md:text-lg text-[#2a2a2a] leading-relaxed max-w-2xl mx-auto mb-8"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-          >
-            Yeni projeler, tasarım trendleri ve özel içerikler için bültenimize katılın
-          </motion.p>
 
           {/* E-posta Formu */}
           <motion.div

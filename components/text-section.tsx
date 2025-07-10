@@ -1,103 +1,110 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { useContent } from "@/hooks/use-content"
-import { useLanguage } from "@/contexts/language-context"
+import { useInView } from "framer-motion"
+import { useRef } from "react"
+import { useQuoteForm } from "@/contexts/quote-form-context"
+import Image from "next/image"
 
-export function TextSection() {
-  const { content, loading } = useContent("home")
-  const { currentLanguage } = useLanguage()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted || loading) {
-    return (
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="animate-pulse space-y-8">
-            <div className="h-20 bg-gray-200 rounded w-3/4 mx-auto"></div>
-            <div className="h-16 bg-gray-200 rounded w-2/3 mx-auto"></div>
-            <div className="h-12 bg-gray-200 rounded w-1/2 mx-auto"></div>
-          </div>
-        </div>
-      </section>
-    )
-  }
-
-  const textData = content?.textSection || {
-    mainText1: { tr: "MEKANLARINIZ", en: "YOUR SPACES" },
-    mainText2: { tr: "YAŞAMINIZA", en: "BRING LIGHT TO" },
-    handwritingText: { tr: "ışık tutar!", en: "your life!" },
-    description: {
-      tr: "SHINEST İç Mimarlık olarak, yaşam alanlarınızı sanat eserine dönüştürüyoruz.",
-      en: "As SHINEST Interior Architecture, we transform your living spaces into works of art.",
-    },
-  }
-
-  const getLocalizedText = (textObj: any) => {
-    if (typeof textObj === "string") return textObj
-    return textObj?.[currentLanguage.toLowerCase()] || textObj?.tr || textObj?.en || ""
-  }
+// Animated text component for letter-by-letter animation
+function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
+  const letters = text.split("")
 
   return (
-    <section className="py-32 bg-white relative overflow-hidden">
-      <div className="container mx-auto px-6">
-        <div className="max-w-6xl mx-auto text-center">
-          {/* Main Text 1 */}
-          <motion.h2
-            className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-shinest-blue mb-6 tracking-wider leading-tight"
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            {getLocalizedText(textData.mainText1)}
-          </motion.h2>
+    <span className="inline-block">
+      {letters.map((letter, index) => (
+        <motion.span
+          key={index}
+          className="inline-block"
+          initial={{ opacity: 0, y: 50, rotateX: -90, scale: 0.8 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+          transition={{
+            duration: 0.6,
+            delay: delay + index * 0.05,
+            ease: [0.25, 0.46, 0.45, 0.94],
+          }}
+        >
+          {letter === " " ? "\u00A0" : letter}
+        </motion.span>
+      ))}
+    </span>
+  )
+}
 
-          {/* Main Text 2 */}
-          <motion.h3
-            className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-shinest-blue mb-8 tracking-wider leading-tight"
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            viewport={{ once: true }}
-          >
-            {getLocalizedText(textData.mainText2)}
-          </motion.h3>
+export function TextSection() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
+  const { openQuoteForm } = useQuoteForm()
 
-          {/* Handwriting Text */}
+  return (
+    <section ref={ref} className="py-20 bg-white relative overflow-hidden">
+      <div className="container mx-auto px-4 relative z-10">
+        {/* Handwriting Style Text */}
+        <motion.div
+          className="mb-12"
+          initial={{ opacity: 0, x: -50 }}
+          animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
+          transition={{ duration: 1.0, delay: 0.2 }}
+        >
+          <div className="relative">
+            <Image
+              src="/images/mekanlariniz-text.png"
+              alt="Mekanlarınız Yaşamınıza Işık Tutar"
+              width={300}
+              height={120}
+              className="opacity-80"
+            />
+          </div>
+        </motion.div>
+
+        {/* Main Content */}
+        <div className="max-w-4xl">
+          {/* Large Animated Text */}
           <motion.div
-            className="mb-16"
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.4 }}
-            viewport={{ once: true }}
+            className="mb-8"
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 1, delay: 0.8 }}
           >
-            <span className="font-handwriting text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-shinest-gold inline-block transform -rotate-3">
-              {getLocalizedText(textData.handwritingText)}
-            </span>
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-[#15415b] leading-tight mb-6">
+              <AnimatedText text="Hayallerinizle" delay={0.9} />
+              <br />
+              <AnimatedText text="Buluşturalım" delay={1.4} />
+            </h2>
           </motion.div>
 
           {/* Description */}
-          <motion.p
-            className="font-sans text-lg sm:text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed"
+          <motion.div
+            className="mb-8"
             initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            viewport={{ once: true }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 2.0 }}
           >
-            {getLocalizedText(textData.description)}
-          </motion.p>
-        </div>
-      </div>
+            <p className="font-sans text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl">
+              Her proje, benzersiz bir hikaye anlatır. Biz de sizin hikayanizi en güzel şekilde yaşam alanlarınıza
+              yansıtıyoruz.
+            </p>
+          </motion.div>
 
-      {/* Decorative Elements */}
-      <div className="absolute top-20 left-10 w-32 h-32 bg-shinest-blue/5 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 right-10 w-40 h-40 bg-shinest-gold/10 rounded-full blur-3xl"></div>
+          {/* CTA Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 2.4 }}
+          >
+            <button
+              onClick={openQuoteForm}
+              className="font-display bg-[#4285f4] text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-[#3367d6] transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+            >
+              Teklif Al
+            </button>
+          </motion.div>
+        </div>
+
+        {/* Background Decorative Elements */}
+        <div className="absolute top-1/4 right-8 w-32 h-32 bg-[#c4975a] rounded-full opacity-5" />
+        <div className="absolute bottom-1/4 right-1/4 w-20 h-20 bg-[#15415b] rounded-full opacity-5" />
+      </div>
     </section>
   )
 }

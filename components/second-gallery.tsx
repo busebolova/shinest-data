@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 import Image from "next/image"
 
-export default function SecondGallery() {
+export function SecondGallery() {
   const galleryRef = useRef(null)
 
   // Gallery scroll animations
@@ -55,7 +55,7 @@ export default function SecondGallery() {
   return (
     <section
       ref={galleryRef}
-      className="min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh] bg-[#f9f7f4] relative overflow-hidden py-8 md:py-16"
+      className="min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh] bg-white relative overflow-hidden"
     >
       <div className="w-full h-full relative">
         {galleryImages.map((image) => (
@@ -86,3 +86,5 @@ export default function SecondGallery() {
     </section>
   )
 }
+
+export default SecondGallery

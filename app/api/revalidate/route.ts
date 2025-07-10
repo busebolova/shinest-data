@@ -1,24 +1,43 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { revalidatePath } from "next/cache"
+import { NextResponse } from "next/server"
+import { revalidatePath, revalidateTag } from "next/cache"
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { path } = body
+    const { path, tag, all } = await request.json()
 
     if (path) {
       revalidatePath(path)
-      return NextResponse.json({ revalidated: true, path })
     }
 
-    // Revalidate common paths
-    revalidatePath("/")
-    revalidatePath("/projects")
-    revalidatePath("/admin")
+    if (tag) {
+      revalidateTag(tag)
+    }
 
-    return NextResponse.json({ revalidated: true, paths: ["/", "/projects", "/admin"] })
+    if (all) {
+      // Revalidate all common pages
+      revalidatePath("/")
+      revalidatePath("/projects")
+      revalidatePath("/blog")
+      revalidatePath("/about")
+      revalidatePath("/services")
+      revalidatePath("/contact")
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Cache başarıyla temizlendi",
+      revalidated: true,
+      timestamp: new Date().toISOString(),
+    })
   } catch (error) {
-    console.error("Revalidation error:", error)
-    return NextResponse.json({ error: "Failed to revalidate" }, { status: 500 })
+    console.error("Error revalidating:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Cache temizlenirken hata oluştu",
+        error: error instanceof Error ? error.message : "Bilinmeyen hata",
+      },
+      { status: 500 },
+    )
   }
 }

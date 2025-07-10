@@ -1,101 +1,84 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
+import { dataManager } from "@/lib/data-manager"
 import { revalidatePath } from "next/cache"
-
-// In-memory storage for demo (in production, use database)
-let homeContent = {
-  hero: {
-    title: "SHINEST",
-    subtitle: "İÇ MİMARLIK",
-    description: "Hayalinizdeki mekanları gerçeğe dönüştürüyoruz",
-    image: "/images/hero-image.png",
-  },
-  about: {
-    title: "Hakkımızda",
-    description: "Modern ve şık tasarımlarla yaşam alanlarınızı dönüştürüyoruz.",
-    image: "/images/about-image.png",
-  },
-  services: [
-    {
-      id: 1,
-      title: "Danışmanlık",
-      description: "Profesyonel iç mimarlık danışmanlığı",
-      image: "/images/consulting-service.png",
-    },
-    {
-      id: 2,
-      title: "Tasarım",
-      description: "Özel tasarım çözümleri",
-      image: "/images/design-service.png",
-    },
-    {
-      id: 3,
-      title: "Uygulama",
-      description: "Projelerinizi hayata geçiriyoruz",
-      image: "/images/implementation-service.png",
-    },
-  ],
-  gallery: [
-    { id: 1, image: "/images/gallery-1.png", title: "Modern Salon" },
-    { id: 2, image: "/images/gallery-2.png", title: "Lüks Yatak Odası" },
-    { id: 3, image: "/images/gallery-3.png", title: "Şık Mutfak" },
-    { id: 4, image: "/images/gallery-4.png", title: "Çalışma Odası" },
-    { id: 5, image: "/images/gallery-5.png", title: "Banyo Tasarımı" },
-  ],
-}
 
 export async function GET() {
   try {
-    return NextResponse.json(homeContent)
+    const content = await dataManager.getPageContent("home")
+    return NextResponse.json(content)
   } catch (error) {
     console.error("Error fetching home content:", error)
-    return NextResponse.json({ error: "Failed to fetch content" }, { status: 500 })
+
+    // Return fallback content
+    const fallbackContent = {
+      hero: {
+        title: "SHINEST",
+        subtitle: "İÇ MİMARLIK",
+        description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
+        image: "/images/hero-image.png",
+      },
+      bigText: {
+        line1: "MEKANLARINIZ",
+        line2: "YAŞAMINIZA",
+        line3: "IŞIK TUTAR!",
+      },
+      gallery: {
+        images: [
+          "/images/gallery-1.png",
+          "/images/gallery-2.png",
+          "/images/gallery-3.png",
+          "/images/gallery-4.png",
+          "/images/gallery-5.png",
+        ],
+      },
+      services: {
+        title: "Hizmetlerimiz",
+        items: [
+          {
+            title: "Danışmanlık",
+            description: "Profesyonel iç mimarlık danışmanlığı",
+            image: "/images/consulting-service.png",
+          },
+          {
+            title: "Tasarım",
+            description: "Yaratıcı ve fonksiyonel tasarım çözümleri",
+            image: "/images/design-service.png",
+          },
+          {
+            title: "Uygulama",
+            description: "Tasarımdan uygulamaya kadar tüm süreçler",
+            image: "/images/implementation-service.png",
+          },
+        ],
+      },
+    }
+
+    return NextResponse.json(fallbackContent)
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const content = await request.json()
+    await dataManager.savePageContent("home", content)
 
-    // Update the content
-    homeContent = { ...homeContent, ...body }
-
-    // Revalidate the home page to update the cache
+    // Revalidate home page and admin page
     revalidatePath("/")
     revalidatePath("/admin/content/home")
 
     return NextResponse.json({
       success: true,
-      message: "Content updated successfully",
-      data: homeContent,
+      message: "Ana sayfa içeriği başarıyla güncellendi",
     })
   } catch (error) {
     console.error("Error updating home content:", error)
-    return NextResponse.json({ error: "Failed to update content" }, { status: 500 })
-  }
-}
-
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { section, data } = body
-
-    if (section && homeContent[section as keyof typeof homeContent]) {
-      homeContent[section as keyof typeof homeContent] = data
-    } else {
-      homeContent = { ...homeContent, ...body }
-    }
-
-    // Revalidate pages
-    revalidatePath("/")
-    revalidatePath("/admin/content/home")
-
-    return NextResponse.json({
-      success: true,
-      message: `${section || "Content"} updated successfully`,
-      data: homeContent,
-    })
-  } catch (error) {
-    console.error("Error updating content:", error)
-    return NextResponse.json({ error: "Failed to update content" }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        message: "İçerik güncellenirken hata oluştu",
+        error: error instanceof Error ? error.message : "Bilinmeyen hata",
+      },
+      { status: 500 },
+    )
   }
 }
