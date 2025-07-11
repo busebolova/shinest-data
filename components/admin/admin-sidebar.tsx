@@ -1,96 +1,112 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import {
-  LayoutDashboard,
-  FolderOpen,
-  FileText,
-  ImageIcon,
-  Settings,
-  Home,
-  ChevronLeft,
-  ChevronRight,
-  Edit,
-  Globe,
-} from "lucide-react"
+import { cn } from "@/utils/classname"
 import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { RealtimeStatus } from "@/components/admin/realtime-status"
+import { LayoutDashboard, FileText, X, ChevronDown, ChevronRight } from "lucide-react"
+import Image from "next/image"
 
-const navigation = [
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Ana Sayfa Düzenle", href: "/admin/content/home", icon: Home },
-  { name: "Sayfa İçerikleri", href: "/admin/content/pages", icon: Edit },
-  { name: "Global İçerik", href: "/admin/content/global", icon: Globe },
-  { name: "Projeler", href: "/admin/projects", icon: FolderOpen },
-  { name: "Blog", href: "/admin/blog", icon: FileText },
-  { name: "Medya", href: "/admin/media", icon: ImageIcon },
-  { name: "Ayarlar", href: "/admin/settings", icon: Settings },
-]
+interface SidebarProps {
+  className?: string
+}
 
-export function AdminSidebar() {
+export function AdminSidebar({ className }: SidebarProps) {
   const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({
+    content: pathname?.startsWith("/admin/content") || false,
+    projects: pathname?.startsWith("/admin/projects") || false,
+  })
 
-  return (
-    <div
-      className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-white border-r border-gray-200 transition-all duration-300",
-        collapsed ? "w-16" : "w-64",
-      )}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
-            </div>
-            <div>
-              <h2 className="font-semibold text-gray-900">SHINEST</h2>
-              <p className="text-xs text-gray-500">Admin Panel</p>
-            </div>
-          </div>
-        )}
-        <Button variant="ghost" size="sm" onClick={() => setCollapsed(!collapsed)} className="p-1.5 h-auto">
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+  // Close mobile menu when path changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [pathname])
+
+  const toggleSubmenu = (key: string) => {
+    setOpenSubmenus((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }))
+  }
+
+  const isActive = (path: string) => {
+    if (path === "/admin" && pathname === "/admin") {
+      return true
+    }
+    return path !== "/admin" && pathname?.startsWith(path)
+  }
+
+  const sidebarContent = (
+    <>
+      <div className="flex items-center justify-between px-4 py-2">
+        <Link href="/" className="flex items-center">
+          <Image src="/images/shinest-logo.png" alt="SHINEST" width={120} height={40} className="h-8 w-auto" />
+        </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <X className="h-5 w-5" />
         </Button>
       </div>
 
-      {/* Navigation */}
-      <nav className="p-4 space-y-2">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-blue-50 text-blue-700 border border-blue-200"
-                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
-                collapsed && "justify-center",
-              )}
-              title={collapsed ? item.name : undefined}
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              {!collapsed && <span>{item.name}</span>}
-            </Link>
-          )
-        })}
-      </nav>
+      <Separator className="my-2" />
 
-      {/* Footer */}
-      {!collapsed && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-          <div className="text-xs text-gray-500 text-center">
-            <p>© 2024 SHINEST</p>
-            <p>Admin Panel v1.0</p>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+      <div className="px-4 py-2">
+        <RealtimeStatus />
+      </div>
+
+      <Separator className="my-2" />
+
+      <ScrollArea className="flex-1 px-2">
+        <div className="space-y-1 py-2">
+          <Link href="/admin">
+            <Button
+              variant={isActive("/admin") ? "secondary" : "ghost"}
+              size="sm"
+              className={cn("w-full justify-start", isActive("/admin") && "bg-[#c4975a]/10 text-[#c4975a]")}
+            >
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Dashboard
+            </Button>
+          </Link>
+
+          {/* Content Management */}
+          <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-between"
+              onClick={() => toggleSubmenu("content")}
+            >
+              <span className="flex items-center">
+                <FileText className="mr-2 h-4 w-4" />
+                İçerik Yönetimi
+              </span>
+              {openSubmenus.content ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </Button>
+
+            {openSubmenus.content && (
+              <div className="ml-4 mt-1 space-y-1">
+                <Link href="/admin/content">
+                  <Button
+                    variant={isActive("/admin/content") && !pathname?.includes("/admin/content/") ? "secondary" : "ghost"}
+                    size="sm"
+                    className={cn(
+                      "w-full justify-start",
+                      isActive("/admin/content") && !pathname?.includes("/admin/content/") && "bg-[#c4975a]/10 text-[#c4975a]"
+                    )}
+                  >
+                    <FileText className="mr-2 h-3 w-3" />\

@@ -1,70 +1,34 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
 type Language = "tr" | "en"
 
 interface LanguageContextType {
   language: Language
   setLanguage: (lang: Language) => void
-  t: (key: string) => string
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
-const translations = {
-  tr: {
-    home: "Ana Sayfa",
-    about: "Hakkımızda",
-    services: "Hizmetler",
-    projects: "Projeler",
-    blog: "Blog",
-    contact: "İletişim",
-    getQuote: "Teklif Al",
-    ourServices: "Hizmetlerimiz",
-    consulting: "Danışmanlık",
-    design: "Tasarım",
-    implementation: "Uygulama",
-    viewDetails: "Detayları Gör",
-    allProjects: "Tüm Projeler",
-    readMore: "Devamını Oku",
-    contactUs: "Bize Ulaşın",
-    phone: "Telefon",
-    email: "E-posta",
-    address: "Adres",
-    followUs: "Bizi Takip Edin",
-  },
-  en: {
-    home: "Home",
-    about: "About",
-    services: "Services",
-    projects: "Projects",
-    blog: "Blog",
-    contact: "Contact",
-    getQuote: "Get Quote",
-    ourServices: "Our Services",
-    consulting: "Consulting",
-    design: "Design",
-    implementation: "Implementation",
-    viewDetails: "View Details",
-    allProjects: "All Projects",
-    readMore: "Read More",
-    contactUs: "Contact Us",
-    phone: "Phone",
-    email: "Email",
-    address: "Address",
-    followUs: "Follow Us",
-  },
-}
-
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>("tr")
 
-  const t = (key: string): string => {
-    return translations[language][key as keyof typeof translations.tr] || key
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("language") as Language
+    if (savedLanguage && (savedLanguage === "tr" || savedLanguage === "en")) {
+      setLanguage(savedLanguage)
+    }
+  }, [])
+
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang)
+    localStorage.setItem("language", lang)
   }
 
-  return <LanguageContext.Provider value={{ language, setLanguage, t }}>{children}</LanguageContext.Provider>
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage }}>{children}</LanguageContext.Provider>
+  )
 }
 
 export function useLanguage() {

@@ -1,522 +1,367 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, useInView } from "framer-motion"
-import { useRef } from "react"
+import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, Calendar, MapPin, Eye } from "lucide-react"
-import { useLanguage } from "@/contexts/language-context"
-import { useQuoteForm } from "@/contexts/quote-form-context"
+import { MapPin, Calendar, Users, Star } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 
 interface Project {
-  id: string
-  title: {
-    tr: string
-    en: string
-  }
-  description: {
-    tr: string
-    en: string
-  }
-  category: {
-    tr: string
-    en: string
-  }
-  images: string[]
-  featured: boolean
-  status: "draft" | "published"
-  year: string
+  id: number
+  title: string
+  category: string
   location: string
-  area?: string
+  area: string
+  year: string
+  description: string
+  image: string
+  featured?: boolean
+  status?: string
+  features?: string[]
   client?: string
-  slug: string
-  features?: {
-    tr: string[]
-    en: string[]
-  }
-}
-
-// Animated text component for letter-by-letter animation
-function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
-  const letters = text.split("")
-
-  return (
-    <span className="inline-block">
-      {letters.map((letter, index) => (
-        <motion.span
-          key={index}
-          className="inline-block"
-          initial={{ opacity: 0, y: 50, rotateX: -90, scale: 0.8 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-          transition={{
-            duration: 0.6,
-            delay: delay + index * 0.05,
-            ease: [0.25, 0.46, 0.45, 0.94],
-          }}
-        >
-          {letter === " " ? "\u00A0" : letter}
-        </motion.span>
-      ))}
-    </span>
-  )
 }
 
 export default function ProjectsPage() {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-100px" })
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const { language } = useLanguage()
-  const { openQuoteForm } = useQuoteForm()
+  const [isLoaded, setIsLoaded] = useState(false)
+  const shinestLetters = "SHINEST".split("")
 
-  // Default projects data
-  const defaultProjects: Project[] = [
+  // Static projects that are always available
+  const staticProjects: Project[] = [
     {
-      id: "1",
-      title: {
-        tr: "Modern Yaşam Alanı",
-        en: "Modern Living Space",
-      },
-      description: {
-        tr: "Minimalist tasarım anlayışıyla modern yaşam alanı projesi. Açık plan konsepti ile geniş ve ferah bir atmosfer yaratılmıştır.",
-        en: "Modern living space project with minimalist design approach. An open plan concept creates a spacious and airy atmosphere.",
-      },
-      category: {
-        tr: "Konut",
-        en: "Residential",
-      },
-      images: ["/images/poland-apartment-1.png", "/images/poland-apartment-2.png"],
-      featured: true,
-      status: "published",
-      year: "2024",
+      id: 1,
+      title: "Modern Yaşam Alanı",
+      category: "residential",
       location: "İstanbul",
       area: "120m²",
-      slug: "modern-yasam-alani",
-      features: {
-        tr: ["Açık Plan Konsept", "Modern Mobilyalar", "Doğal Aydınlatma"],
-        en: ["Open Plan Concept", "Modern Furniture", "Natural Lighting"],
-      },
+      year: "2024",
+      description:
+        "Minimalist tasarım anlayışı ile modern yaşam alanı tasarımı. Açık plan konsepti ve doğal ışık kullanımı ile konforlu ve estetik bir yaşam alanı yarattık. Her detay düşünülerek tasarlanan bu projede, kullanıcının ihtiyaçları ve modern yaşam tarzı bir araya getirildi.",
+      image: "/images/modern-living-room.jpeg",
+      featured: true,
+      features: ["Açık Plan", "Doğal Işık", "Modern Mobilya", "Akıllı Ev Sistemi"],
+      client: "Özel Müşteri",
     },
     {
-      id: "2",
-      title: {
-        tr: "Lüks Ofis Tasarımı",
-        en: "Luxury Office Design",
-      },
-      description: {
-        tr: "Profesyonel ve şık ofis iç mekan tasarımı projesi. Çalışan verimliliğini artıran ergonomik çözümler uygulanmıştır.",
-        en: "Professional and elegant office interior design project. Ergonomic solutions that increase employee productivity have been implemented.",
-      },
-      category: {
-        tr: "Ofis",
-        en: "Office",
-      },
-      images: ["/images/modern-wooden-office.png"],
-      featured: true,
-      status: "published",
-      year: "2024",
+      id: 2,
+      title: "Lüks Ofis Tasarımı",
+      category: "office",
       location: "Ankara",
       area: "200m²",
-      slug: "luks-ofis-tasarimi",
-      features: {
-        tr: ["Ergonomik Tasarım", "Akıllı Sistemler", "Toplantı Odaları"],
-        en: ["Ergonomic Design", "Smart Systems", "Meeting Rooms"],
-      },
+      year: "2024",
+      description:
+        "Kurumsal kimliği yansıtan lüks ofis tasarımı. Fonksiyonellik ve estetik mükemmel uyum içinde. Çalışanların verimliliğini artıracak ergonomik çözümler ve şık tasarım elementleri ile modern iş dünyasının gereksinimlerini karşılayan bir çalışma ortamı yaratıldı.",
+      image: "/images/modern-wooden-office.png",
+      featured: true,
+      features: ["Kurumsal Tasarım", "Ergonomik Mobilya", "Ses İzolasyonu", "Toplantı Odaları"],
+      client: "Teknoloji Şirketi",
     },
     {
-      id: "3",
-      title: {
-        tr: "Butik Otel Lobisi",
-        en: "Boutique Hotel Lobby",
-      },
-      description: {
-        tr: "Konforlu ve etkileyici otel lobisi tasarım projesi. Misafirlere unutulmaz bir karşılama deneyimi sunmaktadır.",
-        en: "Comfortable and impressive hotel lobby design project. It offers guests an unforgettable welcome experience.",
-      },
-      category: {
-        tr: "Ticari",
-        en: "Commercial",
-      },
-      images: ["/images/luxury-hotel-lobby.png"],
-      featured: false,
-      status: "published",
-      year: "2024",
+      id: 3,
+      title: "Butik Otel Lobisi",
+      category: "commercial",
       location: "İzmir",
       area: "300m²",
-      slug: "butik-otel-lobisi",
-      features: {
-        tr: ["Lüks Mobilyalar", "Özel Aydınlatma", "Karşılama Alanı"],
-        en: ["Luxury Furniture", "Special Lighting", "Reception Area"],
-      },
+      year: "2023",
+      description:
+        "Misafirleri karşılayan etkileyici lobi tasarımı. Lüks ve konfor bir arada. Otelin prestijini yansıtan özel tasarım elementleri ve kaliteli malzemeler kullanılarak, unutulmaz bir ilk izlenim yaratan mekan tasarlandı.",
+      image: "/images/luxury-hotel-lobby.png",
+      features: ["Lüks Malzemeler", "Özel Aydınlatma", "Resepsiyon Tasarımı", "Oturma Alanları"],
+      client: "Butik Otel",
     },
     {
-      id: "4",
-      title: {
-        tr: "Yatak Odası Tasarımı",
-        en: "Bedroom Design",
-      },
-      description: {
-        tr: "Rahat ve şık yatak odası iç mekan tasarımı. Dinlendirici renkler ve fonksiyonel mobilyalar kullanılmıştır.",
-        en: "Comfortable and elegant bedroom interior design. Relaxing colors and functional furniture are used.",
-      },
-      category: {
-        tr: "Konut",
-        en: "Residential",
-      },
-      images: ["/images/bedroom-design-1.png", "/images/bedroom-design-2.png"],
-      featured: false,
-      status: "published",
-      year: "2023",
+      id: 4,
+      title: "Yatak Odası Tasarımı",
+      category: "residential",
       location: "Bursa",
       area: "25m²",
-      slug: "yatak-odasi-tasarimi",
-      features: {
-        tr: ["Özel Dolap Tasarımı", "Yumuşak Aydınlatma", "Konforlu Yatak"],
-        en: ["Custom Wardrobe Design", "Soft Lighting", "Comfortable Bed"],
-      },
+      year: "2023",
+      description:
+        "Huzurlu ve rahat bir yatak odası tasarımı. Depolama çözümleri ve konfor odaklı yaklaşım. Dinlendirici renkler ve yumuşak dokular kullanılarak, günün yorgunluğunu atacağınız kişisel bir sığınak yaratıldı.",
+      image: "/images/bedroom-design-1.png",
+      features: ["Gömme Dolap", "Özel Aydınlatma", "Konforlu Yatak", "Çalışma Alanı"],
+      client: "Genç Çift",
     },
     {
-      id: "5",
-      title: {
-        tr: "Cafe İç Mekan",
-        en: "Cafe Interior",
-      },
-      description: {
-        tr: "Modern ve sıcak cafe iç mekan tasarım projesi. Müşterilerin rahat edebileceği samimi bir atmosfer yaratılmıştır.",
-        en: "Modern and warm cafe interior design project. An intimate atmosphere has been created where customers can relax.",
-      },
-      category: {
-        tr: "Ticari",
-        en: "Commercial",
-      },
-      images: ["/images/cafe-design-1.png", "/images/cafe-design-2.png"],
-      featured: false,
-      status: "published",
-      year: "2023",
+      id: 5,
+      title: "Cafe İç Mekan",
+      category: "commercial",
       location: "Antalya",
       area: "80m²",
-      slug: "cafe-ic-mekan",
-      features: {
-        tr: ["Sıcak Atmosfer", "Özel Bar Tasarımı", "Rahat Oturma"],
-        en: ["Warm Atmosphere", "Custom Bar Design", "Comfortable Seating"],
-      },
+      year: "2023",
+      description:
+        "Sıcak ve davetkar cafe tasarımı. Müşteri deneyimini ön planda tutan konsept. Doğal malzemeler ve sıcak renklerle, müşterilerin rahatça vakit geçirebileceği samimi bir atmosfer yaratıldı.",
+      image: "/images/cafe-design-1.png",
+      features: ["Sıcak Atmosfer", "Özel Bar", "Oturma Düzeni", "Marka Kimliği"],
+      client: "Cafe Sahibi",
     },
     {
-      id: "6",
-      title: {
-        tr: "Banyo Tasarımı",
-        en: "Bathroom Design",
-      },
-      description: {
-        tr: "Lüks ve fonksiyonel banyo tasarım projesi. Modern donanımlar ve kaliteli malzemeler kullanılmıştır.",
-        en: "Luxury and functional bathroom design project. Modern equipment and quality materials are used.",
-      },
-      category: {
-        tr: "Konut",
-        en: "Residential",
-      },
-      images: ["/images/bathroom-design-1.png", "/images/bathroom-design-2.png"],
-      featured: false,
-      status: "published",
-      year: "2023",
+      id: 6,
+      title: "Banyo Tasarımı",
+      category: "residential",
       location: "İstanbul",
       area: "15m²",
-      slug: "banyo-tasarimi",
-      features: {
-        tr: ["Mermer Detaylar", "Akıllı Aynalar", "Lüks Armatürler"],
-        en: ["Marble Details", "Smart Mirrors", "Luxury Fixtures"],
-      },
+      year: "2024",
+      description:
+        "Modern ve fonksiyonel banyo tasarımı. Su tasarrufu ve estetik bir arada. Kompakt alanda maksimum işlevsellik sağlayan akıllı çözümler ve kaliteli malzemelerle lüks bir banyo deneyimi sunuldu.",
+      image: "/images/bathroom-design-1.png",
+      features: ["Modern Armatürler", "Duş Kabini", "Depolama", "LED Aydınlatma"],
+      client: "Aile",
     },
   ]
 
-  // Get projects from localStorage (admin panel data)
-  const getProjectsFromStorage = (): Project[] => {
-    if (typeof window === "undefined") return []
+  // Load projects from localStorage and combine with static projects
+  const loadProjects = () => {
+    console.log("🚀 ProjectsPage: Starting to load projects...")
 
-    try {
-      const storedProjects = localStorage.getItem("shinest_projects")
-      if (storedProjects) {
-        const parsed = JSON.parse(storedProjects)
-        return Array.isArray(parsed) ? parsed : []
+    // Try to get admin projects from localStorage
+    const adminProjects = localStorage.getItem("shinest_projects")
+    let allProjects = [...staticProjects]
+
+    if (adminProjects) {
+      try {
+        const parsedAdminProjects = JSON.parse(adminProjects)
+        if (Array.isArray(parsedAdminProjects)) {
+          const publishedAdminProjects = parsedAdminProjects.filter(
+            (project: Project) => project.status === "published",
+          )
+          console.log(`📊 Found ${parsedAdminProjects.length} admin projects`)
+          console.log(`✅ ${publishedAdminProjects.length} published admin projects`)
+
+          // Add admin projects to the beginning
+          allProjects = [...publishedAdminProjects, ...staticProjects]
+        }
+      } catch (error) {
+        console.error("Error parsing admin projects:", error)
       }
-    } catch (error) {
-      console.error("Error reading projects from localStorage:", error)
     }
 
-    return []
+    console.log(`🔄 Combined: ${allProjects.length} total projects`)
+    setProjects(allProjects)
+    setLoading(false)
+  }
+
+  const handleQuoteClick = () => {
+    alert("Teklif formu yakında eklenecek!")
   }
 
   useEffect(() => {
-    const loadProjects = () => {
-      try {
-        // First try to get from localStorage (admin panel)
-        const storageProjects = getProjectsFromStorage()
+    // Sayfa yüklendiğinde scroll'u en üste al
+    window.scrollTo(0, 0)
 
-        if (storageProjects.length > 0) {
-          // Filter only published projects
-          const publishedProjects = storageProjects.filter((project: Project) => project.status === "published")
-          setProjects(publishedProjects.length > 0 ? publishedProjects : defaultProjects)
-        } else {
-          // Fallback to default projects
-          setProjects(defaultProjects)
-        }
-      } catch (error) {
-        console.error("Error loading projects:", error)
-        setProjects(defaultProjects)
-      } finally {
-        setLoading(false)
-      }
-    }
+    // State'leri reset et
+    setIsLoaded(false)
+    setLoading(true)
 
+    // Load projects
     loadProjects()
 
-    // Listen for storage changes (when admin adds/updates projects)
+    // Listen for storage changes (when admin adds new projects)
     const handleStorageChange = () => {
+      console.log("📡 Storage changed, reloading projects...")
       loadProjects()
     }
 
     window.addEventListener("storage", handleStorageChange)
-    return () => window.removeEventListener("storage", handleStorageChange)
+
+    // Kısa bir delay sonra animasyonları başlat
+    const initialTimer = setTimeout(() => {
+      setIsLoaded(true)
+    }, 100)
+
+    return () => {
+      clearTimeout(initialTimer)
+      window.removeEventListener("storage", handleStorageChange)
+    }
   }, [])
-
-  const content = {
-    tr: {
-      title: "Projelerimiz",
-      all: "Tümü",
-      residential: "Konut",
-      commercial: "Ticari",
-      office: "Ofis",
-      viewProject: "Projeyi İncele",
-      noProjects: "Henüz yayınlanmış proje bulunmuyor.",
-      loading: "Projeler yükleniyor...",
-      description:
-        "SHINEST İç Mimarlık, tam kapsamlı lüks iç mekan tasarım hizmetleri sunar — ilk konsept ve estetik danışmanlıktan koordinasyon, uygulama ve dergiye layık son dokunuşlara kadar.",
-      cta: "Teklif Al",
-    },
-    en: {
-      title: "Our Projects",
-      all: "All",
-      residential: "Residential",
-      commercial: "Commercial",
-      office: "Office",
-      viewProject: "View Project",
-      noProjects: "No published projects found.",
-      loading: "Loading projects...",
-      description:
-        "SHINEST Interior Architecture provides comprehensive luxury interior design services — from initial concept and aesthetic consultation to coordination, implementation and magazine-worthy finishing touches.",
-      cta: "Get Quote",
-    },
-  }
-
-  const currentContent = content[language]
-
-  // Get unique categories
-  const categories = [
-    { key: "all", label: currentContent.all },
-    { key: "residential", label: currentContent.residential },
-    { key: "commercial", label: currentContent.commercial },
-    { key: "office", label: currentContent.office },
-  ]
-
-  // Filter projects by category
-  const filteredProjects =
-    selectedCategory === "all"
-      ? projects
-      : projects.filter((project) => {
-          const categoryKey = project.category[language].toLowerCase()
-          return (
-            categoryKey.includes(selectedCategory) ||
-            (selectedCategory === "residential" &&
-              (categoryKey.includes("konut") || categoryKey.includes("villa") || categoryKey.includes("yatak"))) ||
-            (selectedCategory === "commercial" &&
-              (categoryKey.includes("ticari") || categoryKey.includes("otel") || categoryKey.includes("cafe"))) ||
-            (selectedCategory === "office" && categoryKey.includes("ofis"))
-          )
-        })
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-white">
+      <div className="min-h-screen bg-[#f5f3f0]">
         <Header />
-        <div className="pt-32">
-          <div className="container mx-auto px-4">
-            <div className="text-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#c4975a] mx-auto"></div>
-              <p className="mt-4 text-gray-600">{currentContent.loading}</p>
-            </div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-[#15415b] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 text-lg">Projeler yükleniyor...</p>
           </div>
         </div>
         <Footer />
-      </main>
+      </div>
     )
   }
 
+  // Show only featured projects (first 6)
+  const featuredProjects = projects.filter((project) => project.featured).slice(0, 6)
+
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-[#f5f3f0]">
       <Header />
 
-      <section ref={ref} className="pt-32 py-16 bg-white">
-        <div className="container mx-auto px-4">
-          {/* Projects Title */}
+      <section className="pt-32 sm:pt-36 md:pt-40 pb-20">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+          {/* Header - Mobile Responsive */}
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-12 md:mb-16"
             initial={{ opacity: 0, y: 50 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-            transition={{ duration: 0.8 }}
+            animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+            transition={{ duration: 1.0, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
-            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-[#15415b] mb-8">
-              {currentContent.title}
-            </h2>
+            {/* SHINEST - Yukarıdan gelen harf animasyonu */}
+            <div className="font-display text-[16vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[8vw] text-shinest-blue leading-[0.85] font-normal mb-6 md:mb-8 flex justify-center">
+              {shinestLetters.map((letter, index) => (
+                <motion.span
+                  key={index}
+                  className="inline-block"
+                  initial={{ opacity: 0, y: -50, scale: 0.8 }}
+                  animate={isLoaded ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -50, scale: 0.8 }}
+                  transition={{
+                    duration: 1.2,
+                    delay: 0.3 + index * 0.08,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                    type: "spring",
+                    stiffness: 100,
+                    damping: 12,
+                  }}
+                >
+                  {letter}
+                </motion.span>
+              ))}
+            </div>
+
+            {/* Projelerimiz Başlığı */}
+            <motion.div
+              className="text-[#c4975a] text-[8vw] sm:text-[6vw] md:text-[5vw] lg:text-[4vw] xl:text-[3vw] flex justify-center font-display"
+              initial={{ opacity: 0, y: -30, scale: 0.8 }}
+              animate={isLoaded ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -30, scale: 0.8 }}
+              transition={{
+                duration: 1.2,
+                delay: 1.3,
+                ease: [0.25, 0.46, 0.45, 0.94],
+                type: "spring",
+                stiffness: 100,
+                damping: 12,
+              }}
+            >
+              Projelerimiz
+            </motion.div>
           </motion.div>
 
-          {/* Category Filter */}
-          <motion.div
-            className="flex flex-wrap justify-center gap-4 mb-12"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            {categories.map((category) => (
-              <button
-                key={category.key}
-                onClick={() => setSelectedCategory(category.key)}
-                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
-                  selectedCategory === category.key
-                    ? "bg-[#c4975a] text-white shadow-lg"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
-          </motion.div>
-
-          {/* Project Cards */}
-          <div className="grid md:grid-cols-3 gap-8 mb-20">
-            {filteredProjects.map((project, index) => (
+          {/* Projeler Listesi */}
+          <div className="grid grid-cols-1 gap-16 mb-16">
+            {featuredProjects.map((project, index) => (
               <motion.div
                 key={project.id}
-                className="group bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+                className={`grid grid-cols-1 lg:grid-cols-2 gap-8 items-center ${
+                  index % 2 === 1 ? "lg:flex-row-reverse" : ""
+                }`}
                 initial={{ opacity: 0, y: 50 }}
-                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
-                whileHover={{ y: -5 }}
+                animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+                transition={{ duration: 0.8, delay: 1.8 + index * 0.2 }}
               >
-                <div className="relative h-64 overflow-hidden">
+                {/* Görsel */}
+                <div
+                  className={`relative h-[300px] sm:h-[400px] rounded-lg overflow-hidden shadow-lg ${
+                    index % 2 === 1 ? "lg:order-2" : "lg:order-1"
+                  }`}
+                >
                   <Image
-                    src={project.images[0] || "/placeholder.svg?height=300&width=400"}
-                    alt={project.title[language]}
+                    src={project.image || "/placeholder.svg"}
+                    alt={project.title}
                     fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-110"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  <div className="absolute top-4 left-4">
-                    <span className="bg-[#c4975a] text-white px-3 py-1 rounded-full text-sm font-medium">
-                      {project.category[language]}
-                    </span>
-                  </div>
+
+                  {/* Featured Badge */}
                   {project.featured && (
-                    <div className="absolute top-4 right-4">
-                      <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                        {language === "tr" ? "Öne Çıkan" : "Featured"}
-                      </span>
+                    <div className="absolute top-4 left-4 bg-[#c4975a] text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                      <Star size={14} fill="currentColor" />
+                      Öne Çıkan
                     </div>
                   )}
                 </div>
 
-                <div className="p-6">
-                  <h3 className="font-display text-2xl text-[#15415b] mb-3">{project.title[language]}</h3>
-                  <p className="font-sans text-gray-600 mb-4 leading-relaxed">{project.description[language]}</p>
+                {/* İçerik */}
+                <div className={`space-y-6 ${index % 2 === 1 ? "lg:order-1" : "lg:order-2"}`}>
+                  <h2 className="font-display text-3xl text-shinest-blue">{project.title}</h2>
 
-                  <ul className="space-y-2 mb-4">
-                    {project.features?.[language]?.map((feature, idx) => (
-                      <li key={idx} className="font-sans text-sm text-gray-500 flex items-center">
-                        <span className="w-2 h-2 bg-[#c4975a] rounded-full mr-3"></span>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>{project.year}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="w-4 h-4" />
+                  {/* Proje Detayları */}
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <MapPin size={14} />
                       <span>{project.location}</span>
                     </div>
-                    {project.area && (
-                      <div className="flex items-center space-x-1">
-                        <Eye className="w-4 h-4" />
-                        <span>{project.area}</span>
+                    <div className="flex items-center gap-1">
+                      <Calendar size={14} />
+                      <span>{project.year}</span>
+                    </div>
+                    {project.client && (
+                      <div className="flex items-center gap-1">
+                        <Users size={14} />
+                        <span>{project.client}</span>
                       </div>
                     )}
+                    <div className="bg-[#c4975a] text-white px-2 py-1 rounded text-xs">{project.area}</div>
                   </div>
 
+                  <p className="font-sans text-lg text-[#2a2a2a] leading-relaxed">{project.description}</p>
+
+                  {/* Features */}
+                  {project.features && (
+                    <div className="flex flex-wrap gap-2">
+                      {project.features.map((feature, idx) => (
+                        <span key={idx} className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   <Link
-                    href={`/projects/${project.slug}`}
-                    className="inline-flex items-center space-x-2 text-[#c4975a] font-medium hover:text-[#b8864d] transition-colors duration-300"
+                    href={`/projects/${project.id}`}
+                    className="inline-flex items-center gap-2 bg-shinest-blue text-white px-6 py-3 rounded-full font-sans font-medium hover:bg-shinest-blue/80 transition-colors duration-300"
                   >
-                    <span>{currentContent.viewProject}</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                    <span>Detaylı Bilgi</span>
                   </Link>
                 </div>
               </motion.div>
             ))}
           </div>
 
-          {/* Large Animated Text */}
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : { opacity: 0 }}
-            transition={{ duration: 1, delay: 1.5 }}
-          >
-            <div className="font-display text-6xl md:text-7xl lg:text-8xl xl:text-9xl text-[#15415b] leading-tight tracking-tight flex justify-center flex-wrap">
-              <div className="w-full">
-                <AnimatedText text="MEKANLARINIZ" delay={1.6} />
-              </div>
-              <div className="w-full">
-                <AnimatedText text="YAŞAMINIZA" delay={2.2} />
-              </div>
-              <div className="w-full">
-                <AnimatedText text="IŞIK" delay={2.8} />
-                <span className="mx-4"></span>
-                <AnimatedText text="TUTAR!" delay={3.0} />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Subtitle */}
+          {/* All Projects Link */}
           <motion.div
             className="text-center mb-16"
             initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.8, delay: 3.5 }}
+            animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 2.6 }}
           >
-            <p className="font-sans text-sm sm:text-base md:text-lg text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              {currentContent.description}
-            </p>
-          </motion.div>
-
-          {/* CTA Button */}
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.8, delay: 4.0 }}
-          >
-            <button
-              onClick={openQuoteForm}
-              className="font-display bg-[#15415b] text-white px-12 py-4 rounded-full text-lg font-semibold hover:bg-[#1a4a66] transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+            <Link
+              href="/projects/all"
+              className="inline-flex items-center gap-2 bg-white text-shinest-blue border-2 border-shinest-blue px-8 py-4 rounded-full font-sans font-medium hover:bg-shinest-blue hover:text-white transition-colors duration-300"
             >
-              {currentContent.cta}
+              <span>Tüm Projeleri Gör</span>
+            </Link>
+          </motion.div>
+
+          {/* CTA */}
+          <motion.div
+            className="text-center bg-white p-8 sm:p-12 rounded-lg shadow-lg"
+            initial={{ opacity: 0, y: 30 }}
+            animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 2.8 }}
+          >
+            <h3 className="font-display text-2xl sm:text-3xl text-shinest-blue mb-4">Projeniz İçin Teklif Alın</h3>
+            <p className="font-sans text-lg text-[#2a2a2a] mb-6 max-w-3xl mx-auto">
+              SHINEST İç Mimarlık olarak, her projeye özel çözümler sunuyoruz. Hayalinizdeki mekanı birlikte yaratalım.
+            </p>
+            <button
+              onClick={handleQuoteClick}
+              className="inline-flex items-center gap-2 bg-shinest-blue text-white px-8 py-4 rounded-full font-sans font-medium hover:bg-shinest-blue/80 transition-colors duration-300"
+            >
+              <span>Teklif Al</span>
             </button>
           </motion.div>
         </div>

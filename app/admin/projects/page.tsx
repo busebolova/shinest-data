@@ -10,9 +10,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Plus, Edit, Trash2, Save, X } from "lucide-react"
-import { toast } from "sonner"
+import { Plus, Edit, Trash2, Save, X, RefreshCw, Search } from "lucide-react"
 import Image from "next/image"
+import { githubRealtime } from "@/lib/github-realtime"
 
 interface Project {
   id: string
@@ -35,6 +35,10 @@ export default function AdminProjectsPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [refreshing, setRefreshing] = useState(false)
+  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   const emptyProject: Omit<Project, "id" | "createdAt" | "updatedAt"> = {
     title: { tr: "", en: "" },
@@ -50,7 +54,29 @@ export default function AdminProjectsPage() {
 
   useEffect(() => {
     fetchProjects()
+
+    // Subscribe to realtime updates
+    const unsubscribe = githubRealtime.onMessage((data) => {
+      if (data.type === "sync") {
+        // Refresh projects when sync happens
+        fetchProjects()
+      }
+    })
+
+    return () => {
+      unsubscribe()
+    }
   }, [])
+
+  // Auto-hide notifications after 3 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
 
   const fetchProjects = async () => {
     try {
@@ -65,10 +91,16 @@ export default function AdminProjectsPage() {
       }
     } catch (error) {
       console.error("Error fetching projects:", error)
-      toast.error("Projeler yüklenirken hata oluştu")
+      setNotification({ type: "error", message: "Projeler yüklenirken hata oluştu" })
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
+  }
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await fetchProjects()
   }
 
   const handleSave = async (project: Project | Omit<Project, "id" | "createdAt" | "updatedAt">) => {
@@ -89,7 +121,10 @@ export default function AdminProjectsPage() {
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
-          toast.success(isNew ? "Proje başarıyla oluşturuldu!" : "Proje başarıyla güncellendi!")
+          setNotification({
+            type: "success",
+            message: isNew ? "Proje başarıyla oluşturuldu!" : "Proje başarıyla güncellendi!",
+          })
           await fetchProjects() // Listeyi yenile
           setEditingProject(null)
           setIsCreating(false)
@@ -101,7 +136,7 @@ export default function AdminProjectsPage() {
       }
     } catch (error) {
       console.error("Save error:", error)
-      toast.error("Kaydetme sırasında hata oluştu")
+      setNotification({ type: "error", message: "Kaydetme sırasında hata oluştu" })
     } finally {
       setSaving(false)
     }
@@ -118,7 +153,7 @@ export default function AdminProjectsPage() {
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
-          toast.success("Proje başarıyla silindi!")
+          setNotification({ type: "success", message: "Proje başarıyla silindi!" })
           await fetchProjects()
         } else {
           throw new Error("Silme başarısız")
@@ -128,7 +163,7 @@ export default function AdminProjectsPage() {
       }
     } catch (error) {
       console.error("Delete error:", error)
-      toast.error("Silme sırasında hata oluştu")
+      setNotification({ type: "error", message: "Silme sırasında hata oluştu" })
     }
   }
 
@@ -146,7 +181,21 @@ export default function AdminProjectsPage() {
       .replace(/^-|-$/g, "")
   }
 
-  if (loading) {
+  // Filter projects based on search term and status
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch =
+      project.title.tr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.title.en.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.description.tr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.location.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus = filterStatus === "all" || project.status === filterStatus
+
+    return matchesSearch && matchesStatus
+  })
+
+  if (loading && projects.length === 0) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -160,18 +209,72 @@ export default function AdminProjectsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Notification */}
+      {notification && (
+        <div
+          className={`fixed top-4 right-4 p-4 rounded-md z-50 ${
+            notification.type === "success"
+              ? "bg-green-100 text-green-800 border border-green-200"
+              : "bg-red-100 text-red-800 border border-red-200"
+          }`}
+        >
+          {notification.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Projeler</h1>
           <p className="text-gray-600">Proje portföyünüzü yönetin</p>
         </div>
-        <Button onClick={() => setIsCreating(true)} className="bg-[#c4975a] hover:bg-[#b8864d]">
-          <Plus className="w-4 h-4 mr-2" />
-          Yeni Proje
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1 bg-transparent"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            <span className="hidden md:inline">Yenile</span>
+          </Button>
+          <Button onClick={() => setIsCreating(true)} className="bg-[#c4975a] hover:bg-[#b8864d]">
+            <Plus className="w-4 h-4 mr-2" />
+            Yeni Proje
+          </Button>
+        </div>
       </div>
+
+      {/* Filters */}
+      <Card className="overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Proje ara..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-2">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#c4975a]"
+              >
+                <option value="all">Tüm Durumlar</option>
+                <option value="published">Yayında</option>
+                <option value="draft">Taslak</option>
+                <option value="archived">Arşivlenmiş</option>
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Create/Edit Form */}
       {(isCreating || editingProject) && (
@@ -197,8 +300,8 @@ export default function AdminProjectsPage() {
 
       {/* Projects List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project) => (
-          <Card key={project.id} className="overflow-hidden">
+        {filteredProjects.map((project) => (
+          <Card key={project.id} className="overflow-hidden h-full flex flex-col">
             <div className="relative h-48">
               {project.images[0] ? (
                 <Image
@@ -216,12 +319,12 @@ export default function AdminProjectsPage() {
               <div className="absolute top-2 right-2 flex gap-2">
                 {project.featured && <Badge className="bg-[#c4975a]">Öne Çıkan</Badge>}
                 <Badge variant={project.status === "published" ? "default" : "secondary"}>
-                  {project.status === "published" ? "Yayında" : "Taslak"}
+                  {project.status === "published" ? "Yayında" : project.status === "draft" ? "Taslak" : "Arşiv"}
                 </Badge>
               </div>
             </div>
-            <CardContent className="p-4">
-              <div className="space-y-2">
+            <CardContent className="p-4 flex-1 flex flex-col">
+              <div className="space-y-2 flex-1">
                 <h3 className="font-semibold text-lg line-clamp-1">{project.title.tr}</h3>
                 <p className="text-sm text-gray-600 line-clamp-2">{project.description.tr}</p>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -232,7 +335,7 @@ export default function AdminProjectsPage() {
                   <span>{project.location}</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-100">
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => setEditingProject(project)} className="h-8 px-2">
                     <Edit className="w-3 h-3" />
@@ -253,6 +356,7 @@ export default function AdminProjectsPage() {
         ))}
       </div>
 
+      {/* Empty State */}
       {projects.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -264,6 +368,28 @@ export default function AdminProjectsPage() {
             <Button onClick={() => setIsCreating(true)} className="bg-[#c4975a] hover:bg-[#b8864d]">
               <Plus className="w-4 h-4 mr-2" />
               Yeni Proje
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No Results */}
+      {projects.length > 0 && filteredProjects.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="text-gray-400 mb-4">
+              <Search className="w-12 h-12" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Sonuç bulunamadı</h3>
+            <p className="text-gray-600 text-center mb-4">Arama kriterlerinize uygun proje bulunamadı</p>
+            <Button
+              onClick={() => {
+                setSearchTerm("")
+                setFilterStatus("all")
+              }}
+              variant="outline"
+            >
+              Filtreleri Temizle
             </Button>
           </CardContent>
         </Card>

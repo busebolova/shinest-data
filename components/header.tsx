@@ -2,158 +2,221 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import Link from "next/link"
 import Image from "next/image"
-import { Menu, X } from "lucide-react"
-import { useLanguage } from "@/contexts/language-context"
+import Link from "next/link"
+import { Menu, X, Globe } from "lucide-react"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
-  const { language, setLanguage } = useLanguage()
+  const [language, setLanguage] = useState<"tr" | "en">("tr")
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
+    const savedLanguage = localStorage.getItem("language") as "tr" | "en"
+    if (savedLanguage) {
+      setLanguage(savedLanguage)
     }
-
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const navigation = {
-    tr: [
-      { name: "Ana Sayfa", href: "/" },
-      { name: "Hakkımızda", href: "/about" },
-      { name: "Hizmetlerimiz", href: "/services" },
-      { name: "Projelerimiz", href: "/projects" },
-      { name: "Blog", href: "/blog" },
-      { name: "İletişim", href: "/contact" },
-    ],
-    en: [
-      { name: "Home", href: "/" },
-      { name: "About", href: "/about" },
-      { name: "Services", href: "/services" },
-      { name: "Projects", href: "/projects" },
-      { name: "Blog", href: "/blog" },
-      { name: "Contact", href: "/contact" },
-    ],
+  const handleLanguageChange = (lang: "tr" | "en") => {
+    setLanguage(lang)
+    localStorage.setItem("language", lang)
   }
 
-  const currentNavigation = navigation[language]
+  const content = {
+    tr: {
+      home: "Ana Sayfa",
+      about: "Hakkımızda",
+      services: "Hizmetler",
+      projects: "Projeler",
+      blog: "Blog",
+      contact: "İletişim",
+    },
+    en: {
+      home: "Home",
+      about: "About",
+      services: "Services",
+      projects: "Projects",
+      blog: "Blog",
+      contact: "Contact",
+    },
+  }
+
+  const currentContent = content[language]
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg" : "bg-white"
-      }`}
+      className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100"
       style={{ fontFamily: "Poppins, sans-serif" }}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-24">
-          {/* Logo - Bigger */}
-          <Link href="/" className="flex items-center">
+        <div className="flex items-center justify-between h-20">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-3">
             <div className="relative w-20 h-20 overflow-hidden">
-              <Image
-                src="/images/shinest-logo.png"
-                alt="SHINEST Logo"
-                fill
-                className="object-contain hover:scale-110 transition-transform duration-300"
-                sizes="80px"
-              />
+              <Image src="/images/shinest-logo.png" alt="SHINEST Logo" fill className="object-contain" priority />
             </div>
           </Link>
 
-          {/* Navigation - Centered */}
+          {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center justify-center flex-1">
             <div className="flex items-center space-x-8">
-              {currentNavigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="text-gray-700 hover:text-[#c4975a] font-medium transition-colors duration-300 relative group"
-                >
-                  {item.name}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#c4975a] transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-              ))}
+              <Link href="/" className="text-gray-700 hover:text-[#15415b] transition-colors duration-300 font-medium">
+                {currentContent.home}
+              </Link>
+              <Link
+                href="/about"
+                className="text-gray-700 hover:text-[#15415b] transition-colors duration-300 font-medium"
+              >
+                {currentContent.about}
+              </Link>
+              <Link
+                href="/services"
+                className="text-gray-700 hover:text-[#15415b] transition-colors duration-300 font-medium"
+              >
+                {currentContent.services}
+              </Link>
+              <Link
+                href="/projects"
+                className="text-gray-700 hover:text-[#15415b] transition-colors duration-300 font-medium"
+              >
+                {currentContent.projects}
+              </Link>
+              <Link
+                href="/blog"
+                className="text-gray-700 hover:text-[#15415b] transition-colors duration-300 font-medium"
+              >
+                {currentContent.blog}
+              </Link>
+              <Link
+                href="/contact"
+                className="text-gray-700 hover:text-[#15415b] transition-colors duration-300 font-medium"
+              >
+                {currentContent.contact}
+              </Link>
             </div>
           </nav>
 
-          {/* Language Switcher - Right */}
-          <div className="hidden lg:flex items-center space-x-4">
+          {/* Language Switcher & Mobile Menu */}
+          <div className="flex items-center space-x-4">
+            {/* Language Switcher - Desktop */}
+            <div className="hidden lg:flex items-center space-x-2">
+              <Globe size={16} className="text-gray-500" />
+              <button
+                onClick={() => handleLanguageChange("tr")}
+                className={`px-2 py-1 text-sm font-medium transition-colors duration-300 ${
+                  language === "tr" ? "text-[#15415b]" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                TR
+              </button>
+              <span className="text-gray-300">|</span>
+              <button
+                onClick={() => handleLanguageChange("en")}
+                className={`px-2 py-1 text-sm font-medium transition-colors duration-300 ${
+                  language === "en" ? "text-[#15415b]" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                EN
+              </button>
+            </div>
+
+            {/* Mobile Menu Button */}
             <button
-              onClick={() => setLanguage("tr")}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
-                language === "tr" ? "bg-[#c4975a] text-white" : "text-gray-600 hover:text-[#c4975a]"
-              }`}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="lg:hidden p-2 text-gray-700 hover:text-[#15415b] transition-colors duration-300"
             >
-              TR
-            </button>
-            <button
-              onClick={() => setLanguage("en")}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
-                language === "en" ? "bg-[#c4975a] text-white" : "text-gray-600 hover:text-[#c4975a]"
-              }`}
-            >
-              EN
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden p-2 text-gray-700 hover:text-[#c4975a] transition-colors duration-300"
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
         </div>
-      </div>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-white border-t border-gray-200"
-          >
-            <div className="container mx-auto px-4 py-4">
-              <nav className="flex flex-col space-y-4">
-                {currentNavigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="text-gray-700 hover:text-[#c4975a] font-medium transition-colors duration-300 py-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-                <div className="flex items-center space-x-4 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={() => setLanguage("tr")}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
-                      language === "tr" ? "bg-[#c4975a] text-white" : "text-gray-600 hover:text-[#c4975a]"
-                    }`}
-                  >
-                    TR
-                  </button>
-                  <button
-                    onClick={() => setLanguage("en")}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
-                      language === "en" ? "bg-[#c4975a] text-white" : "text-gray-600 hover:text-[#c4975a]"
-                    }`}
-                  >
-                    EN
-                  </button>
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="lg:hidden bg-white border-t border-gray-200"
+            >
+              <nav className="py-4 space-y-4">
+                <Link
+                  href="/"
+                  className="block px-4 py-2 text-gray-700 hover:text-[#15415b] hover:bg-gray-50 transition-colors duration-300 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {currentContent.home}
+                </Link>
+                <Link
+                  href="/about"
+                  className="block px-4 py-2 text-gray-700 hover:text-[#15415b] hover:bg-gray-50 transition-colors duration-300 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {currentContent.about}
+                </Link>
+                <Link
+                  href="/services"
+                  className="block px-4 py-2 text-gray-700 hover:text-[#15415b] hover:bg-gray-50 transition-colors duration-300 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {currentContent.services}
+                </Link>
+                <Link
+                  href="/projects"
+                  className="block px-4 py-2 text-gray-700 hover:text-[#15415b] hover:bg-gray-50 transition-colors duration-300 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {currentContent.projects}
+                </Link>
+                <Link
+                  href="/blog"
+                  className="block px-4 py-2 text-gray-700 hover:text-[#15415b] hover:bg-gray-50 transition-colors duration-300 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {currentContent.blog}
+                </Link>
+                <Link
+                  href="/contact"
+                  className="block px-4 py-2 text-gray-700 hover:text-[#15415b] hover:bg-gray-50 transition-colors duration-300 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {currentContent.contact}
+                </Link>
+
+                {/* Mobile Language Switcher */}
+                <div className="px-4 py-2 border-t border-gray-200">
+                  <div className="flex items-center space-x-4">
+                    <Globe size={16} className="text-gray-500" />
+                    <button
+                      onClick={() => {
+                        handleLanguageChange("tr")
+                        setIsMenuOpen(false)
+                      }}
+                      className={`px-3 py-1 text-sm font-medium rounded transition-colors duration-300 ${
+                        language === "tr" ? "bg-[#15415b] text-white" : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      Türkçe
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleLanguageChange("en")
+                        setIsMenuOpen(false)
+                      }}
+                      className={`px-3 py-1 text-sm font-medium rounded transition-colors duration-300 ${
+                        language === "en" ? "bg-[#15415b] text-white" : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      English
+                    </button>
+                  </div>
                 </div>
               </nav>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </header>
   )
 }

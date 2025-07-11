@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 // Mock projects data - this would normally come from a database
 const projects = [
   {
-    id: "1",
+    id: "api-1",
     title: {
       tr: "Modern Yaşam Alanı",
       en: "Modern Living Space",
@@ -29,7 +29,7 @@ const projects = [
     },
   },
   {
-    id: "2",
+    id: "api-2",
     title: {
       tr: "Lüks Ofis Tasarımı",
       en: "Luxury Office Design",
@@ -55,7 +55,7 @@ const projects = [
     },
   },
   {
-    id: "3",
+    id: "api-3",
     title: {
       tr: "Butik Otel Lobisi",
       en: "Boutique Hotel Lobby",
@@ -78,84 +78,6 @@ const projects = [
     features: {
       tr: ["Lüks Mobilyalar", "Özel Aydınlatma", "Karşılama Alanı"],
       en: ["Luxury Furniture", "Special Lighting", "Reception Area"],
-    },
-  },
-  {
-    id: "4",
-    title: {
-      tr: "Yatak Odası Tasarımı",
-      en: "Bedroom Design",
-    },
-    description: {
-      tr: "Rahat ve şık yatak odası iç mekan tasarımı. Dinlendirici renkler ve fonksiyonel mobilyalar kullanılmıştır.",
-      en: "Comfortable and elegant bedroom interior design. Relaxing colors and functional furniture are used.",
-    },
-    category: {
-      tr: "Konut",
-      en: "Residential",
-    },
-    images: ["/images/bedroom-design-1.png", "/images/bedroom-design-2.png"],
-    featured: false,
-    status: "published",
-    year: "2023",
-    location: "Bursa",
-    area: "25m²",
-    slug: "yatak-odasi-tasarimi",
-    features: {
-      tr: ["Özel Dolap Tasarımı", "Yumuşak Aydınlatma", "Konforlu Yatak"],
-      en: ["Custom Wardrobe Design", "Soft Lighting", "Comfortable Bed"],
-    },
-  },
-  {
-    id: "5",
-    title: {
-      tr: "Cafe İç Mekan",
-      en: "Cafe Interior",
-    },
-    description: {
-      tr: "Modern ve sıcak cafe iç mekan tasarım projesi. Müşterilerin rahat edebileceği samimi bir atmosfer yaratılmıştır.",
-      en: "Modern and warm cafe interior design project. An intimate atmosphere has been created where customers can relax.",
-    },
-    category: {
-      tr: "Ticari",
-      en: "Commercial",
-    },
-    images: ["/images/cafe-design-1.png", "/images/cafe-design-2.png"],
-    featured: false,
-    status: "published",
-    year: "2023",
-    location: "Antalya",
-    area: "80m²",
-    slug: "cafe-ic-mekan",
-    features: {
-      tr: ["Sıcak Atmosfer", "Özel Bar Tasarımı", "Rahat Oturma"],
-      en: ["Warm Atmosphere", "Custom Bar Design", "Comfortable Seating"],
-    },
-  },
-  {
-    id: "6",
-    title: {
-      tr: "Banyo Tasarımı",
-      en: "Bathroom Design",
-    },
-    description: {
-      tr: "Lüks ve fonksiyonel banyo tasarım projesi. Modern donanımlar ve kaliteli malzemeler kullanılmıştır.",
-      en: "Luxury and functional bathroom design project. Modern equipment and quality materials are used.",
-    },
-    category: {
-      tr: "Konut",
-      en: "Residential",
-    },
-    images: ["/images/bathroom-design-1.png", "/images/bathroom-design-2.png"],
-    featured: false,
-    status: "published",
-    year: "2023",
-    location: "İstanbul",
-    area: "15m²",
-    slug: "banyo-tasarimi",
-    features: {
-      tr: ["Mermer Detaylar", "Akıllı Aynalar", "Lüks Armatürler"],
-      en: ["Marble Details", "Smart Mirrors", "Luxury Fixtures"],
     },
   },
 ]

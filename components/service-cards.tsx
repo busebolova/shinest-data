@@ -3,7 +3,6 @@
 import { motion } from "framer-motion"
 import { useInView } from "framer-motion"
 import { useRef } from "react"
-import { useQuoteForm } from "@/contexts/quote-form-context"
 import Image from "next/image"
 
 // Animated text component for letter-by-letter animation
@@ -34,7 +33,10 @@ function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
 export function ServiceCards() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
-  const { openQuoteForm } = useQuoteForm()
+
+  const handleQuoteClick = () => {
+    alert("Teklif formu yakında eklenecek!")
+  }
 
   const services = [
     {
@@ -155,7 +157,7 @@ export function ServiceCards() {
           transition={{ duration: 0.8, delay: 4.0 }}
         >
           <button
-            onClick={openQuoteForm}
+            onClick={handleQuoteClick}
             className="font-display bg-[#15415b] text-white px-12 py-4 rounded-full text-lg font-semibold hover:bg-[#1a4a66] transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
           >
             Teklif Al

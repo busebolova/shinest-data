@@ -1,29 +1,27 @@
 import { NextResponse } from "next/server"
 
+// Mock global content data
 const globalContent = {
-  company: {
+  site: {
     name: "SHINEST İç Mimarlık",
-    description: "Yaşam alanlarınızı hayallerinizle buluşturan profesyonel iç mimarlık hizmetleri.",
-    tagline: "Mekanlarınız Yaşamınıza Işık Tutar!",
-    founded: "2020",
-    location: "İstanbul, Türkiye",
+    description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
+    logo: "/images/shinest-logo.png",
+    favicon: "/favicon.ico",
   },
   contact: {
-    phone: "+90 (212) 555 0123",
+    phone: "+90 (212) 123 45 67",
     email: "info@shinest.com",
-    address: "Ataşehir, İstanbul, Türkiye",
-    workingHours: "Pazartesi - Cuma: 09:00 - 18:00",
+    address: "İstanbul, Türkiye",
+    social: {
+      instagram: "#",
+      facebook: "#",
+      twitter: "#",
+    },
   },
-  social: {
-    instagram: "https://instagram.com/shinest",
-    facebook: "https://facebook.com/shinest",
-    linkedin: "https://linkedin.com/company/shinest",
-  },
-  seo: {
-    title: "SHINEST İç Mimarlık - Profesyonel İç Mekan Tasarımı",
-    description:
-      "İstanbul'da profesyonel iç mimarlık hizmetleri. Modern tasarım anlayışıyla yaşam alanlarınızı dönüştürüyoruz.",
-    keywords: "iç mimarlık, interior design, İstanbul, tasarım, dekorasyon, mimarlık",
+  colors: {
+    primary: "#15415b",
+    secondary: "#c4975a",
+    accent: "#b8864d",
   },
 }
 
@@ -36,13 +34,17 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    // Here you would normally update the database
+    // Here you would normally save to a database
     // For now, we'll just return the updated content
-    const updatedContent = { ...globalContent, ...body }
+    const updatedContent = {
+      ...globalContent,
+      ...body,
+      updatedAt: new Date().toISOString(),
+    }
 
     return NextResponse.json(updatedContent)
   } catch (error) {

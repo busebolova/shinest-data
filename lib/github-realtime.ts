@@ -1,114 +1,190 @@
 import { githubAPI } from "./github-api"
 
-interface RealtimeConnection {
-  isConnected: boolean
-  lastSync: Date | null
-  error: string | null
+export type ConnectionStatus = {
+  status: "connected" | "connecting" | "disconnected" | "polling" | "error"
+  message?: string
+  lastUpdate?: Date
+  error?: Error
 }
 
 class GitHubRealtime {
-  private connection: RealtimeConnection = {
-    isConnected: false,
-    lastSync: null,
-    error: null,
-  }
-
-  private listeners: Set<(connection: RealtimeConnection) => void> = new Set()
-  private syncInterval: NodeJS.Timeout | null = null
+  private status: ConnectionStatus = { status: "disconnected" }
+  private pollingInterval: NodeJS.Timeout | null = null
+  private messageListeners: Set<(data: any) => void> = new Set()
+  private statusListeners: Set<(status: ConnectionStatus) => void> = new Set()
+  private lastSyncTime: Date | null = null
 
   constructor() {
-    this.startSync()
+    // Start polling if in browser environment
+    if (typeof window !== "undefined") {
+      this.startPolling()
+    }
   }
 
-  // Start periodic sync
-  private startSync() {
-    // Sync every 30 seconds
-    this.syncInterval = setInterval(() => {
-      this.checkConnection()
+  private startPolling() {
+    // Clear any existing interval
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval)
+    }
+
+    // Set status to polling
+    this.updateStatus({ status: "polling", message: "Polling for updates..." })
+
+    // Poll every 30 seconds
+    this.pollingInterval = setInterval(() => {
+      this.checkForUpdates()
     }, 30000)
 
     // Initial check
-    this.checkConnection()
+    this.checkForUpdates()
   }
 
-  // Check GitHub connection
-  private async checkConnection() {
+  private async checkForUpdates() {
     try {
-      if (githubAPI.isConfigured()) {
-        await githubAPI.getRepositoryInfo()
-        this.updateConnection({
-          isConnected: true,
-          lastSync: new Date(),
-          error: null,
+      // Check if GitHub API is configured
+      if (!githubAPI.isConfigured()) {
+        this.updateStatus({
+          status: "error",
+          message: "GitHub API not configured",
+          error: new Error("GitHub API not configured"),
         })
-      } else {
-        this.updateConnection({
-          isConnected: false,
-          lastSync: null,
-          error: "GitHub API not configured",
-        })
+        return
       }
+
+      // Get latest commit
+      const latestCommit = await githubAPI.getLatestCommit()
+
+      // Update status
+      this.updateStatus({
+        status: "connected",
+        message: `Last commit: ${latestCommit.commit.message.substring(0, 30)}...`,
+        lastUpdate: new Date(),
+      })
+
+      // Emit heartbeat message
+      this.emitMessage({
+        type: "heartbeat",
+        data: {
+          commit: latestCommit.sha.substring(0, 7),
+          message: latestCommit.commit.message,
+          time: latestCommit.commit.author.date,
+        },
+      })
+
+      this.lastSyncTime = new Date()
     } catch (error) {
-      this.updateConnection({
-        isConnected: false,
-        lastSync: this.connection.lastSync,
-        error: error instanceof Error ? error.message : "Connection failed",
+      console.error("Error checking for updates:", error)
+      this.updateStatus({
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error : new Error("Unknown error"),
       })
     }
   }
 
-  // Update connection status
-  private updateConnection(newConnection: RealtimeConnection) {
-    this.connection = newConnection
-    this.notifyListeners()
-  }
-
-  // Notify all listeners
-  private notifyListeners() {
-    this.listeners.forEach((listener) => {
+  private updateStatus(status: ConnectionStatus) {
+    this.status = status
+    // Notify all status listeners
+    this.statusListeners.forEach((listener) => {
       try {
-        listener(this.connection)
+        listener(this.status)
       } catch (error) {
-        console.error("Error in realtime listener:", error)
+        console.error("Error in status listener:", error)
       }
     })
   }
 
-  // Subscribe to connection changes
-  subscribe(listener: (connection: RealtimeConnection) => void) {
-    this.listeners.add(listener)
+  private emitMessage(data: any) {
+    // Notify all message listeners
+    this.messageListeners.forEach((listener) => {
+      try {
+        listener(data)
+      } catch (error) {
+        console.error("Error in message listener:", error)
+      }
+    })
+  }
 
-    // Immediately call with current state
-    listener(this.connection)
+  // Public API
+  getStatus(): ConnectionStatus {
+    return { ...this.status }
+  }
 
+  onStatusChange(callback: (status: ConnectionStatus) => void): () => void {
+    this.statusListeners.add(callback)
+    // Immediately call with current status
+    callback(this.status)
     // Return unsubscribe function
     return () => {
-      this.listeners.delete(listener)
+      this.statusListeners.delete(callback)
     }
   }
 
-  // Get current connection status
-  getConnection(): RealtimeConnection {
-    return { ...this.connection }
+  onMessage(callback: (data: any) => void): () => void {
+    this.messageListeners.add(callback)
+    // Return unsubscribe function
+    return () => {
+      this.messageListeners.delete(callback)
+    }
   }
 
-  // Manual sync
-  async sync(): Promise<void> {
-    await this.checkConnection()
+  async forceSync(): Promise<void> {
+    this.updateStatus({ status: "connecting", message: "Syncing..." })
+
+    try {
+      // Force sync with API
+      const response = await fetch("/api/github/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Sync failed")
+      }
+
+      const data = await response.json()
+
+      this.updateStatus({
+        status: "connected",
+        message: `Synced successfully at ${new Date().toLocaleTimeString()}`,
+        lastUpdate: new Date(),
+      })
+
+      this.emitMessage({
+        type: "sync",
+        data,
+      })
+
+      this.lastSyncTime = new Date()
+
+      return data
+    } catch (error) {
+      console.error("Force sync error:", error)
+      this.updateStatus({
+        status: "error",
+        message: error instanceof Error ? error.message : "Sync failed",
+        error: error instanceof Error ? error : new Error("Sync failed"),
+      })
+      throw error
+    }
   }
 
-  // Cleanup
+  getLastSyncTime(): Date | null {
+    return this.lastSyncTime
+  }
+
   destroy() {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval)
-      this.syncInterval = null
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval)
+      this.pollingInterval = null
     }
-    this.listeners.clear()
+    this.statusListeners.clear()
+    this.messageListeners.clear()
   }
 }
 
 // Create singleton instance
 export const githubRealtime = new GitHubRealtime()
-
-// Export types
-export type { RealtimeConnection }
