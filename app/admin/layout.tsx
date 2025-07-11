@@ -1,3 +1,4 @@
+import type React from "react"
 import { RealtimeStatus } from "@/components/admin/realtime-status"
 
 export default function AdminLayout({
@@ -17,15 +18,30 @@ export default function AdminLayout({
         <nav className="mt-6">
           <ul>
             <li className="p-4 hover:bg-gray-700">
-              <a href="#" className="block">Dashboard</a>
+              <a href="/admin" className="block">
+                Dashboard
+              </a>
             </li>
             <li className="p-4 hover:bg-gray-700">
-              <a href="#" className="block">Ürünler</a>
+              <a href="/admin/projects" className="block">
+                Projeler
+              </a>
             </li>
             <li className="p-4 hover:bg-gray-700">
-              <a href="#" className="block">Siparişler</a>
+              <a href="/admin/blog" className="block">
+                Blog
+              </a>
             </li>
-            {/* Add more menu items here */}
+            <li className="p-4 hover:bg-gray-700">
+              <a href="/admin/messages" className="block">
+                Mesajlar
+              </a>
+            </li>
+            <li className="p-4 hover:bg-gray-700">
+              <a href="/admin/settings" className="block">
+                Ayarlar
+              </a>
+            </li>
           </ul>
         </nav>
       </div>
@@ -39,7 +55,7 @@ export default function AdminLayout({
               <h1 className="text-xl font-semibold text-gray-900">SHINEST Admin</h1>
               <p className="text-sm text-gray-600">İçerik Yönetim Sistemi</p>
             </div>
-            
+
             {/* Realtime Status */}
             <div className="flex items-center gap-4">
               <RealtimeStatus />
@@ -55,9 +71,7 @@ export default function AdminLayout({
 
         {/* Page Content */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
-          <div className="p-6">
-            {children}
-          </div>
+          <div className="p-6">{children}</div>
         </main>
       </div>
     </div>

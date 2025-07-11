@@ -4,18 +4,30 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Activity, Users, FileText, ImageIcon, RefreshCw, Clock, TrendingUp, Eye, MessageSquare } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import {
+  Activity,
+  Users,
+  FileText,
+  MessageSquare,
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  Clock,
+  TrendingUp,
+  Eye,
+  Calendar,
+} from "lucide-react"
 
 interface DashboardStats {
   totalProjects: number
-  totalPosts: number
+  totalBlogs: number
   totalViews: number
   totalMessages: number
-  recentActivity: Array<{
+  recentActivities: Array<{
     id: string
-    type: "project" | "post" | "message"
-    title: string
+    type: string
+    description: string
     timestamp: string
   }>
 }
@@ -23,63 +35,78 @@ interface DashboardStats {
 export function RealtimeDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalProjects: 0,
-    totalPosts: 0,
+    totalBlogs: 0,
     totalViews: 0,
     totalMessages: 0,
-    recentActivity: [],
+    recentActivities: [],
   })
-  const [isLoading, setIsLoading] = useState(true)
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [isOnline, setIsOnline] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Gerçek zamanlı veri yükleme
-  const loadDashboardData = async () => {
+  const fetchStats = async () => {
     try {
-      setIsLoading(true)
+      setIsRefreshing(true)
 
-      // localStorage'dan veri yükle
+      // localStorage'dan verileri al
       const projects = JSON.parse(localStorage.getItem("projects") || "[]")
-      const posts = JSON.parse(localStorage.getItem("blog") || "[]")
+      const blogs = JSON.parse(localStorage.getItem("blogs") || "[]")
+      const messages = JSON.parse(localStorage.getItem("messages") || "[]")
 
-      // Mock veriler
-      const mockStats: DashboardStats = {
-        totalProjects: projects.length || 12,
-        totalPosts: posts.length || 8,
-        totalViews: Math.floor(Math.random() * 10000) + 5000,
-        totalMessages: Math.floor(Math.random() * 50) + 20,
-        recentActivity: [
-          {
-            id: "1",
-            type: "project",
-            title: "Yeni proje eklendi: Modern Villa",
-            timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-          },
-          {
-            id: "2",
-            type: "message",
-            title: "Yeni mesaj alındı",
-            timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-          },
-          {
-            id: "3",
-            type: "post",
-            title: "Blog yazısı güncellendi",
-            timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          },
-        ],
-      }
+      // Mock views data
+      const views = Math.floor(Math.random() * 10000) + 5000
 
-      setStats(mockStats)
-      setLastUpdate(new Date())
+      // Recent activities oluştur
+      const activities = [
+        {
+          id: "1",
+          type: "project",
+          description: "Yeni proje eklendi",
+          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+        },
+        {
+          id: "2",
+          type: "blog",
+          description: "Blog yazısı güncellendi",
+          timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+        },
+        {
+          id: "3",
+          type: "message",
+          description: "Yeni mesaj alındı",
+          timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+        },
+      ]
+
+      setStats({
+        totalProjects: projects.length,
+        totalBlogs: blogs.length,
+        totalViews: views,
+        totalMessages: messages.length,
+        recentActivities: activities,
+      })
+
+      setLastUpdated(new Date())
+      setIsOnline(true)
     } catch (error) {
-      console.error("Dashboard verisi yüklenirken hata:", error)
+      console.error("Stats fetch error:", error)
+      setIsOnline(false)
     } finally {
-      setIsLoading(false)
+      setIsRefreshing(false)
     }
   }
 
-  // Bağlantı durumunu kontrol et
+  const handleRefresh = () => {
+    fetchStats()
+  }
+
   useEffect(() => {
+    fetchStats()
+
+    // 30 saniyede bir güncelle
+    const interval = setInterval(fetchStats, 30000)
+
+    // Online/offline durumunu takip et
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
 
@@ -87,197 +114,200 @@ export function RealtimeDashboard() {
     window.addEventListener("offline", handleOffline)
 
     return () => {
+      clearInterval(interval)
       window.removeEventListener("online", handleOnline)
       window.removeEventListener("offline", handleOffline)
     }
   }, [])
 
-  // İlk yükleme ve otomatik güncelleme
-  useEffect(() => {
-    loadDashboardData()
-
-    // Her 30 saniyede bir güncelle
-    const interval = setInterval(loadDashboardData, 30000)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  const formatTimeAgo = (timestamp: string) => {
-    const now = new Date()
-    const time = new Date(timestamp)
-    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
-
-    if (diffInMinutes < 1) return "Az önce"
-    if (diffInMinutes < 60) return `${diffInMinutes} dakika önce`
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} saat önce`
-    return `${Math.floor(diffInMinutes / 1440)} gün önce`
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString("tr-TR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
   }
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case "project":
-        return <FileText className="h-4 w-4" />
-      case "post":
-        return <ImageIcon className="h-4 w-4" />
-      case "message":
-        return <MessageSquare className="h-4 w-4" />
-      default:
-        return <Activity className="h-4 w-4" />
-    }
+  const formatRelativeTime = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const minutes = Math.floor(diff / (1000 * 60))
+
+    if (minutes < 1) return "Az önce"
+    if (minutes < 60) return `${minutes} dakika önce`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours} saat önce`
+    const days = Math.floor(hours / 24)
+    return `${days} gün önce`
   }
 
   return (
     <div className="space-y-6">
-      {/* Durum Göstergesi */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500" : "bg-red-500"}`} />
-          <span className="text-sm text-gray-600">{isOnline ? "Çevrimiçi" : "Çevrimdışı"}</span>
-          {lastUpdate && (
-            <span className="text-xs text-gray-500">• Son güncelleme: {lastUpdate.toLocaleTimeString("tr-TR")}</span>
-          )}
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Sistem durumu ve gerçek zamanlı istatistikler</p>
         </div>
-        <Button onClick={loadDashboardData} disabled={isLoading} size="sm" variant="outline">
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-          Yenile
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Clock className="h-4 w-4" />
+            Son güncelleme: {formatTime(lastUpdated)}
+          </div>
+          <Button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            size="sm"
+            variant="outline"
+            className="border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+            Yenile
+          </Button>
+        </div>
       </div>
 
-      {/* İstatistik Kartları */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+      {/* Status Indicator */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {isOnline ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Wifi className="h-5 w-5 text-green-500" />
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div>
+                    <span className="text-green-600 font-medium">Gerçek Zamanlı Bağlantı Aktif</span>
+                    <div className="text-sm text-gray-500">Veriler otomatik olarak güncelleniyor</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <WifiOff className="h-5 w-5 text-red-500" />
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  </div>
+                  <div>
+                    <span className="text-red-600 font-medium">Bağlantı Sorunu</span>
+                    <div className="text-sm text-gray-500">Veriler manuel olarak güncelleniyor</div>
+                  </div>
+                </>
+              )}
+            </div>
+            <Badge
+              variant={isOnline ? "default" : "destructive"}
+              className={isOnline ? "bg-green-100 text-green-800" : ""}
+            >
+              {isOnline ? "Çevrimiçi" : "Çevrimdışı"}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats Cards */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <Card className="bg-white border-0 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Toplam Proje</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Toplam Projeler</CardTitle>
+            <div className="bg-[#c4975a]/10 p-3 rounded-full">
+              <FileText className="h-4 w-4 text-[#c4975a]" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProjects}</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="h-3 w-3 inline mr-1" />
+            <div className="text-2xl font-bold text-gray-900">{stats.totalProjects}</div>
+            <p className="text-xs text-gray-500">
+              <TrendingUp className="h-3 w-3 inline mr-1 text-[#c4975a]" />
               +2 bu ay
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white border-0 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Blog Yazısı</CardTitle>
-            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Blog Yazıları</CardTitle>
+            <div className="bg-blue-100 p-3 rounded-full">
+              <Users className="h-4 w-4 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPosts}</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="h-3 w-3 inline mr-1" />
+            <div className="text-2xl font-bold text-gray-900">{stats.totalBlogs}</div>
+            <p className="text-xs text-gray-500">
+              <TrendingUp className="h-3 w-3 inline mr-1 text-blue-600" />
               +1 bu hafta
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white border-0 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Toplam Görüntüleme</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Toplam Görüntüleme</CardTitle>
+            <div className="bg-green-100 p-3 rounded-full">
+              <Eye className="h-4 w-4 text-green-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="h-3 w-3 inline mr-1" />
+            <div className="text-2xl font-bold text-gray-900">{stats.totalViews.toLocaleString()}</div>
+            <p className="text-xs text-gray-500">
+              <TrendingUp className="h-3 w-3 inline mr-1 text-green-600" />
               +12% bu ay
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white border-0 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mesajlar</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Mesajlar</CardTitle>
+            <div className="bg-purple-100 p-3 rounded-full">
+              <MessageSquare className="h-4 w-4 text-purple-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalMessages}</div>
-            <p className="text-xs text-muted-foreground">
-              <Badge variant="secondary" className="text-xs">
-                {Math.floor(stats.totalMessages * 0.3)} yeni
-              </Badge>
+            <div className="text-2xl font-bold text-gray-900">{stats.totalMessages}</div>
+            <p className="text-xs text-gray-500">
+              <TrendingUp className="h-3 w-3 inline mr-1 text-purple-600" />
+              +3 bugün
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Son Aktiviteler */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Son Aktiviteler
-            </CardTitle>
-            <CardDescription>Sistemdeki son değişiklikler</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3">
-                  <div className="flex-shrink-0 mt-1">{getActivityIcon(activity.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {formatTimeAgo(activity.timestamp)}
-                    </p>
+      {/* Recent Activities */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Son Aktiviteler
+          </CardTitle>
+          <CardDescription>Sistemdeki son değişiklikler ve güncellemeler</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {stats.recentActivities.map((activity, index) => (
+              <div key={activity.id}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                    <div>
+                      <p className="text-sm font-medium">{activity.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3 inline mr-1" />
+                        {formatRelativeTime(activity.timestamp)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Sistem Durumu */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Sistem Durumu
-            </CardTitle>
-            <CardDescription>Performans ve kaynak kullanımı</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Sunucu Performansı</span>
-                  <span>85%</span>
-                </div>
-                <Progress value={85} className="h-2" />
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Veritabanı Kullanımı</span>
-                  <span>62%</span>
-                </div>
-                <Progress value={62} className="h-2" />
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Depolama Alanı</span>
-                  <span>45%</span>
-                </div>
-                <Progress value={45} className="h-2" />
-              </div>
-
-              <div className="pt-2 border-t">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Sistem Sağlığı</span>
-                  <Badge variant="default" className="bg-green-100 text-green-800">
-                    İyi Durumda
+                  <Badge variant="outline" className="text-xs">
+                    {activity.type}
                   </Badge>
                 </div>
+                {index < stats.recentActivities.length - 1 && <Separator className="mt-4" />}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

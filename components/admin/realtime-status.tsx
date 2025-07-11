@@ -1,139 +1,108 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Wifi, WifiOff, Loader2, Github } from "lucide-react"
-import { githubRealtime, type ConnectionStatus } from "@/lib/github-realtime"
+import { Wifi, WifiOff, RefreshCw } from "lucide-react"
+import { githubRealtime } from "@/lib/github-realtime"
+
+interface ConnectionStatus {
+  isConnected: boolean
+  lastUpdate: Date
+  retryCount: number
+}
 
 export function RealtimeStatus() {
-  const [status, setStatus] = useState<ConnectionStatus>({ status: "disconnected" })
-  const [syncing, setSyncing] = useState(false)
-  const [lastActivity, setLastActivity] = useState<string | null>(null)
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [status, setStatus] = useState<ConnectionStatus>({
+    isConnected: false,
+    lastUpdate: new Date(),
+    retryCount: 0,
+  })
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
-    const unsubscribe = githubRealtime.onStatusChange(setStatus)
+    // İlk durumu al
+    setStatus(githubRealtime.getConnectionStatus())
 
-    // Get initial status
-    setStatus(githubRealtime.getStatus())
-
-    return unsubscribe
-  }, [])
-
-  useEffect(() => {
-    const unsubscribe = githubRealtime.onMessage((data) => {
-      if (data.type === "heartbeat") {
-        setLastActivity(`${data.data.commit}: ${data.data.message.substring(0, 20)}...`)
-      } else if (data.type === "sync") {
-        setLastActivity(`Synced: ${data.data.syncedAt}`)
-      }
+    // Gerçek zamanlı verileri dinle
+    const unsubscribe = githubRealtime.subscribe((data) => {
+      setStatus(githubRealtime.getConnectionStatus())
     })
 
-    return unsubscribe
+    // Durum güncellemelerini dinle
+    const statusInterval = setInterval(() => {
+      setStatus(githubRealtime.getConnectionStatus())
+    }, 5000)
+
+    return () => {
+      unsubscribe()
+      clearInterval(statusInterval)
+    }
   }, [])
 
-  // Auto-hide notifications after 3 seconds
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => {
-        setNotification(null)
-      }, 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [notification])
-
-  const handleSync = async () => {
-    setSyncing(true)
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
     try {
-      await githubRealtime.forceSync()
-      setNotification({ type: "success", message: "Senkronizasyon tamamlandı!" })
+      githubRealtime.forceSync()
+      // 2 saniye bekle ve durumu güncelle
+      setTimeout(() => {
+        setStatus(githubRealtime.getConnectionStatus())
+        setIsRefreshing(false)
+      }, 2000)
     } catch (error) {
-      setNotification({ type: "error", message: "Senkronizasyon başarısız: " + (error as Error).message })
-    } finally {
-      setSyncing(false)
+      console.error("Refresh error:", error)
+      setIsRefreshing(false)
     }
   }
 
-  const getStatusBadge = () => {
-    switch (status.status) {
-      case "connected":
-        return (
-          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-            <Wifi className="w-3 h-3 mr-1" />
-            Bağlı
-          </Badge>
-        )
-      case "connecting":
-        return (
-          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-            Bağlanıyor...
-          </Badge>
-        )
-      case "polling":
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-            <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-            Yerel Mod
-          </Badge>
-        )
-      case "error":
-        return (
-          <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">
-            <WifiOff className="w-3 h-3 mr-1" />
-            Hata
-          </Badge>
-        )
-      default:
-        return (
-          <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-200">
-            <WifiOff className="w-3 h-3 mr-1" />
-            Bağlantısız
-          </Badge>
-        )
-    }
+  const formatLastUpdate = (date: Date) => {
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const minutes = Math.floor(diff / (1000 * 60))
+
+    if (minutes < 1) return "Az önce"
+    if (minutes < 60) return `${minutes} dakika önce`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours} saat önce`
+    return date.toLocaleDateString("tr-TR")
   }
 
   return (
-    <div className="relative">
-      <div className="flex items-center gap-2">
-        {getStatusBadge()}
-
-        <div className="flex items-center gap-1 text-xs text-gray-500">
-          <Github className="w-3 h-3" />
-          <span>Gerçek Zamanlı</span>
-        </div>
-
-        <Button onClick={handleSync} disabled={syncing} variant="ghost" size="sm" className="h-6 px-2 text-xs">
-          {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-        </Button>
-
-        {status.message && (
-          <span className="text-xs text-gray-500 max-w-48 truncate" title={status.message}>
-            {status.message}
-          </span>
-        )}
-
-        {lastActivity && <span className="text-xs text-gray-400 hidden md:inline-block">{lastActivity}</span>}
-
-        {status.lastUpdate && (
-          <span className="text-xs text-gray-400">{status.lastUpdate.toLocaleTimeString("tr-TR")}</span>
-        )}
-      </div>
-
-      {/* Notification */}
-      {notification && (
-        <div
-          className={`absolute top-full left-0 mt-2 p-2 rounded-md text-xs z-50 min-w-48 ${
-            notification.type === "success"
-              ? "bg-green-100 text-green-800 border border-green-200"
-              : "bg-red-100 text-red-800 border border-red-200"
-          }`}
-        >
-          {notification.message}
-        </div>
+    <div className="flex items-center gap-3">
+      {status.isConnected ? (
+        <>
+          <div className="flex items-center gap-2">
+            <Wifi className="h-4 w-4 text-green-500" />
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          </div>
+          <div className="hidden md:block">
+            <div className="text-sm font-medium text-green-700">Gerçek Zamanlı</div>
+            <div className="text-xs text-gray-500">Son güncelleme: {formatLastUpdate(status.lastUpdate)}</div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <WifiOff className="h-4 w-4 text-red-500" />
+            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+          </div>
+          <div className="hidden md:block">
+            <div className="text-sm font-medium text-red-700">Bağlantı Yok</div>
+            {status.retryCount > 0 && (
+              <div className="text-xs text-gray-500">Yeniden deneme: {status.retryCount}/3</div>
+            )}
+          </div>
+        </>
       )}
+
+      <Button
+        onClick={handleRefresh}
+        disabled={isRefreshing}
+        size="sm"
+        variant="outline"
+        className="h-8 w-8 p-0 border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
+      >
+        <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
+      </Button>
     </div>
   )
 }
