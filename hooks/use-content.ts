@@ -2,89 +2,49 @@
 
 import { useState, useEffect } from "react"
 
-interface ContentData {
-  [key: string]: any
+interface UseContentOptions {
+  fallbackData?: any
+  autoRefresh?: boolean
+  refreshInterval?: number
 }
 
-export function useContent(page: string) {
-  const [content, setContent] = useState<ContentData | null>(null)
+export function useContent(page: string, options: UseContentOptions = {}) {
+  const [content, setContent] = useState<any>(options.fallbackData || {})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
 
   const fetchContent = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/content/${page}`, {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-      })
+      const response = await fetch(`/api/content/${page}`)
+      const result = await response.json()
 
-      if (response.ok) {
-        const data = await response.json()
-        setContent(data)
+      if (result.success) {
+        setContent(result.data)
+        setLastUpdated(result.timestamp)
       } else {
-        throw new Error(`Failed to fetch content for ${page}`)
+        throw new Error(result.error || "Failed to fetch content")
       }
     } catch (err) {
       console.error(`Error fetching content for ${page}:`, err)
       setError(err instanceof Error ? err.message : "Unknown error")
 
-      // Set fallback content for home page
-      if (page === "home") {
-        setContent({
-          hero: {
-            title: "SHINEST",
-            subtitle: "İÇ MİMARLIK",
-            description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
-            image: "/images/hero-image.png",
-          },
-          bigText: {
-            line1: "MEKANLARINIZ",
-            line2: "YAŞAMINIZA",
-            line3: "IŞIK TUTAR!",
-          },
-          gallery: {
-            images: [
-              "/images/gallery-1.png",
-              "/images/gallery-2.png",
-              "/images/gallery-3.png",
-              "/images/gallery-4.png",
-              "/images/gallery-5.png",
-            ],
-          },
-          services: {
-            title: "Hizmetlerimiz",
-            items: [
-              {
-                title: "Danışmanlık",
-                description: "Profesyonel iç mimarlık danışmanlığı",
-                image: "/images/consulting-service.png",
-              },
-              {
-                title: "Tasarım",
-                description: "Yaratıcı ve fonksiyonel tasarım çözümleri",
-                image: "/images/design-service.png",
-              },
-              {
-                title: "Uygulama",
-                description: "Tasarımdan uygulamaya kadar tüm süreçler",
-                image: "/images/implementation-service.png",
-              },
-            ],
-          },
-        })
+      // Use fallback data if available
+      if (options.fallbackData) {
+        setContent(options.fallbackData)
       }
     } finally {
       setLoading(false)
     }
   }
 
-  const updateContent = async (newContent: ContentData) => {
+  const saveContent = async (newContent: any) => {
     try {
+      setError(null)
+
       const response = await fetch(`/api/content/${page}`, {
         method: "POST",
         headers: {
@@ -93,45 +53,45 @@ export function useContent(page: string) {
         body: JSON.stringify(newContent),
       })
 
-      if (response.ok) {
-        const result = await response.json()
+      const result = await response.json()
+
+      if (result.success) {
         setContent(newContent)
-
-        // Trigger cache revalidation
-        await fetch("/api/revalidate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            path: `/${page === "home" ? "" : page}`,
-            all: true,
-          }),
-        })
-
-        return { success: true, message: result.message }
+        setLastUpdated(result.timestamp)
+        return true
       } else {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Update failed")
+        throw new Error(result.error || "Failed to save content")
       }
     } catch (err) {
-      console.error(`Error updating content for ${page}:`, err)
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
-      }
+      console.error(`Error saving content for ${page}:`, err)
+      setError(err instanceof Error ? err.message : "Unknown error")
+      return false
     }
+  }
+
+  const refreshContent = () => {
+    fetchContent()
   }
 
   useEffect(() => {
     fetchContent()
   }, [page])
 
+  useEffect(() => {
+    if (options.autoRefresh && options.refreshInterval) {
+      const interval = setInterval(fetchContent, options.refreshInterval)
+      return () => clearInterval(interval)
+    }
+  }, [options.autoRefresh, options.refreshInterval, page])
+
   return {
     content,
     loading,
     error,
-    refetch: fetchContent,
-    updateContent,
+    lastUpdated,
+    saveContent,
+    refreshContent,
   }
 }
+
+export default useContent

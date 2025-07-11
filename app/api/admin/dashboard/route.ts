@@ -5,66 +5,62 @@ export async function GET() {
   try {
     const [projects, blogPosts] = await Promise.all([dataManager.getProjects(), dataManager.getBlogPosts()])
 
-    const publishedProjects = projects.filter((p) => p.status === "published")
-    const featuredProjects = projects.filter((p) => p.featured)
-    const publishedPosts = blogPosts.filter((p) => p.status === "published")
-
-    const dashboardData = {
+    const stats = {
       totalProjects: projects.length,
-      completedProjects: publishedProjects.length,
-      inProgressProjects: projects.filter((p) => p.status === "draft").length,
-      plannedProjects: projects.filter((p) => p.status === "archived").length,
-      featuredProjects: featuredProjects.length,
+      publishedProjects: projects.filter((p) => p.status === "published").length,
+      draftProjects: projects.filter((p) => p.status === "draft").length,
+      featuredProjects: projects.filter((p) => p.featured).length,
       totalBlogPosts: blogPosts.length,
-      publishedPosts: publishedPosts.length,
-      featuredPosts: blogPosts.filter((p) => p.status === "published").length,
-      recentCommits: dataManager.isGitHubConfigured() ? 5 : 0,
-      lastUpdate: new Date().toISOString(),
-      recentActivity: [
-        {
-          id: "1",
-          type: "project",
-          action: "created",
-          title: "Yeni proje eklendi",
-          description: "Modern banyo tasarımı projesi eklendi",
-          timestamp: new Date().toISOString(),
-          status: "success",
-        },
-        {
-          id: "2",
-          type: "blog",
-          action: "published",
-          title: "Blog yazısı yayınlandı",
-          description: "2024 iç mimarlık trendleri yazısı yayınlandı",
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          status: "success",
-        },
-        {
-          id: "3",
-          type: "content",
-          action: "updated",
-          title: "İçerik güncellendi",
-          description: "Ana sayfa içeriği güncellendi",
-          timestamp: new Date(Date.now() - 7200000).toISOString(),
-          status: "success",
-        },
-      ],
-      monthlyStats: {
-        projects: [2, 3, 1, 4, 2, 3],
-        views: [120, 150, 180, 200, 170, 190],
-        months: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran"],
-      },
+      publishedBlogPosts: blogPosts.filter((p) => p.status === "published").length,
+      lastUpdated: new Date().toISOString(),
     }
 
-    return NextResponse.json(dashboardData)
+    const recentActivity = [
+      {
+        id: "1",
+        type: "project",
+        action: "created",
+        title: "Yeni proje eklendi",
+        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      },
+      {
+        id: "2",
+        type: "blog",
+        action: "published",
+        title: "Blog yazısı yayınlandı",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+      },
+      {
+        id: "3",
+        type: "content",
+        action: "updated",
+        title: "Ana sayfa içeriği güncellendi",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
+      },
+    ]
+
+    return NextResponse.json({
+      stats,
+      recentActivity,
+      isGitHubConnected: dataManager.isGitHubConfigured(),
+    })
   } catch (error) {
     console.error("Error fetching dashboard data:", error)
     return NextResponse.json(
       {
-        error: "Dashboard verileri alınamadı",
-        message: error instanceof Error ? error.message : "Bilinmeyen hata",
+        stats: {
+          totalProjects: 0,
+          publishedProjects: 0,
+          draftProjects: 0,
+          featuredProjects: 0,
+          totalBlogPosts: 0,
+          publishedBlogPosts: 0,
+          lastUpdated: new Date().toISOString(),
+        },
+        recentActivity: [],
+        isGitHubConnected: false,
       },
-      { status: 500 },
+      { status: 200 },
     )
   }
 }

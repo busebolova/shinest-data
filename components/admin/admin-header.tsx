@@ -1,108 +1,144 @@
 "use client"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Bell, Settings, User, LogOut, Menu, X } from "lucide-react"
-import { RealtimeIndicator } from "./realtime-indicator"
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
+import { RefreshCw, Github, Wifi, WifiOff, Settings } from "lucide-react"
+import Link from "next/link"
 
 interface AdminHeaderProps {
   title: string
-  onMenuToggle?: () => void
-  isMobileMenuOpen?: boolean
 }
 
-export function AdminHeader({ title, onMenuToggle, isMobileMenuOpen }: AdminHeaderProps) {
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [showUserMenu, setShowUserMenu] = useState(false)
+export function AdminHeader({ title }: AdminHeaderProps) {
+  const [isOnline, setIsOnline] = useState(true)
+  const [lastSync, setLastSync] = useState<Date>(new Date())
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [githubConnected, setGithubConnected] = useState(false)
+
+  useEffect(() => {
+    // Check online status
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener("online", handleOnline)
+    window.addEventListener("offline", handleOffline)
+
+    // Check GitHub connection
+    checkGitHubConnection()
+
+    // Auto refresh every 30 seconds
+    const interval = setInterval(() => {
+      if (isOnline) {
+        handleRefresh()
+      }
+    }, 30000)
+
+    return () => {
+      window.removeEventListener("online", handleOnline)
+      window.removeEventListener("offline", handleOffline)
+      clearInterval(interval)
+    }
+  }, [isOnline])
+
+  const checkGitHubConnection = async () => {
+    try {
+      const response = await fetch("/api/github/repository")
+      setGithubConnected(response.ok)
+    } catch (error) {
+      setGithubConnected(false)
+    }
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      // Refresh dashboard data
+      await fetch("/api/admin/dashboard", { cache: "no-store" })
+      setLastSync(new Date())
+    } catch (error) {
+      console.error("Refresh failed:", error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        {/* Left Side */}
-        <div className="flex items-center space-x-4">
-          {/* Mobile Menu Button */}
-          <button onClick={onMenuToggle} className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            {isMobileMenuOpen ? <X className="w-5 h-5 text-gray-600" /> : <Menu className="w-5 h-5 text-gray-600" />}
-          </button>
-
-          {/* Page Title */}
-          <h1 className={`text-2xl font-bold text-gray-600`}>{title}</h1>
-        </div>
-
-        {/* Right Side */}
-        <div className="flex items-center space-x-4">
-          {/* Realtime Indicator */}
-          <RealtimeIndicator />
-
-          {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
-            >
-              <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-            </button>
-
-            {showNotifications && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
-              >
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="font-semibold text-gray-900">Notifications</h3>
-                </div>
-                <div className="p-4">
-                  <p className="text-sm text-gray-500">No new notifications</p>
-                </div>
-              </motion.div>
-            )}
+    <TooltipProvider>
+      <header className="border-b bg-white px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+            <p className="text-sm text-gray-500">SHINEST Admin Panel</p>
           </div>
 
-          {/* Settings */}
-          <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <Settings className="w-5 h-5 text-gray-600" />
-          </button>
+          <div className="flex items-center gap-4">
+            {/* Connection Status */}
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1">
+                    {isOnline ? (
+                      <Wifi className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <WifiOff className="h-4 w-4 text-red-500" />
+                    )}
+                    <Badge variant={isOnline ? "default" : "destructive"}>{isOnline ? "Online" : "Offline"}</Badge>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Bağlantı durumu: {isOnline ? "Çevrimiçi" : "Çevrimdışı"}</p>
+                </TooltipContent>
+              </Tooltip>
 
-          {/* User Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <div className="w-8 h-8 bg-[#15415b] rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-sm font-medium text-gray-700 hidden sm:block">Admin</span>
-            </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1">
+                    <Github className="h-4 w-4" />
+                    <Badge variant={githubConnected ? "default" : "secondary"}>
+                      {githubConnected ? "Connected" : "Local"}
+                    </Badge>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{githubConnected ? "GitHub repository bağlı" : "Yerel depolama kullanılıyor"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
 
-            {showUserMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
-              >
-                <div className="p-2">
-                  <button className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                    <User className="w-4 h-4" />
-                    <span>Profile</span>
-                  </button>
-                  <button className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                    <Settings className="w-4 h-4" />
-                    <span>Settings</span>
-                  </button>
-                  <hr className="my-2" />
-                  <button className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              </motion.div>
-            )}
+            {/* Last Sync */}
+            <div className="text-xs text-gray-500">Son güncelleme: {lastSync.toLocaleTimeString("tr-TR")}</div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Verileri yenile</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/admin/settings">
+                      <Settings className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Ayarlar</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </TooltipProvider>
   )
 }

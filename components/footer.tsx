@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Phone, Mail, MapPin, Instagram, Facebook, Twitter, Linkedin } from "lucide-react"
 
-export function Footer() {
+export default function Footer() {
   const [language, setLanguage] = useState<"tr" | "en">("tr")
 
   useEffect(() => {

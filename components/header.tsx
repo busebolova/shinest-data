@@ -6,7 +6,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Menu, X, Globe } from "lucide-react"
 
-export function Header() {
+export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [language, setLanguage] = useState<"tr" | "en">("tr")
 

@@ -1,108 +1,76 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Wifi, WifiOff, RefreshCw } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
+import { Wifi, WifiOff, RefreshCw, Clock } from "lucide-react"
 import { githubRealtime } from "@/lib/github-realtime"
 
-interface ConnectionStatus {
-  isConnected: boolean
-  lastUpdate: Date
-  retryCount: number
-}
-
 export function RealtimeStatus() {
-  const [status, setStatus] = useState<ConnectionStatus>({
-    isConnected: false,
-    lastUpdate: new Date(),
-    retryCount: 0,
-  })
+  const [isConnected, setIsConnected] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
-    // İlk durumu al
-    setStatus(githubRealtime.getConnectionStatus())
-
-    // Gerçek zamanlı verileri dinle
     const unsubscribe = githubRealtime.subscribe((data) => {
-      setStatus(githubRealtime.getConnectionStatus())
+      setIsConnected(data.isConnected)
+      setLastUpdate(new Date(data.lastUpdate))
+      setIsRefreshing(false)
     })
 
-    // Durum güncellemelerini dinle
-    const statusInterval = setInterval(() => {
-      setStatus(githubRealtime.getConnectionStatus())
-    }, 5000)
-
-    return () => {
-      unsubscribe()
-      clearInterval(statusInterval)
-    }
+    return unsubscribe
   }, [])
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
-      githubRealtime.forceSync()
-      // 2 saniye bekle ve durumu güncelle
-      setTimeout(() => {
-        setStatus(githubRealtime.getConnectionStatus())
-        setIsRefreshing(false)
-      }, 2000)
+      await githubRealtime.refresh()
     } catch (error) {
-      console.error("Refresh error:", error)
-      setIsRefreshing(false)
+      console.error("Refresh failed:", error)
     }
+    // isRefreshing will be set to false in the subscription callback
   }
 
-  const formatLastUpdate = (date: Date) => {
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / (1000 * 60))
-
-    if (minutes < 1) return "Az önce"
-    if (minutes < 60) return `${minutes} dakika önce`
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours} saat önce`
-    return date.toLocaleDateString("tr-TR")
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString("tr-TR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
   }
 
   return (
-    <div className="flex items-center gap-3">
-      {status.isConnected ? (
-        <>
-          <div className="flex items-center gap-2">
-            <Wifi className="h-4 w-4 text-green-500" />
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          </div>
-          <div className="hidden md:block">
-            <div className="text-sm font-medium text-green-700">Gerçek Zamanlı</div>
-            <div className="text-xs text-gray-500">Son güncelleme: {formatLastUpdate(status.lastUpdate)}</div>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="flex items-center gap-2">
-            <WifiOff className="h-4 w-4 text-red-500" />
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-          </div>
-          <div className="hidden md:block">
-            <div className="text-sm font-medium text-red-700">Bağlantı Yok</div>
-            {status.retryCount > 0 && (
-              <div className="text-xs text-gray-500">Yeniden deneme: {status.retryCount}/3</div>
-            )}
-          </div>
-        </>
-      )}
+    <TooltipProvider>
+      <div className="flex items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1 cursor-pointer" onClick={handleRefresh}>
+              {isConnected ? <Wifi className="h-4 w-4 text-green-500" /> : <WifiOff className="h-4 w-4 text-red-500" />}
+              <Badge variant={isConnected ? "default" : "secondary"} className="text-xs">
+                {isConnected ? "Bağlı" : "Çevrimdışı"}
+              </Badge>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-center">
+              <p>Sistem durumu: {isConnected ? "Çevrimiçi" : "Çevrimdışı"}</p>
+              <p className="text-xs text-gray-500">Yenilemek için tıklayın</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
 
-      <Button
-        onClick={handleRefresh}
-        disabled={isRefreshing}
-        size="sm"
-        variant="outline"
-        className="h-8 w-8 p-0 border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
-      >
-        <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
-      </Button>
-    </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              {isRefreshing ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Clock className="h-3 w-3" />}
+              <span>{formatTime(lastUpdate)}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Son güncelleme: {lastUpdate.toLocaleString("tr-TR")}</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
   )
 }

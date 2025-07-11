@@ -1,173 +1,305 @@
-"use client"
-
-interface RealtimeData {
-  projects: any[]
-  blogs: any[]
-  messages: any[]
-  timestamp: string
+interface GitHubRealtimeConfig {
+  token?: string
+  owner?: string
+  repo?: string
+  branch?: string
 }
 
-interface ConnectionStatus {
-  isConnected: boolean
-  lastUpdate: Date
-  retryCount: number
+interface GitHubEvent {
+  id: string
+  type: string
+  actor: {
+    login: string
+    avatar_url: string
+  }
+  repo: {
+    name: string
+  }
+  payload: any
+  created_at: string
+}
+
+interface GitHubStatus {
+  connected: boolean
+  lastSync: string | null
+  error: string | null
+  rateLimit: {
+    remaining: number
+    reset: number
+  }
 }
 
 class GitHubRealtime {
-  private subscribers: ((data: RealtimeData) => void)[] = []
-  private connectionStatus: ConnectionStatus = {
-    isConnected: false,
-    lastUpdate: new Date(),
-    retryCount: 0,
-  }
+  private config: GitHubRealtimeConfig
+  private status: GitHubStatus
+  private listeners: Set<(status: GitHubStatus) => void>
+  private eventListeners: Set<(events: GitHubEvent[]) => void>
   private syncInterval: NodeJS.Timeout | null = null
-  private maxRetries = 3
 
-  constructor() {
-    if (typeof window !== "undefined") {
-      this.initialize()
+  constructor(config: GitHubRealtimeConfig = {}) {
+    this.config = {
+      token: config.token || process.env.NEXT_PUBLIC_GITHUB_TOKEN,
+      owner: config.owner || process.env.GITHUB_OWNER || "shinest-architecture",
+      repo: config.repo || process.env.GITHUB_REPO || "shinest-data",
+      branch: config.branch || process.env.GITHUB_BRANCH || "main",
     }
+
+    this.status = {
+      connected: false,
+      lastSync: null,
+      error: null,
+      rateLimit: {
+        remaining: 5000,
+        reset: Date.now() + 3600000, // 1 hour from now
+      },
+    }
+
+    this.listeners = new Set()
+    this.eventListeners = new Set()
   }
 
-  private initialize() {
-    // İlk bağlantıyı kur
-    this.connect()
-
-    // Periyodik senkronizasyon başlat
-    this.startPeriodicSync()
-
-    // Online/offline durumunu dinle
-    window.addEventListener("online", this.handleOnline.bind(this))
-    window.addEventListener("offline", this.handleOffline.bind(this))
+  isConfigured(): boolean {
+    return !!(this.config.token && this.config.owner && this.config.repo)
   }
 
-  private async connect() {
+  private async makeRequest(endpoint: string, options: RequestInit = {}) {
+    if (!this.isConfigured()) {
+      throw new Error("GitHub API not configured")
+    }
+
+    const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/${endpoint}`
+    
     try {
-      // localStorage'dan verileri al
-      const projects = JSON.parse(localStorage.getItem("projects") || "[]")
-      const blogs = JSON.parse(localStorage.getItem("blogs") || "[]")
-      const messages = JSON.parse(localStorage.getItem("messages") || "[]")
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${this.config.token}`,
+          Accept: "application/vnd.github.v3+json",
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+      })
 
-      const data: RealtimeData = {
-        projects,
-        blogs,
-        messages,
-        timestamp: new Date().toISOString(),
+      // Update rate limit info
+      const remaining = response.headers.get("x-ratelimit-remaining")
+      const reset = response.headers.get("x-ratelimit-reset")
+      
+      if (remaining && reset) {
+        this.status.rateLimit = {
+          remaining: parseInt(remaining),
+          reset: parseInt(reset) * 1000, // Convert to milliseconds
+        }
       }
 
-      // Bağlantı durumunu güncelle
-      this.connectionStatus = {
-        isConnected: true,
-        lastUpdate: new Date(),
-        retryCount: 0,
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
       }
 
-      // Subscribers'a bildir
-      this.notifySubscribers(data)
+      return response.json()
     } catch (error) {
-      console.error("GitHub Realtime connection error:", error)
-      this.handleConnectionError()
+      this.updateStatus({
+        connected: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      })
+      throw error
     }
   }
 
-  private handleConnectionError() {
-    this.connectionStatus.isConnected = false
-    this.connectionStatus.retryCount++
-
-    if (this.connectionStatus.retryCount <= this.maxRetries) {
-      // Yeniden bağlanmayı dene
-      setTimeout(() => {
-        this.connect()
-      }, 5000 * this.connectionStatus.retryCount) // Exponential backoff
-    }
+  private updateStatus(updates: Partial<GitHubStatus>) {
+    this.status = { ...this.status, ...updates }
+    this.notifyListeners()
   }
 
-  private startPeriodicSync() {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval)
-    }
-
-    this.syncInterval = setInterval(() => {
-      if (this.connectionStatus.isConnected) {
-        this.sync()
-      }
-    }, 30000) // 30 saniyede bir
-  }
-
-  private async sync() {
-    try {
-      // Verileri güncelle
-      await this.connect()
-    } catch (error) {
-      console.error("Sync error:", error)
-      this.handleConnectionError()
-    }
-  }
-
-  private handleOnline() {
-    console.log("Connection restored")
-    this.connectionStatus.retryCount = 0
-    this.connect()
-  }
-
-  private handleOffline() {
-    console.log("Connection lost")
-    this.connectionStatus.isConnected = false
-  }
-
-  private notifySubscribers(data: RealtimeData) {
-    this.subscribers.forEach((callback) => {
+  private notifyListeners() {
+    this.listeners.forEach((listener) => {
       try {
-        callback(data)
+        listener(this.status)
       } catch (error) {
-        console.error("Subscriber notification error:", error)
+        console.error("Error in status listener:", error)
       }
     })
   }
 
-  // Public methods
-  subscribe(callback: (data: RealtimeData) => void): () => void {
-    this.subscribers.push(callback)
-
-    // Unsubscribe function döndür
-    return () => {
-      const index = this.subscribers.indexOf(callback)
-      if (index > -1) {
-        this.subscribers.splice(index, 1)
+  private notifyEventListeners(events: GitHubEvent[]) {
+    this.eventListeners.forEach((listener) => {
+      try {
+        listener(events)
+      } catch (error) {
+        console.error("Error in event listener:", error)
       }
+    })
+  }
+
+  async connect(): Promise<void> {
+    if (!this.isConfigured()) {
+      this.updateStatus({
+        connected: false,
+        error: "GitHub API not configured",
+      })
+      return
+    }
+
+    try {
+      // Test connection by fetching repository info
+      await this.makeRequest("")
+      
+      this.updateStatus({
+        connected: true,
+        error: null,
+        lastSync: new Date().toISOString(),
+      })
+
+      // Start periodic sync
+      this.startSync()
+    } catch (error) {
+      this.updateStatus({
+        connected: false,
+        error: error instanceof Error ? error.message : "Connection failed",
+      })
     }
   }
 
-  getConnectionStatus(): ConnectionStatus {
-    return { ...this.connectionStatus }
-  }
-
-  forceSync() {
-    this.sync()
-  }
-
-  disconnect() {
+  disconnect(): void {
     if (this.syncInterval) {
       clearInterval(this.syncInterval)
       this.syncInterval = null
     }
 
-    this.connectionStatus.isConnected = false
-    this.subscribers = []
+    this.updateStatus({
+      connected: false,
+      lastSync: null,
+      error: null,
+    })
+  }
 
-    if (typeof window !== "undefined") {
-      window.removeEventListener("online", this.handleOnline.bind(this))
-      window.removeEventListener("offline", this.handleOffline.bind(this))
+  private startSync(): void {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval)
     }
+
+    // Sync every 30 seconds
+    this.syncInterval = setInterval(() => {
+      this.sync()
+    }, 30000)
+  }
+
+  async sync(): Promise<void> {
+    if (!this.status.connected) {
+      return
+    }
+
+    try {
+      // Fetch recent events
+      const events = await this.getRecentEvents()
+      this.notifyEventListeners(events)
+
+      this.updateStatus({
+        lastSync: new Date().toISOString(),
+        error: null,
+      })
+    } catch (error) {
+      console.error("Sync error:", error)
+      this.updateStatus({
+        error: error instanceof Error ? error.message : "Sync failed",
+      })
+    }
+  }
+
+  async getRecentEvents(limit = 10): Promise<GitHubEvent[]> {
+    try {
+      const events = await this.makeRequest(`events?per_page=${limit}`)
+      return events || []
+    } catch (error) {
+      console.error("Error fetching events:", error)
+      return []
+    }
+  }
+
+  async getCommits(limit = 10): Promise<any[]> {
+    try {
+      const commits = await this.makeRequest(`commits?per_page=${limit}&sha=${this.config.branch}`)
+      return commits || []
+    } catch (error) {
+      console.error("Error fetching commits:", error)
+      return []
+    }
+  }
+
+  async getRepositoryInfo(): Promise<any> {
+    try {
+      return await this.makeRequest("")
+    } catch (error) {
+      console.error("Error fetching repository info:", error)
+      return null
+    }
+  }
+
+  async getBranches(): Promise<any[]> {
+    try {
+      const branches = await this.makeRequest("branches")
+      return branches || []
+    } catch (error) {
+      console.error("Error fetching branches:", error)
+      return []
+    }
+  }
+
+  async getContributors(): Promise<any[]> {
+    try {
+      const contributors = await this.makeRequest("contributors")
+      return contributors || []
+    } catch (error) {
+      console.error("Error fetching contributors:", error)
+      return []
+    }
+  }
+
+  // Event listeners
+  onStatusChange(listener: (status: GitHubStatus) => void): () => void {
+    this.listeners.add(listener)
+    
+    // Call immediately with current status
+    listener(this.status)
+    
+    // Return unsubscribe function
+    return () => {
+      this.listeners.delete(listener)
+    }
+  }
+
+  onEvents(listener: (events: GitHubEvent[]) => void): () => void {
+    this.eventListeners.add(listener)
+    
+    // Return unsubscribe function
+    return () => {
+      this.eventListeners.delete(listener)
+    }
+  }
+
+  getStatus(): GitHubStatus {
+    return { ...this.status }
+  }
+
+  // Utility methods
+  isRateLimited(): boolean {
+    return this.status.rateLimit.remaining < 10
+  }
+
+  getRateLimitResetTime(): Date {
+    return new Date(this.status.rateLimit.reset)
+  }
+
+  getTimeUntilReset(): number {
+    return Math.max(0, this.status.rateLimit.reset - Date.now())
   }
 }
 
 // Singleton instance
 export const githubRealtime = new GitHubRealtime()
 
-// Cleanup on page unload
-if (typeof window !== "undefined") {
-  window.addEventListener("beforeunload", () => {
-    githubRealtime.disconnect()
-  })
+// Auto-connect if configured
+if (typeof window !== "undefined" && githubRealtime.isConfigured()) {
+  githubRealtime.connect().catch(console.error)
 }
+
+export type { GitHubEvent, GitHubStatus, GitHubRealtimeConfig }
