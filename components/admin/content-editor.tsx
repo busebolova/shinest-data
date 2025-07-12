@@ -1,9 +1,10 @@
 "use client"
 
 import React from "react"
+
 import { useState, useCallback } from "react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
-import { Plus, GripVertical, ImageIcon, Type, Quote, Grid3X3, Trash2, Eye, Save, Settings, Loader2 } from "lucide-react"
+import { Plus, GripVertical, ImageIcon, Type, Quote, Grid3X3, Trash2, Eye, Save, Upload, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,7 +12,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 
 interface ContentSection {
   id: string
@@ -34,17 +34,11 @@ export function ContentEditor({
   onSave,
 }: {
   initialSections?: ContentSection[]
-  onSave?: (sections: ContentSection[]) => Promise<void>
+  onSave?: (sections: ContentSection[]) => void
 }) {
   const [sections, setSections] = useState<ContentSection[]>(initialSections)
   const [previewMode, setPreviewMode] = useState(false)
   const [selectedSection, setSelectedSection] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-
-  // Sync initialSections prop with internal state
-  React.useEffect(() => {
-    setSections(initialSections)
-  }, [initialSections])
 
   const handleDragEnd = useCallback(
     (result: any) => {
@@ -88,12 +82,21 @@ export function ContentEditor({
     }
   }
 
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await onSave?.(sections)
-    } finally {
-      setSaving(false)
+  const handleSave = () => {
+    onSave?.(sections)
+  }
+
+  const handleImageUpload = async (file: File, sectionId: string, field: string) => {
+    // Simulate image upload
+    const imageUrl = URL.createObjectURL(file)
+    const section = sections.find((s) => s.id === sectionId)
+    if (section) {
+      updateSection(sectionId, {
+        content: {
+          ...section.content,
+          [field]: imageUrl,
+        },
+      })
     }
   }
 
@@ -109,9 +112,9 @@ export function ContentEditor({
                 <Eye className="w-4 h-4 mr-1" />
                 {previewMode ? "Düzenle" : "Önizle"}
               </Button>
-              <Button size="sm" onClick={handleSave} disabled={saving}>
-                {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-                {saving ? "Kaydediliyor..." : "Kaydet"}
+              <Button size="sm" onClick={handleSave}>
+                <Save className="w-4 h-4 mr-1" />
+                Kaydet
               </Button>
             </div>
           </div>
@@ -200,6 +203,7 @@ export function ContentEditor({
           <SectionEditor
             section={sections.find((s) => s.id === selectedSection)!}
             onUpdate={(updates) => updateSection(selectedSection, updates)}
+            onImageUpload={handleImageUpload}
             previewMode={previewMode}
           />
         ) : (
@@ -219,10 +223,12 @@ export function ContentEditor({
 function SectionEditor({
   section,
   onUpdate,
+  onImageUpload,
   previewMode,
 }: {
   section: ContentSection
   onUpdate: (updates: Partial<ContentSection>) => void
+  onImageUpload: (file: File, sectionId: string, field: string) => void
   previewMode: boolean
 }) {
   if (previewMode) {
@@ -241,414 +247,231 @@ function SectionEditor({
         />
       </div>
 
-      {section.type === "hero" && <HeroEditor section={section} onUpdate={onUpdate} />}
+      {section.type === "hero" && <HeroEditor section={section} onUpdate={onUpdate} onImageUpload={onImageUpload} />}
 
       {section.type === "text" && <TextEditor section={section} onUpdate={onUpdate} />}
 
-      {section.type === "gallery" && <GalleryEditor section={section} onUpdate={onUpdate} />}
+      {section.type === "gallery" && (
+        <GalleryEditor section={section} onUpdate={onUpdate} onImageUpload={onImageUpload} />
+      )}
 
       {section.type === "quote" && <QuoteEditor section={section} onUpdate={onUpdate} />}
 
-      {section.type === "services" && <ServicesEditor section={section} onUpdate={onUpdate} />}
+      {section.type === "services" && (
+        <ServicesEditor section={section} onUpdate={onUpdate} onImageUpload={onImageUpload} />
+      )}
     </div>
   )
 }
 
-function HeroEditor({ section, onUpdate }: any) {
-  const updateContentField = (field: string, value: any, lang?: string) => {
-    onUpdate({
-      content: {
-        ...section.content,
-        [field]: lang ? { ...section.content[field], [lang]: value } : value,
-      },
-    })
-  }
-
+function HeroEditor({ section, onUpdate, onImageUpload }: any) {
   return (
     <div className="space-y-4">
       <div>
-        <Label>Ana Başlık (TR)</Label>
+        <Label>Ana Başlık</Label>
         <Input
-          value={section.content.title?.tr || ""}
-          onChange={(e) => updateContentField("title", e.target.value, "tr")}
+          value={section.content.title || ""}
+          onChange={(e) =>
+            onUpdate({
+              content: { ...section.content, title: e.target.value },
+            })
+          }
         />
       </div>
       <div>
-        <Label>Ana Başlık (EN)</Label>
+        <Label>Alt Başlık</Label>
         <Input
-          value={section.content.title?.en || ""}
-          onChange={(e) => updateContentField("title", e.target.value, "en")}
+          value={section.content.subtitle || ""}
+          onChange={(e) =>
+            onUpdate({
+              content: { ...section.content, subtitle: e.target.value },
+            })
+          }
         />
       </div>
       <div>
-        <Label>Alt Başlık (TR)</Label>
-        <Input
-          value={section.content.subtitle?.tr || ""}
-          onChange={(e) => updateContentField("subtitle", e.target.value, "tr")}
-        />
-      </div>
-      <div>
-        <Label>Alt Başlık (EN)</Label>
-        <Input
-          value={section.content.subtitle?.en || ""}
-          onChange={(e) => updateContentField("subtitle", e.target.value, "en")}
-        />
-      </div>
-      <div>
-        <Label>Açıklama (TR)</Label>
+        <Label>Açıklama</Label>
         <Textarea
-          value={section.content.description?.tr || ""}
-          onChange={(e) => updateContentField("description", e.target.value, "tr")}
+          value={section.content.description || ""}
+          onChange={(e) =>
+            onUpdate({
+              content: { ...section.content, description: e.target.value },
+            })
+          }
         />
       </div>
       <div>
-        <Label>Açıklama (EN)</Label>
-        <Textarea
-          value={section.content.description?.en || ""}
-          onChange={(e) => updateContentField("description", e.target.value, "en")}
-        />
-      </div>
-      <div>
-        <Label>Buton Metni (TR)</Label>
-        <Input
-          value={section.content.buttonText?.tr || ""}
-          onChange={(e) => updateContentField("buttonText", e.target.value, "tr")}
-        />
-      </div>
-      <div>
-        <Label>Buton Metni (EN)</Label>
-        <Input
-          value={section.content.buttonText?.en || ""}
-          onChange={(e) => updateContentField("buttonText", e.target.value, "en")}
-        />
-      </div>
-      <div>
-        <Label>Arka Plan Görseli URL (public/images/hero-image.png gibi)</Label>
-        <Input
-          value={section.content.backgroundImage || ""}
-          onChange={(e) => updateContentField("backgroundImage", e.target.value)}
-          placeholder="/images/hero-image.png"
-        />
-        {section.content.backgroundImage && (
-          <img
-            src={section.content.backgroundImage || "/placeholder.svg"}
-            alt="Background Preview"
-            className="mt-2 h-24 object-cover rounded-md"
+        <Label>Arka Plan Görseli</Label>
+        <div className="mt-2">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) onImageUpload(file, section.id, "backgroundImage")
+            }}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           />
-        )}
-        <p className="text-sm text-muted-foreground mt-1">Görseli `public` klasörüne yükleyip buraya yolunu girin.</p>
-      </div>
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={section.content.showAnimation || false}
-          onCheckedChange={(checked) => updateContentField("showAnimation", checked)}
-          id="show-animation"
-        />
-        <Label htmlFor="show-animation">Animasyon Göster</Label>
-      </div>
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={section.content.isVisible || false}
-          onCheckedChange={(checked) => updateContentField("isVisible", checked)}
-          id="hero-is-visible"
-        />
-        <Label htmlFor="hero-is-visible">Bölümü Görünür Yap</Label>
+        </div>
       </div>
     </div>
   )
 }
 
 function TextEditor({ section, onUpdate }: any) {
-  const updateContentField = (field: string, value: any, lang?: string) => {
-    onUpdate({
-      content: {
-        ...section.content,
-        [field]: lang ? { ...section.content[field], [lang]: value } : value,
-      },
-    })
-  }
-
   return (
     <div className="space-y-4">
       <div>
-        <Label>Başlık (TR)</Label>
+        <Label>Başlık</Label>
         <Input
-          value={section.content.title?.tr || ""}
-          onChange={(e) => updateContentField("title", e.target.value, "tr")}
+          value={section.content.title || ""}
+          onChange={(e) =>
+            onUpdate({
+              content: { ...section.content, title: e.target.value },
+            })
+          }
         />
       </div>
       <div>
-        <Label>Başlık (EN)</Label>
-        <Input
-          value={section.content.title?.en || ""}
-          onChange={(e) => updateContentField("title", e.target.value, "en")}
-        />
-      </div>
-      {section.content.mainText1 !== undefined && ( // Specific for "Büyük Metin" section
-        <>
-          <div>
-            <Label>Ana Metin 1 (TR)</Label>
-            <Input
-              value={section.content.mainText1?.tr || ""}
-              onChange={(e) => updateContentField("mainText1", e.target.value, "tr")}
-            />
-          </div>
-          <div>
-            <Label>Ana Metin 1 (EN)</Label>
-            <Input
-              value={section.content.mainText1?.en || ""}
-              onChange={(e) => updateContentField("mainText1", e.target.value, "en")}
-            />
-          </div>
-          <div>
-            <Label>Ana Metin 2 (TR)</Label>
-            <Input
-              value={section.content.mainText2?.tr || ""}
-              onChange={(e) => updateContentField("mainText2", e.target.value, "tr")}
-            />
-          </div>
-          <div>
-            <Label>Ana Metin 2 (EN)</Label>
-            <Input
-              value={section.content.mainText2?.en || ""}
-              onChange={(e) => updateContentField("mainText2", e.target.value, "en")}
-            />
-          </div>
-          <div>
-            <Label>El Yazısı Metin (TR)</Label>
-            <Input
-              value={section.content.handwritingText?.tr || ""}
-              onChange={(e) => updateContentField("handwritingText", e.target.value, "tr")}
-            />
-          </div>
-          <div>
-            <Label>El Yazısı Metin (EN)</Label>
-            <Input
-              value={section.content.handwritingText?.en || ""}
-              onChange={(e) => updateContentField("handwritingText", e.target.value, "en")}
-            />
-          </div>
-        </>
-      )}
-      <div>
-        <Label>İçerik (TR)</Label>
+        <Label>İçerik</Label>
         <Textarea
           rows={8}
-          value={section.content.text?.tr || ""}
-          onChange={(e) => updateContentField("text", e.target.value, "tr")}
+          value={section.content.text || ""}
+          onChange={(e) =>
+            onUpdate({
+              content: { ...section.content, text: e.target.value },
+            })
+          }
         />
-      </div>
-      <div>
-        <Label>İçerik (EN)</Label>
-        <Textarea
-          rows={8}
-          value={section.content.text?.en || ""}
-          onChange={(e) => updateContentField("text", e.target.value, "en")}
-        />
-      </div>
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={section.content.isVisible || false}
-          onCheckedChange={(checked) => updateContentField("isVisible", checked)}
-          id="text-is-visible"
-        />
-        <Label htmlFor="text-is-visible">Bölümü Görünür Yap</Label>
       </div>
     </div>
   )
 }
 
-function GalleryEditor({ section, onUpdate }: any) {
+function GalleryEditor({ section, onUpdate, onImageUpload }: any) {
   const images = section.content.images || []
 
-  const addImage = () => {
+  const addImage = (file: File) => {
+    const imageUrl = URL.createObjectURL(file)
     onUpdate({
       content: {
         ...section.content,
-        images: [
-          ...images,
-          { id: Date.now().toString(), url: "/placeholder.svg", alt: { tr: "Yeni Görsel", en: "New Image" } },
-        ],
+        images: [...images, { url: imageUrl, alt: file.name }],
       },
-    })
-  }
-
-  const updateImage = (id: string, field: string, value: any, lang?: string) => {
-    const newImages = images.map((img: any) =>
-      img.id === id ? { ...img, [field]: lang ? { ...img[field], [lang]: value } : value } : img,
-    )
-    onUpdate({
-      content: { ...section.content, images: newImages },
-    })
-  }
-
-  const deleteImage = (id: string) => {
-    const newImages = images.filter((img: any) => img.id !== id)
-    onUpdate({
-      content: { ...section.content, images: newImages },
     })
   }
 
   return (
     <div className="space-y-4">
       <div>
-        <Label>Galeri Başlığı (TR)</Label>
+        <Label>Galeri Başlığı</Label>
         <Input
-          value={section.content.title?.tr || ""}
+          value={section.content.title || ""}
           onChange={(e) =>
-            onUpdate({ content: { ...section.content, title: { ...section.content.title, tr: e.target.value } } })
-          }
-        />
-      </div>
-      <div>
-        <Label>Galeri Başlığı (EN)</Label>
-        <Input
-          value={section.content.title?.en || ""}
-          onChange={(e) =>
-            onUpdate({ content: { ...section.content, title: { ...section.content.title, en: e.target.value } } })
+            onUpdate({
+              content: { ...section.content, title: e.target.value },
+            })
           }
         />
       </div>
       <div>
         <Label>Görseller</Label>
-        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {images.map((image: any) => (
-            <Card key={image.id}>
-              <CardContent className="p-4 space-y-3">
-                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                  <img
-                    src={image.url || "/placeholder.svg"}
-                    alt={image.alt?.tr || "Galeri Görseli"}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <Label>Görsel URL</Label>
-                  <Input
-                    value={image.url || ""}
-                    onChange={(e) => updateImage(image.id, "url", e.target.value)}
-                    placeholder="/images/gallery-1.png"
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Görseli `public` klasörüne yükleyip buraya yolunu girin.
-                  </p>
-                </div>
-                <div>
-                  <Label>Alt Metin (TR)</Label>
-                  <Input
-                    value={image.alt?.tr || ""}
-                    onChange={(e) => updateImage(image.id, "alt", e.target.value, "tr")}
-                  />
-                </div>
-                <div>
-                  <Label>Alt Metin (EN)</Label>
-                  <Input
-                    value={image.alt?.en || ""}
-                    onChange={(e) => updateImage(image.id, "alt", e.target.value, "en")}
-                  />
-                </div>
-                <Button variant="destructive" size="sm" onClick={() => deleteImage(image.id)} className="w-full">
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Sil
-                </Button>
-              </CardContent>
-            </Card>
+        <div className="mt-2 grid grid-cols-3 gap-4">
+          {images.map((image: any, index: number) => (
+            <div key={index} className="relative">
+              <img
+                src={image.url || "/placeholder.svg"}
+                alt={image.alt}
+                className="w-full h-24 object-cover rounded-lg"
+              />
+              <Button
+                variant="destructive"
+                size="sm"
+                className="absolute top-1 right-1"
+                onClick={() => {
+                  const newImages = images.filter((_: any, i: number) => i !== index)
+                  onUpdate({
+                    content: { ...section.content, images: newImages },
+                  })
+                }}
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
           ))}
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center flex items-center justify-center">
-            <Button variant="outline" onClick={addImage}>
-              <Plus className="w-4 h-4 mr-2" />
-              Görsel Ekle
-            </Button>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || [])
+                files.forEach(addImage)
+              }}
+              className="hidden"
+              id="gallery-upload"
+            />
+            <label htmlFor="gallery-upload" className="cursor-pointer">
+              <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+              <span className="text-sm text-gray-500">Görsel Ekle</span>
+            </label>
           </div>
         </div>
-      </div>
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={section.content.isVisible || false}
-          onCheckedChange={(checked) => onUpdate({ content: { ...section.content, isVisible: checked } })}
-          id="gallery-is-visible"
-        />
-        <Label htmlFor="gallery-is-visible">Bölümü Görünür Yap</Label>
       </div>
     </div>
   )
 }
 
 function QuoteEditor({ section, onUpdate }: any) {
-  const updateContentField = (field: string, value: any, lang?: string) => {
-    onUpdate({
-      content: {
-        ...section.content,
-        [field]: lang ? { ...section.content[field], [lang]: value } : value,
-      },
-    })
-  }
-
   return (
     <div className="space-y-4">
       <div>
-        <Label>Alıntı Metni (TR)</Label>
+        <Label>Alıntı Metni</Label>
         <Textarea
-          value={section.content.quote?.tr || ""}
-          onChange={(e) => updateContentField("quote", e.target.value, "tr")}
+          value={section.content.quote || ""}
+          onChange={(e) =>
+            onUpdate({
+              content: { ...section.content, quote: e.target.value },
+            })
+          }
         />
       </div>
       <div>
-        <Label>Alıntı Metni (EN)</Label>
-        <Textarea
-          value={section.content.quote?.en || ""}
-          onChange={(e) => updateContentField("quote", e.target.value, "en")}
-        />
-      </div>
-      <div>
-        <Label>Yazar (TR)</Label>
+        <Label>Yazar</Label>
         <Input
-          value={section.content.author?.tr || ""}
-          onChange={(e) => updateContentField("author", e.target.value, "tr")}
+          value={section.content.author || ""}
+          onChange={(e) =>
+            onUpdate({
+              content: { ...section.content, author: e.target.value },
+            })
+          }
         />
       </div>
       <div>
-        <Label>Yazar (EN)</Label>
+        <Label>Pozisyon</Label>
         <Input
-          value={section.content.author?.en || ""}
-          onChange={(e) => updateContentField("author", e.target.value, "en")}
+          value={section.content.position || ""}
+          onChange={(e) =>
+            onUpdate({
+              content: { ...section.content, position: e.target.value },
+            })
+          }
         />
-      </div>
-      <div>
-        <Label>Pozisyon (TR)</Label>
-        <Input
-          value={section.content.position?.tr || ""}
-          onChange={(e) => updateContentField("position", e.target.value, "tr")}
-        />
-      </div>
-      <div>
-        <Label>Pozisyon (EN)</Label>
-        <Input
-          value={section.content.position?.en || ""}
-          onChange={(e) => updateContentField("position", e.target.value, "en")}
-        />
-      </div>
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={section.content.isVisible || false}
-          onCheckedChange={(checked) => updateContentField("isVisible", checked)}
-          id="quote-is-visible"
-        />
-        <Label htmlFor="quote-is-visible">Bölümü Görünür Yap</Label>
       </div>
     </div>
   )
 }
 
-function ServicesEditor({ section, onUpdate }: any) {
+function ServicesEditor({ section, onUpdate, onImageUpload }: any) {
   const services = section.content.services || []
 
   const addService = () => {
     const newService = {
       id: Date.now().toString(),
-      title: { tr: "Yeni Hizmet", en: "New Service" },
-      description: { tr: "", en: "" },
-      image: "/placeholder.svg",
+      title: "Yeni Hizmet",
+      description: "",
+      image: "",
+      features: [],
     }
     onUpdate({
       content: {
@@ -658,138 +481,72 @@ function ServicesEditor({ section, onUpdate }: any) {
     })
   }
 
-  const updateService = (serviceId: string, field: string, value: any, lang?: string) => {
-    const newServices = services.map((s: any) =>
-      s.id === serviceId ? { ...s, [field]: lang ? { ...s[field], [lang]: value } : value } : s,
-    )
-    onUpdate({
-      content: { ...section.content, services: newServices },
-    })
-  }
-
-  const deleteService = (serviceId: string) => {
-    const newServices = services.filter((s: any) => s.id !== serviceId)
-    onUpdate({
-      content: { ...section.content, services: newServices },
-    })
-  }
-
   return (
     <div className="space-y-4">
       <div>
-        <Label>Bölüm Başlığı (TR)</Label>
+        <Label>Bölüm Başlığı</Label>
         <Input
-          value={section.content.title?.tr || ""}
+          value={section.content.title || ""}
           onChange={(e) =>
-            onUpdate({ content: { ...section.content, title: { ...section.content.title, tr: e.target.value } } })
+            onUpdate({
+              content: { ...section.content, title: e.target.value },
+            })
           }
         />
       </div>
       <div>
-        <Label>Bölüm Başlığı (EN)</Label>
-        <Input
-          value={section.content.title?.en || ""}
-          onChange={(e) =>
-            onUpdate({ content: { ...section.content, title: { ...section.content.title, en: e.target.value } } })
-          }
-        />
-      </div>
-      <div>
-        <Label>Alt Başlık (TR)</Label>
-        <Textarea
-          value={section.content.subtitle?.tr || ""}
-          onChange={(e) =>
-            onUpdate({ content: { ...section.content, subtitle: { ...section.content.subtitle, tr: e.target.value } } })
-          }
-          rows={3}
-        />
-      </div>
-      <div>
-        <Label>Alt Başlık (EN)</Label>
-        <Textarea
-          value={section.content.subtitle?.en || ""}
-          onChange={(e) =>
-            onUpdate({ content: { ...section.content, subtitle: { ...section.content.subtitle, en: e.target.value } } })
-          }
-          rows={3}
-        />
-      </div>
-      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <Label className="text-base font-semibold">Hizmetler</Label>
+          <Label>Hizmetler</Label>
           <Button onClick={addService} size="sm">
             <Plus className="w-4 h-4 mr-1" />
             Hizmet Ekle
           </Button>
         </div>
         <div className="mt-2 space-y-4">
-          {services.map((service: any) => (
+          {services.map((service: any, index: number) => (
             <Card key={service.id}>
-              <CardContent className="p-4 space-y-3">
-                <div>
-                  <Label>Başlık (TR)</Label>
+              <CardContent className="p-4">
+                <div className="space-y-3">
                   <Input
-                    value={service.title?.tr || ""}
-                    onChange={(e) => updateService(service.id, "title", e.target.value, "tr")}
+                    placeholder="Hizmet Başlığı"
+                    value={service.title}
+                    onChange={(e) => {
+                      const newServices = [...services]
+                      newServices[index].title = e.target.value
+                      onUpdate({
+                        content: { ...section.content, services: newServices },
+                      })
+                    }}
                   />
-                </div>
-                <div>
-                  <Label>Başlık (EN)</Label>
-                  <Input
-                    value={service.title?.en || ""}
-                    onChange={(e) => updateService(service.id, "title", e.target.value, "en")}
-                  />
-                </div>
-                <div>
-                  <Label>Açıklama (TR)</Label>
                   <Textarea
-                    value={service.description?.tr || ""}
-                    onChange={(e) => updateService(service.id, "description", e.target.value, "tr")}
-                    rows={3}
+                    placeholder="Hizmet Açıklaması"
+                    value={service.description}
+                    onChange={(e) => {
+                      const newServices = [...services]
+                      newServices[index].description = e.target.value
+                      onUpdate({
+                        content: { ...section.content, services: newServices },
+                      })
+                    }}
                   />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      const newServices = services.filter((_: any, i: number) => i !== index)
+                      onUpdate({
+                        content: { ...section.content, services: newServices },
+                      })
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Sil
+                  </Button>
                 </div>
-                <div>
-                  <Label>Açıklama (EN)</Label>
-                  <Textarea
-                    value={service.description?.en || ""}
-                    onChange={(e) => updateService(service.id, "description", e.target.value, "en")}
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label>Görsel URL (public/images/consulting-service.png gibi)</Label>
-                  <Input
-                    value={service.image || ""}
-                    onChange={(e) => updateService(service.id, "image", e.target.value)}
-                    placeholder="/images/consulting-service.png"
-                  />
-                  {service.image && (
-                    <img
-                      src={service.image || "/placeholder.svg"}
-                      alt="Service Preview"
-                      className="mt-2 h-16 object-cover rounded-md"
-                    />
-                  )}
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Görseli `public` klasörüne yükleyip buraya yolunu girin.
-                  </p>
-                </div>
-                <Button variant="destructive" size="sm" onClick={() => deleteService(service.id)} className="w-full">
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Sil
-                </Button>
               </CardContent>
             </Card>
           ))}
         </div>
-      </div>
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={section.content.isVisible || false}
-          onCheckedChange={(checked) => onUpdate({ content: { ...section.content, isVisible: checked } })}
-          id="services-is-visible"
-        />
-        <Label htmlFor="services-is-visible">Bölümü Görünür Yap</Label>
       </div>
     </div>
   )
@@ -802,56 +559,28 @@ function SectionPreview({ section }: { section: ContentSection }) {
 
       {section.type === "hero" && (
         <div className="bg-gray-100 p-8 rounded-lg text-center">
-          <h1 className="text-3xl font-bold mb-2">
-            {section.content.title?.tr || section.content.title?.en || "Başlık"}
-          </h1>
-          <h2 className="text-xl text-gray-600 mb-4">
-            {section.content.subtitle?.tr || section.content.subtitle?.en || "Alt Başlık"}
-          </h2>
-          <p className="text-gray-700">
-            {section.content.description?.tr || section.content.description?.en || "Açıklama"}
-          </p>
-          {section.content.backgroundImage && (
-            <img
-              src={section.content.backgroundImage || "/placeholder.svg"}
-              alt="Hero Background"
-              className="mt-4 max-h-48 w-full object-cover rounded-md"
-            />
-          )}
+          <h1 className="text-3xl font-bold mb-2">{section.content.title}</h1>
+          <h2 className="text-xl text-gray-600 mb-4">{section.content.subtitle}</h2>
+          <p className="text-gray-700">{section.content.description}</p>
         </div>
       )}
 
       {section.type === "text" && (
         <div>
-          <h2 className="text-2xl font-bold mb-4">
-            {section.content.title?.tr || section.content.title?.en || "Metin Başlığı"}
-          </h2>
-          {section.content.mainText1 && (
-            <>
-              <p className="text-xl font-bold">{section.content.mainText1?.tr || section.content.mainText1?.en}</p>
-              <p className="text-xl font-bold">{section.content.mainText2?.tr || section.content.mainText2?.en}</p>
-              <p className="text-xl font-bold text-yellow-600">
-                {section.content.handwritingText?.tr || section.content.handwritingText?.en}
-              </p>
-            </>
-          )}
-          <p className="text-gray-700 whitespace-pre-wrap">
-            {section.content.text?.tr || section.content.text?.en || "Metin içeriği"}
-          </p>
+          <h2 className="text-2xl font-bold mb-4">{section.content.title}</h2>
+          <p className="text-gray-700 whitespace-pre-wrap">{section.content.text}</p>
         </div>
       )}
 
       {section.type === "gallery" && (
         <div>
-          <h2 className="text-2xl font-bold mb-4">
-            {section.content.title?.tr || section.content.title?.en || "Galeri Başlığı"}
-          </h2>
+          <h2 className="text-2xl font-bold mb-4">{section.content.title}</h2>
           <div className="grid grid-cols-3 gap-4">
             {section.content.images?.map((image: any, index: number) => (
               <img
                 key={index}
                 src={image.url || "/placeholder.svg"}
-                alt={image.alt?.tr || image.alt?.en || "Galeri Görseli"}
+                alt={image.alt}
                 className="w-full h-32 object-cover rounded-lg"
               />
             ))}
@@ -861,39 +590,22 @@ function SectionPreview({ section }: { section: ContentSection }) {
 
       {section.type === "quote" && (
         <div className="bg-gray-50 p-6 rounded-lg text-center">
-          <blockquote className="text-xl italic mb-4">
-            "{section.content.quote?.tr || section.content.quote?.en || "Alıntı metni"}"
-          </blockquote>
+          <blockquote className="text-xl italic mb-4">"{section.content.quote}"</blockquote>
           <cite className="text-gray-600">
-            — {section.content.author?.tr || section.content.author?.en || "Yazar"},{" "}
-            {section.content.position?.tr || section.content.position?.en || "Pozisyon"}
+            — {section.content.author}, {section.content.position}
           </cite>
         </div>
       )}
 
       {section.type === "services" && (
         <div>
-          <h2 className="text-2xl font-bold mb-4">
-            {section.content.title?.tr || section.content.title?.en || "Hizmetler Başlığı"}
-          </h2>
-          <p className="text-gray-600 mb-4">
-            {section.content.subtitle?.tr || section.content.subtitle?.en || "Alt Başlık"}
-          </p>
+          <h2 className="text-2xl font-bold mb-4">{section.content.title}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {section.content.services?.map((service: any, index: number) => (
               <Card key={service.id}>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold mb-2">{service.title?.tr || service.title?.en || "Hizmet Başlığı"}</h3>
-                  <p className="text-gray-600 text-sm">
-                    {service.description?.tr || service.description?.en || "Hizmet açıklaması"}
-                  </p>
-                  {service.image && (
-                    <img
-                      src={service.image || "/placeholder.svg"}
-                      alt="Service Preview"
-                      className="mt-2 h-16 object-cover rounded-md"
-                    />
-                  )}
+                  <h3 className="font-semibold mb-2">{service.title}</h3>
+                  <p className="text-gray-600 text-sm">{service.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -908,39 +620,31 @@ function getDefaultContent(type: ContentSection["type"]) {
   switch (type) {
     case "hero":
       return {
-        title: { tr: "Ana Başlık", en: "Main Title" },
-        subtitle: { tr: "Alt Başlık", en: "Subtitle" },
-        description: { tr: "Açıklama metni", en: "Description text" },
-        buttonText: { tr: "Keşfet", en: "Explore" },
-        backgroundImage: "/placeholder.svg?height=400&width=800",
-        showAnimation: true,
-        isVisible: true,
+        title: "Ana Başlık",
+        subtitle: "Alt Başlık",
+        description: "Açıklama metni",
+        backgroundImage: "",
       }
     case "text":
       return {
-        title: { tr: "Metin Başlığı", en: "Text Title" },
-        text: { tr: "Metin içeriği", en: "Text content" },
-        isVisible: true,
+        title: "Metin Başlığı",
+        text: "Metin içeriği",
       }
     case "gallery":
       return {
-        title: { tr: "Galeri Başlığı", en: "Gallery Title" },
+        title: "Galeri Başlığı",
         images: [],
-        isVisible: true,
       }
     case "quote":
       return {
-        quote: { tr: "Alıntı metni", en: "Quote text" },
-        author: { tr: "Yazar", en: "Author" },
-        position: { tr: "Pozisyon", en: "Position" },
-        isVisible: true,
+        quote: "Alıntı metni",
+        author: "Yazar",
+        position: "Pozisyon",
       }
     case "services":
       return {
-        title: { tr: "Hizmetlerimiz", en: "Our Services" },
-        subtitle: { tr: "Hizmetlerimizin alt başlığı", en: "Subtitle for our services" },
+        title: "Hizmetlerimiz",
         services: [],
-        isVisible: true,
       }
     default:
       return {}

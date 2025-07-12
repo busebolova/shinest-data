@@ -1,203 +1,378 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-
-import { useEffect, useState, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, FileText, LayoutDashboard, Wifi, WifiOff, AlertTriangle } from "lucide-react"
-import { githubRealtime, type ConnectionStatus, type RealtimeData, type RealtimeMessage } from "@/lib/github-realtime"
-import { formatDistanceToNow, parseISO } from "date-fns"
-import { tr } from "date-fns/locale"
-import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Progress } from "@/components/ui/progress"
+import {
+  Users,
+  FileText,
+  MessageSquare,
+  TrendingUp,
+  Activity,
+  Github,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  Settings,
+} from "lucide-react"
+import { githubRealtime, type RealtimeData } from "@/lib/github-realtime"
+import { githubAPI } from "@/lib/github-api"
+
+interface DashboardStats {
+  projects: number
+  blogPosts: number
+  messages: number
+  visitors: number
+  githubConnected: boolean
+  lastSync: string
+}
 
 export function RealtimeDashboard() {
   const [data, setData] = useState<RealtimeData>(githubRealtime.getData())
-  const [messages, setMessages] = useState<RealtimeMessage[]>([])
-  const [loading, setLoading] = useState(false)
-
-  const handleDataUpdate = useCallback((updatedData: RealtimeData) => {
-    setData(updatedData)
-    setLoading(false)
-  }, [])
-
-  const handleMessage = useCallback((message: RealtimeMessage) => {
-    setMessages((prev) => [message, ...prev].slice(0, 10)) // Keep last 10 messages
-    if (message.type === "error") {
-      toast.error(`Gerçek Zamanlı Hata: ${message.data?.error || "Bilinmeyen hata"}`)
-    } else if (message.type === "connected") {
-      toast.success("Gerçek Zamanlı Bağlantı Kuruldu!")
-    } else if (message.type === "disconnected") {
-      toast.warning("Gerçek Zamanlı Bağlantı Kesildi.")
-    }
-  }, [])
+  const [loading, setLoading] = useState(true)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
 
   useEffect(() => {
-    const unsubscribeData = githubRealtime.subscribe(handleDataUpdate)
-    const unsubscribeMessages = githubRealtime.onMessage(handleMessage)
+    const unsubscribe = githubRealtime.subscribe((newData) => {
+      setData(newData)
+      setLoading(false)
+    })
 
-    // Initial fetch if data is empty
-    if (data.projects.length === 0 && data.blogs.length === 0) {
-      setLoading(true)
-      githubRealtime.refresh().finally(() => setLoading(false))
+    const fetchInitialData = async () => {
+      // Fetch initial data for recent activity
+      try {
+        const isConnected = githubAPI.isConfigured()
+        if (isConnected) {
+          const commits = await githubAPI.getCommits(5)
+          setRecentActivity(
+            commits.map((commit) => ({
+              id: commit.sha,
+              type: "commit",
+              title: commit.commit.message.split("\n")[0],
+              description: `by ${commit.commit.author.name}`,
+              timestamp: commit.commit.author.date,
+              url: commit.html_url,
+            })),
+          )
+        }
+      } catch (error) {
+        console.error("Failed to fetch initial GitHub activity:", error)
+      }
+      setLoading(false)
     }
 
-    return () => {
-      unsubscribeData()
-      unsubscribeMessages()
-    }
-  }, [handleDataUpdate, handleMessage, data.projects.length, data.blogs.length])
+    fetchInitialData()
 
-  const handleRefresh = async () => {
+    return () => unsubscribe()
+  }, [])
+
+  const handleGithubSync = async () => {
     setLoading(true)
-    await githubRealtime.refresh()
-  }
-
-  const renderConnectionStatus = (status: ConnectionStatus) => {
-    switch (status) {
-      case "connected":
-        return (
-          <Badge className="bg-green-500 hover:bg-green-500 text-white">
-            <Wifi className="w-3 h-3 mr-1" /> Çevrimiçi
-          </Badge>
-        )
-      case "disconnected":
-        return (
-          <Badge variant="destructive">
-            <WifiOff className="w-3 h-3 mr-1" /> Çevrimdışı
-          </Badge>
-        )
-      case "connecting":
-        return (
-          <Badge variant="secondary">
-            <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Bağlanıyor...
-          </Badge>
-        )
-      case "error":
-        return (
-          <Badge variant="destructive">
-            <AlertTriangle className="w-3 h-3 mr-1" /> Hata
-          </Badge>
-        )
-      default:
-        return null
-    }
-  }
-
-  const formatTimeAgo = (isoString: string) => {
-    if (!isoString) return "N/A"
     try {
-      return formatDistanceToNow(parseISO(isoString), { addSuffix: true, locale: tr })
-    } catch (e) {
-      return "Geçersiz Tarih"
+      await githubRealtime.refresh()
+      const isConnected = githubAPI.isConfigured()
+      if (isConnected) {
+        const commits = await githubAPI.getCommits(5)
+        setRecentActivity(
+          commits.map((commit) => ({
+            id: commit.sha,
+            type: "commit",
+            title: commit.commit.message.split("\n")[0],
+            description: `by ${commit.commit.author.name}`,
+            timestamp: commit.commit.author.date,
+            url: commit.html_url,
+          })),
+        )
+      }
+    } catch (error) {
+      console.error("GitHub sync failed:", error)
+    } finally {
+      setLoading(false)
     }
+  }
+
+  const githubStatus = data.connectionStatus
+  const stats: DashboardStats = {
+    projects: data.projects?.length || 0,
+    blogPosts: data.blogs?.length || 0,
+    messages: data.dashboard?.messages || 0,
+    visitors: data.dashboard?.visitors || 0,
+    githubConnected: githubRealtime.isGitHubConfigured() && data.connectionStatus === "connected",
+    lastSync: data.lastUpdate,
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#c4975a]"></div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {/* Real-time Status Card */}
-      <Card className="lg:col-span-1">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Gerçek Zamanlı Durum</CardTitle>
-          {renderConnectionStatus(data.connectionStatus)}
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data.connectionStatus === "connected" ? "Aktif" : "Pasif"}</div>
-          <p className="text-xs text-muted-foreground mt-1">Son Güncelleme: {formatTimeAgo(data.lastUpdate)}</p>
-          <Button onClick={handleRefresh} disabled={loading} className="mt-4 w-full">
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            {loading ? "Yenileniyor..." : "Şimdi Yenile"}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">SHINEST Admin Panel Özeti</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleGithubSync}
+            disabled={githubStatus === "connecting"}
+            variant="outline"
+            className="border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${githubStatus === "connecting" ? "animate-spin" : ""}`} />
+            Senkronize Et
           </Button>
-          {!githubRealtime.isGitHubConfigured() && (
-            <p className="text-sm text-orange-500 mt-2">
-              GitHub API yapılandırılmadı. Veriler yerel depolamadan çekiliyor.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Key Metrics */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Toplam Projeler</CardTitle>
-          <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data.projects.length}</div>
-          <p className="text-xs text-muted-foreground">{data.dashboard.projectsPublished || 0} yayınlanmış</p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Toplam Blog Yazıları</CardTitle>
-          <FileText className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data.blogs.length}</div>
-          <p className="text-xs text-muted-foreground">{data.dashboard.blogPostsPublished || 0} yayınlanmış</p>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card className="col-span-full lg:col-span-2">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Son Etkinlikler (Gerçek Zamanlı Mesajlar)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[200px] pr-4">
-            <div className="space-y-2">
-              {messages.length === 0 && <p className="text-muted-foreground text-sm">Henüz bir etkinlik yok.</p>}
-              {messages.map((msg, index) => (
-                <div key={index} className="flex items-center space-x-2 text-sm">
-                  <span className="text-muted-foreground">[{new Date(msg.timestamp).toLocaleTimeString()}]</span>
-                  {msg.type === "connected" && (
-                    <Badge variant="outline" className="bg-green-100 text-green-700">
-                      Bağlandı
-                    </Badge>
-                  )}
-                  {msg.type === "disconnected" && (
-                    <Badge variant="outline" className="bg-red-100 text-red-700">
-                      Bağlantı Kesildi
-                    </Badge>
-                  )}
-                  {msg.type === "connecting" && (
-                    <Badge variant="outline" className="bg-blue-100 text-blue-700">
-                      Bağlanıyor
-                    </Badge>
-                  )}
-                  {msg.type === "error" && <Badge variant="destructive">Hata</Badge>}
-                  {msg.type === "sync" && <Badge variant="secondary">Senkronizasyon</Badge>}
-                  <span className="flex-1 text-gray-700">
-                    {msg.data?.source && `(${msg.data.source}) `}
-                    {msg.data?.message || msg.data?.error || msg.type}
-                  </span>
-                </div>
-              ))}
+      {/* GitHub Connection Status */}
+      <Card className="border-l-4 border-l-[#c4975a]">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Github className="w-5 h-5 text-gray-700" />
+              <div>
+                <CardTitle className="text-lg">GitHub Bağlantısı</CardTitle>
+                <CardDescription>İçerik senkronizasyon durumu</CardDescription>
+              </div>
             </div>
-          </ScrollArea>
+            <div className="flex items-center gap-2">
+              {stats.githubConnected ? (
+                <>
+                  <Wifi className="w-4 h-4 text-green-500" />
+                  <Badge variant="secondary" className="bg-green-50 text-green-700">
+                    Bağlı
+                  </Badge>
+                </>
+              ) : githubStatus === "connecting" ? (
+                <>
+                  <RefreshCw className="w-4 h-4 text-yellow-500 animate-spin" />
+                  <Badge variant="secondary" className="bg-yellow-50 text-yellow-700">
+                    Kontrol Ediliyor
+                  </Badge>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-4 h-4 text-red-500" />
+                  <Badge variant="destructive">Bağlantı Yok</Badge>
+                </>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="text-gray-500">Durum:</span>
+              <span
+                className={`ml-2 font-medium ${
+                  stats.githubConnected
+                    ? "text-green-600"
+                    : githubStatus === "connecting"
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                }`}
+              >
+                {stats.githubConnected ? "Aktif" : githubStatus === "connecting" ? "Kontrol Ediliyor" : "Pasif"}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500">Son Senkronizasyon:</span>
+              <span className="ml-2 font-medium">
+                {stats.lastSync ? new Date(stats.lastSync).toLocaleString("tr-TR") : "Henüz yok"}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500">Otomatik Güncelleme:</span>
+              <span className="ml-2 font-medium">{stats.githubConnected ? "30 saniye" : "Durduruldu"}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Toplam Proje</CardTitle>
+            <FileText className="h-4 w-4 text-[#c4975a]" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.projects}</div>
+            <p className="text-xs text-muted-foreground">+2 geçen aydan</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Blog Yazıları</CardTitle>
+            <FileText className="h-4 w-4 text-[#c4975a]" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.blogPosts}</div>
+            <p className="text-xs text-muted-foreground">+1 bu hafta</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Mesajlar</CardTitle>
+            <MessageSquare className="h-4 w-4 text-[#c4975a]" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.messages}</div>
+            <p className="text-xs text-muted-foreground">+5 bugün</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ziyaretçiler</CardTitle>
+            <Users className="h-4 w-4 text-[#c4975a]" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.visitors}</div>
+            <p className="text-xs text-muted-foreground">+12% geçen haftadan</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Activity & Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-[#c4975a]" />
+              Son Aktiviteler
+            </CardTitle>
+            <CardDescription>GitHub'dan son değişiklikler</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentActivity.length > 0 ? (
+                recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                    <div className="w-2 h-2 bg-[#c4975a] rounded-full mt-2"></div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{activity.title}</p>
+                      <p className="text-xs text-gray-500">{activity.description}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(activity.timestamp).toLocaleString("tr-TR")}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Henüz aktivite yok</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-[#c4975a]" />
+              Hızlı İşlemler
+            </CardTitle>
+            <CardDescription>Sık kullanılan işlemler</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col gap-2 border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
+                onClick={() => (window.location.href = "/admin/projects/new")}
+              >
+                <FileText className="w-5 h-5" />
+                <span className="text-xs">Yeni Proje</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col gap-2 border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
+                onClick={() => (window.location.href = "/admin/blog/new")}
+              >
+                <FileText className="w-5 h-5" />
+                <span className="text-xs">Yeni Blog</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col gap-2 border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
+                onClick={() => (window.location.href = "/admin/messages")}
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span className="text-xs">Mesajlar</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col gap-2 border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
+                onClick={() => (window.location.href = "/admin/settings")}
+              >
+                <Settings className="w-5 h-5" />
+                <span className="text-xs">Ayarlar</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Performance Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-[#c4975a]" />
+            Performans Özeti
+          </CardTitle>
+          <CardDescription>Site performans metrikleri</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Sayfa Yükleme Hızı</span>
+                <span>85%</span>
+              </div>
+              <Progress value={85} className="h-2" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>SEO Skoru</span>
+                <span>92%</span>
+              </div>
+              <Progress value={92} className="h-2" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Kullanıcı Deneyimi</span>
+                <span>88%</span>
+              </div>
+              <Progress value={88} className="h-2" />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
-  )
-}
-
-function Loader2({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={cn("animate-spin", className)}
-    >
-      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
   )
 }

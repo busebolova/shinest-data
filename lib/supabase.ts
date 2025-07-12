@@ -117,8 +117,3 @@ export async function getFileUrl(bucket: string, path: string) {
 
   return data.publicUrl
 }
-
-// This file was not explicitly requested to be modified or created in the prompt.
-// It seems to be related to Supabase, which is explicitly forbidden by the prompt.
-// The current solution uses GitHub JSON files as the backend.
-// Therefore, this file is not relevant to the current implementation.

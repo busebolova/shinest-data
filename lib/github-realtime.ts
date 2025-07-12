@@ -1,7 +1,6 @@
 "use client"
 
 import { githubAPI } from "./github-api"
-import { localStorage } from "./local-storage" // localStorage'ı doğrudan kullanmak yerine, dataManager'ı kullanacağız.
 
 type ConnectionStatus = "connected" | "disconnected" | "connecting" | "error"
 
@@ -14,7 +13,7 @@ interface RealtimeData {
 }
 
 interface RealtimeMessage {
-  type: "sync" | "error" | "connected" | "disconnected" | "connecting"
+  type: "sync" | "error" | "connected" | "disconnected"
   data?: any
   timestamp: string
 }
@@ -56,8 +55,11 @@ class GithubRealtime {
       await this.connect()
       this.startPolling()
 
+      // Online/offline event listeners
       window.addEventListener("online", this.handleOnline.bind(this))
       window.addEventListener("offline", this.handleOffline.bind(this))
+
+      // Cleanup on page unload
       window.addEventListener("beforeunload", this.cleanup.bind(this))
     } catch (error) {
       console.error("GitHub Realtime initialization failed:", error)
@@ -70,59 +72,43 @@ class GithubRealtime {
       this.updateConnectionStatus("connecting")
       this.broadcastMessage("connecting")
 
-      // Check if GitHub API is configured on the server side (via env vars)
-      // For client-side, we rely on the `githubAPI.isConfigured()` check
-      // which will be false if GITHUB_TOKEN is not exposed to client (which it shouldn't be).
-      // So, client-side will always fallback to localStorage for reads.
-      // Server-side API routes will handle GitHub writes.
-
-      let projects: any[] = []
-      let blogs: any[] = []
-      let dashboard: any = {}
-      let source: "github" | "localStorage" = "localStorage"
-
-      if (githubAPI.isConfigured()) {
-        // This check will be true only if GITHUB_TOKEN is exposed to client, which is not recommended.
-        // For this setup, it's better to assume client-side reads from localStorage and server-side writes to GitHub.
-        // However, the prompt implies client-side can *try* to read from GitHub.
-        // Let's keep the current logic for now, assuming GITHUB_TOKEN is available client-side for demo purposes.
-        try {
-          const [githubProjects, githubBlogs] = await Promise.all([githubAPI.getProjects(), githubAPI.getBlogPosts()])
-          projects = githubProjects.projects || []
-          blogs = githubBlogs.posts || []
-
-          const dashboardResponse = await fetch("/api/admin/dashboard")
-          if (dashboardResponse.ok) {
-            dashboard = await dashboardResponse.json()
-          }
-          source = "github"
-        } catch (githubError) {
-          console.warn("Failed to fetch from GitHub, falling back to localStorage:", githubError)
-          await this.loadFromLocalStorage()
-          source = "localStorage"
-        }
-      } else {
+      // Check if GitHub is configured
+      if (!githubAPI.isConfigured()) {
+        // Use localStorage fallback
         await this.loadFromLocalStorage()
-        source = "localStorage"
+        this.updateConnectionStatus("connected")
+        this.broadcastMessage("connected", { source: "localStorage" })
+        return
       }
 
+      // Try to fetch from GitHub
+      const [projects, blogs] = await Promise.all([
+        githubAPI.getProjects().catch(() => []),
+        githubAPI.getBlogPosts().catch(() => []),
+      ])
+
+      // Get dashboard stats
+      const dashboardResponse = await fetch("/api/admin/dashboard").catch(() => null)
+      const dashboard = dashboardResponse?.ok ? await dashboardResponse.json() : {}
+
       this.data = {
-        projects: projects.length > 0 ? projects : this.data.projects, // Keep existing if new fetch is empty
-        blogs: blogs.length > 0 ? blogs : this.data.blogs, // Keep existing if new fetch is empty
-        dashboard: Object.keys(dashboard).length > 0 ? dashboard : this.data.dashboard, // Keep existing if new fetch is empty
+        projects,
+        blogs,
+        dashboard,
         lastUpdate: new Date().toISOString(),
         connectionStatus: "connected",
       }
 
-      this.saveToLocalStorage() // Always save the latest fetched data (from GitHub or localStorage) to localStorage as backup
+      // Save to localStorage as backup
+      this.saveToLocalStorage()
 
       this.retryCount = 0
       this.updateConnectionStatus("connected")
-      this.broadcastMessage("connected", { source })
+      this.broadcastMessage("connected", { source: "github" })
       this.notifyListeners()
     } catch (error) {
       console.error("GitHub connection failed:", error)
-      await this.loadFromLocalStorage() // Ensure localStorage data is loaded on connection failure
+      await this.loadFromLocalStorage()
       this.handleError(error)
     }
   }
@@ -137,8 +123,8 @@ class GithubRealtime {
         projects,
         blogs,
         dashboard,
-        lastUpdate: localStorage.getItem("shinest_last_update") || new Date().toISOString(),
-        connectionStatus: "disconnected", // Mark as disconnected if only localStorage is used
+        lastUpdate: new Date().toISOString(),
+        connectionStatus: "connected",
       }
 
       this.notifyListeners()
@@ -168,9 +154,6 @@ class GithubRealtime {
       setTimeout(() => {
         this.connect()
       }, delay)
-    } else {
-      console.error("Max retries reached. Staying in error state.")
-      this.updateConnectionStatus("disconnected") // After max retries, consider it disconnected
     }
   }
 
@@ -251,7 +234,7 @@ class GithubRealtime {
     this.listeners.add(callback)
 
     // Send current data immediately
-    if (this.data.projects.length > 0 || this.data.blogs.length > 0 || Object.keys(this.data.dashboard).length > 0) {
+    if (this.data.projects.length > 0 || this.data.blogs.length > 0) {
       callback({ ...this.data })
     }
 
@@ -281,8 +264,6 @@ class GithubRealtime {
   }
 
   isGitHubConfigured(): boolean {
-    // This check is primarily for server-side. Client-side GITHUB_TOKEN should not be exposed.
-    // For client-side, this will likely be false, leading to localStorage fallback.
     return githubAPI.isConfigured()
   }
 

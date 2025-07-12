@@ -4,23 +4,19 @@ export interface User {
   role: string
 }
 
-// Use environment variables for production credentials
-// These should be set in Vercel environment variables for production
-const ADMIN_EMAIL = process.env.ADMIN_USERNAME || "admin@shinesticmimarlik.com"
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "shinest2024"
+export const ADMIN_CREDENTIALS = {
+  email: "admin@shinesticmimarlik.com",
+  password: "shinest2024",
+  name: "Admin",
+  role: "admin",
+}
 
 export function authenticate(email: string, password: string): User | null {
-  if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+  if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
     return {
-      email: ADMIN_EMAIL,
-      name: "Admin",
-      role: "admin",
-    }
-  }
-  // Add demo credentials for local development if needed, but not for production
-  if (process.env.NODE_ENV === "development") {
-    if (email === "demo@shinest.com" && password === "demo123") {
-      return { email: "demo@shinest.com", name: "Demo User", role: "admin" }
+      email: ADMIN_CREDENTIALS.email,
+      name: ADMIN_CREDENTIALS.name,
+      role: ADMIN_CREDENTIALS.role,
     }
   }
   return null
@@ -34,9 +30,7 @@ export function isAuthenticated(): boolean {
     if (!auth) return false
 
     const authData = JSON.parse(auth)
-    // For security, re-authenticate with the actual credentials, not just stored email
-    // This is a simplified check for demo purposes. In a real app, you'd verify a token.
-    return authData.email === ADMIN_EMAIL
+    return authData.email === ADMIN_CREDENTIALS.email
   } catch {
     return false
   }

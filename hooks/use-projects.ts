@@ -1,8 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { dataManager } from "@/lib/data-manager"
-import { toast } from "sonner"
+import { useState, useEffect } from "react"
 
 interface Project {
   id: string
@@ -24,77 +22,123 @@ export function useProjects() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchProjects = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  const fetchProjects = async () => {
     try {
-      const fetchedProjects = await dataManager.getProjects()
-      setProjects(fetchedProjects)
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch("/api/projects", {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data)
+      } else {
+        throw new Error("Failed to fetch projects")
+      }
     } catch (err) {
       console.error("Error fetching projects:", err)
-      setError("Projeler yüklenirken bir hata oluştu.")
-      toast.error("Projeler yüklenirken bir hata oluştu.")
+      setError(err instanceof Error ? err.message : "Unknown error")
     } finally {
       setLoading(false)
     }
-  }, [])
+  }
+
+  const createProject = async (projectData: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
+    try {
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(projectData),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          await fetchProjects() // Refresh the list
+          return { success: true, project: result.project, message: result.message }
+        }
+      }
+
+      throw new Error("Failed to create project")
+    } catch (err) {
+      console.error("Error creating project:", err)
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }
+    }
+  }
+
+  const updateProject = async (id: string, updates: Partial<Project>) => {
+    try {
+      const response = await fetch(`/api/projects/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updates),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          await fetchProjects() // Refresh the list
+          return { success: true, project: result.project, message: result.message }
+        }
+      }
+
+      throw new Error("Failed to update project")
+    } catch (err) {
+      console.error("Error updating project:", err)
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }
+    }
+  }
+
+  const deleteProject = async (id: string) => {
+    try {
+      const response = await fetch(`/api/projects/${id}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          await fetchProjects() // Refresh the list
+          return { success: true, message: result.message }
+        }
+      }
+
+      throw new Error("Failed to delete project")
+    } catch (err) {
+      console.error("Error deleting project:", err)
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }
+    }
+  }
 
   useEffect(() => {
     fetchProjects()
-  }, [fetchProjects])
-
-  const createProject = useCallback(async (projectData: Omit<Project, "id" | "createdAt" | "updatedAt" | "slug">) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const newProject = await dataManager.createProject(projectData)
-      setProjects((prev) => [newProject, ...prev])
-      toast.success("Proje başarıyla oluşturuldu!")
-      return newProject
-    } catch (err) {
-      console.error("Error creating project:", err)
-      setError("Proje oluşturulurken bir hata oluştu.")
-      toast.error("Proje oluşturulurken bir hata oluştu.")
-      throw err
-    } finally {
-      setLoading(false)
-    }
   }, [])
 
-  const updateProject = useCallback(async (id: string, updates: Partial<Project>) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const updatedProject = await dataManager.updateProject(id, updates)
-      setProjects((prev) => prev.map((p) => (p.id === id ? updatedProject : p)))
-      toast.success("Proje başarıyla güncellendi!")
-      return updatedProject
-    } catch (err) {
-      console.error("Error updating project:", err)
-      setError("Proje güncellenirken bir hata oluştu.")
-      toast.error("Proje güncellenirken bir hata oluştu.")
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  const deleteProject = useCallback(async (id: string) => {
-    setLoading(true)
-    setError(null)
-    try {
-      await dataManager.deleteProject(id)
-      setProjects((prev) => prev.filter((p) => p.id !== id))
-      toast.success("Proje başarıyla silindi!")
-    } catch (err) {
-      console.error("Error deleting project:", err)
-      setError("Proje silinirken bir hata oluştu.")
-      toast.error("Proje silinirken bir hata oluştu.")
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  return { projects, loading, error, createProject, updateProject, deleteProject, refreshProjects: fetchProjects }
+  return {
+    projects,
+    loading,
+    error,
+    refetch: fetchProjects,
+    createProject,
+    updateProject,
+    deleteProject,
+  }
 }

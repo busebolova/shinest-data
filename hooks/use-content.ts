@@ -1,65 +1,137 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { dataManager } from "@/lib/data-manager"
-import { toast } from "sonner"
+import { useState, useEffect } from "react"
 
-interface ContentSection {
-  id: string
-  type: "hero" | "text" | "gallery" | "quote" | "services"
-  title: string
-  content: any
-  order: number
+interface ContentData {
+  [key: string]: any
 }
 
-interface PageContent {
-  sections: ContentSection[]
-}
-
-export function useContent(pageName: string) {
-  const [content, setContent] = useState<PageContent | null>(null)
+export function useContent(page: string) {
+  const [content, setContent] = useState<ContentData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchContent = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  const fetchContent = async () => {
     try {
-      const fetchedContent = await dataManager.getPageContent(pageName)
-      setContent(fetchedContent)
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch(`/api/content/${page}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setContent(data)
+      } else {
+        throw new Error(`Failed to fetch content for ${page}`)
+      }
     } catch (err) {
-      console.error(`Error fetching content for ${pageName}:`, err)
-      setError("İçerik yüklenirken bir hata oluştu.")
-      toast.error("İçerik yüklenirken bir hata oluştu.")
+      console.error(`Error fetching content for ${page}:`, err)
+      setError(err instanceof Error ? err.message : "Unknown error")
+
+      // Set fallback content for home page
+      if (page === "home") {
+        setContent({
+          hero: {
+            title: "SHINEST",
+            subtitle: "İÇ MİMARLIK",
+            description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
+            image: "/images/hero-image.png",
+          },
+          bigText: {
+            line1: "MEKANLARINIZ",
+            line2: "YAŞAMINIZA",
+            line3: "IŞIK TUTAR!",
+          },
+          gallery: {
+            images: [
+              "/images/gallery-1.png",
+              "/images/gallery-2.png",
+              "/images/gallery-3.png",
+              "/images/gallery-4.png",
+              "/images/gallery-5.png",
+            ],
+          },
+          services: {
+            title: "Hizmetlerimiz",
+            items: [
+              {
+                title: "Danışmanlık",
+                description: "Profesyonel iç mimarlık danışmanlığı",
+                image: "/images/consulting-service.png",
+              },
+              {
+                title: "Tasarım",
+                description: "Yaratıcı ve fonksiyonel tasarım çözümleri",
+                image: "/images/design-service.png",
+              },
+              {
+                title: "Uygulama",
+                description: "Tasarımdan uygulamaya kadar tüm süreçler",
+                image: "/images/implementation-service.png",
+              },
+            ],
+          },
+        })
+      }
     } finally {
       setLoading(false)
     }
-  }, [pageName])
+  }
+
+  const updateContent = async (newContent: ContentData) => {
+    try {
+      const response = await fetch(`/api/content/${page}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newContent),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setContent(newContent)
+
+        // Trigger cache revalidation
+        await fetch("/api/revalidate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            path: `/${page === "home" ? "" : page}`,
+            all: true,
+          }),
+        })
+
+        return { success: true, message: result.message }
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Update failed")
+      }
+    } catch (err) {
+      console.error(`Error updating content for ${page}:`, err)
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }
+    }
+  }
 
   useEffect(() => {
     fetchContent()
-  }, [fetchContent])
+  }, [page])
 
-  const saveContent = useCallback(
-    async (newSections: ContentSection[]) => {
-      setLoading(true)
-      setError(null)
-      try {
-        const contentToSave: PageContent = { sections: newSections }
-        await dataManager.savePageContent(pageName, contentToSave)
-        setContent(contentToSave) // Update state with saved content
-        toast.success("İçerik başarıyla kaydedildi!")
-      } catch (err) {
-        console.error(`Error saving content for ${pageName}:`, err)
-        setError("İçerik kaydedilirken bir hata oluştu.")
-        toast.error("İçerik kaydedilirken bir hata oluştu.")
-        throw err // Re-throw to allow UI to handle saving state
-      } finally {
-        setLoading(false)
-      }
-    },
-    [pageName],
-  )
-
-  return { content, loading, error, saveContent, refreshContent: fetchContent }
+  return {
+    content,
+    loading,
+    error,
+    refetch: fetchContent,
+    updateContent,
+  }
 }

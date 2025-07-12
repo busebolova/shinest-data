@@ -6,8 +6,9 @@ import { Grid, List, Search } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { useLanguage } from "@/contexts/language-context"
-import { ProjectsGrid } from "@/components/projects-grid"
-import { dataManager } from "@/lib/data-manager"
+import { useProjects } from "@/hooks/use-projects"
+import Link from "next/link"
+import Image from "next/image"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -30,26 +31,16 @@ const itemVariants = {
   },
 }
 
-export default function AllProjectsClientPage() {
+export default function AllProjectsPage() {
   const { language } = useLanguage()
-  const [projects, setProjects] = useState([])
-  const [filteredProjects, setFilteredProjects] = useState([])
+  const { projects, loading, error } = useProjects()
+  const [filteredProjects, setFilteredProjects] = useState(projects)
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
 
   useEffect(() => {
-    const fetchData = async () => {
-      const initialProjects = await dataManager.getProjects()
-      setProjects(initialProjects)
-      setFilteredProjects(initialProjects.filter((p) => p.status === "published"))
-    }
-
-    fetchData()
-  }, [])
-
-  useEffect(() => {
-    let filtered = projects.filter((p) => p.status === "published")
+    let filtered = projects
 
     // Filter by category
     if (selectedCategory !== "all") {
@@ -109,10 +100,7 @@ export default function AllProjectsClientPage() {
   const t = texts[language]
 
   // Get unique categories from projects
-  const categories = [
-    "all",
-    ...Array.from(new Set(projects.filter((p) => p.status === "published").map((p) => p.category.toLowerCase()))),
-  ]
+  const categories = ["all", ...Array.from(new Set(projects.map((p) => p.category.toLowerCase())))]
 
   return (
     <div className="min-h-screen bg-white">
@@ -204,7 +192,104 @@ export default function AllProjectsClientPage() {
       {/* Projects Grid/List */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4">
-          <ProjectsGrid projects={filteredProjects} />
+          {loading ? (
+            <div className="text-center py-20">
+              <div className="inline-block animate-spin rounded-full h-32 w-32 border-b-2 border-[#1e40af]"></div>
+              <p className="mt-4 text-gray-600">Projeler yükleniyor...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-20">
+              <p className="text-red-600">Projeler yüklenirken bir hata oluştu.</p>
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-gray-600 text-lg">{t.noResults}</p>
+            </div>
+          ) : (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" : "space-y-8"}
+            >
+              {filteredProjects.map((project) => (
+                <motion.div
+                  key={project.id}
+                  variants={itemVariants}
+                  className={
+                    viewMode === "grid"
+                      ? "group cursor-pointer"
+                      : "group cursor-pointer border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow"
+                  }
+                >
+                  <Link href={`/projects/${project.slug}`}>
+                    <div className={viewMode === "grid" ? "space-y-4" : "flex gap-6"}>
+                      {/* Image */}
+                      <div
+                        className={`relative ${
+                          viewMode === "grid"
+                            ? "aspect-[4/3] rounded-2xl overflow-hidden"
+                            : "flex-shrink-0 w-48 h-32 rounded-xl overflow-hidden"
+                        }`}
+                      >
+                        {project.featured_image ? (
+                          <Image
+                            src={project.featured_image || "/placeholder.svg"}
+                            alt={project.title.tr}
+                            fill
+                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+                            <span>Görsel yükleniyor...</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className={`space-y-3 ${viewMode === "list" ? "flex-1" : ""}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-[#1e40af]/10 text-[#1e40af] rounded-full text-sm font-medium">
+                            {project.category}
+                          </span>
+                          {project.year && <span className="text-sm text-gray-500">{project.year}</span>}
+                        </div>
+
+                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-[#1e40af] transition-colors">
+                          {project.title.tr}
+                        </h3>
+
+                        <p className="text-gray-600 text-sm line-clamp-2">{project.description.tr}</p>
+
+                        {/* Project Details */}
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                          {project.location && <span>📍 {project.location}</span>}
+                          {project.area && <span>📐 {project.area}</span>}
+                          {project.client && <span>👤 {project.client}</span>}
+                        </div>
+
+                        {/* Tags */}
+                        {project.tags && project.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {project.tags.slice(0, 3).map((tag, index) => (
+                              <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                                {tag}
+                              </span>
+                            ))}
+                            {project.tags.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                                +{project.tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </div>
       </section>
 

@@ -8,8 +8,8 @@ export async function GET(request: Request, { params }: { params: { page: string
     const content = await dataManager.getPageContent(page)
     return NextResponse.json(content)
   } catch (error) {
-    console.error(`Error fetching content for page ${params.page}:`, error)
-    return NextResponse.json({ error: `Failed to fetch content for page ${params.page}` }, { status: 500 })
+    console.error(`Error fetching content for ${params.page}:`, error)
+    return NextResponse.json({})
   }
 }
 

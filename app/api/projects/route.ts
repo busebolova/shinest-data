@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { dataManager } from "@/lib/data-manager"
 
 // Mock projects data - this would normally come from a database
 const projects = [
@@ -85,8 +84,10 @@ const projects = [
 
 export async function GET() {
   try {
-    const projectsData = await dataManager.getProjects()
-    return NextResponse.json(projectsData)
+    // Filter only published projects
+    const publishedProjects = projects.filter((project) => project.status === "published")
+
+    return NextResponse.json(publishedProjects)
   } catch (error) {
     console.error("Error fetching projects:", error)
     return NextResponse.json({ error: "Failed to fetch projects" }, { status: 500 })
@@ -95,18 +96,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const newProjectData = await request.json()
-    const newProject = await dataManager.createProject(newProjectData)
+    const body = await request.json()
 
-    // Trigger revalidation for projects page
-    await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/revalidate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.REVALIDATE_TOKEN}`,
-      },
-      body: JSON.stringify({ path: "/projects" }),
-    })
+    // Here you would normally save to a database
+    // For now, we'll just return the created project
+    const newProject = {
+      id: Date.now().toString(),
+      ...body,
+      status: "published",
+    }
 
     return NextResponse.json(newProject, { status: 201 })
   } catch (error) {

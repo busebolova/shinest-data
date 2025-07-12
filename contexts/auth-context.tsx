@@ -1,72 +1,101 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
-import {
-  login as authLogin,
-  logout as authLogout,
-  isAuthenticated as checkAuth,
-  getCurrentUser,
-  type User,
-} from "@/lib/simple-auth"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
+
+interface User {
+  id: string
+  name: string
+  email: string
+  role: string
+}
 
 interface AuthContextType {
   user: User | null
-  isAuthenticated: () => boolean
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   isLoading: boolean
+  isAuthenticated: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
-  const checkAuthentication = useCallback(() => {
-    setIsLoading(true)
-    const authenticated = checkAuth()
-    if (authenticated) {
-      setUser(getCurrentUser())
-    } else {
-      setUser(null)
-    }
-    setIsLoading(false)
-  }, [])
+  const isAuthenticated = !!user
 
   useEffect(() => {
-    checkAuthentication()
-  }, [checkAuthentication])
+    // Check if user is logged in on mount
+    const checkAuth = () => {
+      const adminLoggedIn = localStorage.getItem("admin_logged_in")
+      const userData = localStorage.getItem("admin_user")
+
+      if (adminLoggedIn === "true" && userData) {
+        try {
+          const parsedUser = JSON.parse(userData)
+          setUser(parsedUser)
+        } catch (error) {
+          console.error("Error parsing user data:", error)
+          localStorage.removeItem("admin_logged_in")
+          localStorage.removeItem("admin_user")
+        }
+      }
+      setIsLoading(false)
+    }
+
+    checkAuth()
+  }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true)
-    const success = authLogin(email, password)
-    if (success) {
-      setUser(getCurrentUser())
-    } else {
-      setUser(null)
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Check credentials
+      if (email === "admin@shinesticmimarlik.com" && password === "shinest2024") {
+        const userData: User = {
+          id: "1",
+          name: "Admin",
+          email: "admin@shinesticmimarlik.com",
+          role: "admin",
+        }
+
+        setUser(userData)
+        localStorage.setItem("admin_logged_in", "true")
+        localStorage.setItem("admin_user", JSON.stringify(userData))
+        return true
+      }
+
+      return false
+    } catch (error) {
+      console.error("Login error:", error)
+      return false
     }
-    setIsLoading(false)
-    return success
   }
 
   const logout = () => {
-    authLogout()
     setUser(null)
+    localStorage.removeItem("admin_logged_in")
+    localStorage.removeItem("admin_user")
+    router.push("/admin/login")
   }
 
-  const contextValue = React.useMemo(
-    () => ({
-      user,
-      isAuthenticated: checkAuth,
-      login,
-      logout,
-      isLoading,
-    }),
-    [user, isLoading],
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        isLoading,
+        isAuthenticated,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
   )
-
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

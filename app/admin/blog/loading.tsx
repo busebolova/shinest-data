@@ -1,5 +1,3 @@
-import LoadingScreen from "@/components/loading-screen"
-
-export default function BlogLoading() {
-  return <LoadingScreen />
+export default function Loading() {
+  return null
 }

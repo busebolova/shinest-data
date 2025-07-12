@@ -25,54 +25,7 @@ interface LocalBlogPost {
   updatedAt: string
 }
 
-interface LocalPageContent {
-  sections: Array<{
-    id: string
-    type: string
-    title: string
-    content: any
-    order: number
-  }>
-}
-
-interface LocalAdminSettings {
-  company: {
-    name: string
-    nameEn: string
-    logo: string
-    phone: string
-    email: string
-    address: string
-    addressEn: string
-  }
-  social: {
-    instagram: string
-    facebook: string
-    linkedin: string
-    youtube: string
-  }
-  seo: {
-    title: string
-    titleEn: string
-    description: string
-    descriptionEn: string
-    keywords: string
-    keywordsEn: string
-  }
-  contact: {
-    workingHours: string
-    workingHoursEn: string
-    whatsapp: string
-  }
-  security: {
-    twoFactorAuth: boolean
-    captchaEnabled: boolean
-    sessionTimeout: number
-    maxLoginAttempts: number
-  }
-}
-
-class LocalStorageManager {
+class LocalStorage {
   private projects: LocalProject[] = [
     {
       id: "1",
@@ -219,252 +172,94 @@ class LocalStorageManager {
     },
   ]
 
-  // This structure should match what ContentEditor expects
-  private pageContents: { [key: string]: LocalPageContent } = {
+  private pageContents: { [key: string]: any } = {
     home: {
-      sections: [
-        {
-          id: "hero-home",
-          type: "hero",
-          title: "Ana Sayfa Hero",
-          content: {
-            title: { tr: "SHINEST", en: "SHINEST" },
-            subtitle: { tr: "İÇ MİMARLIK", en: "INTERIOR ARCHITECTURE" },
-            description: {
-              tr: "Hayalinizdeki mekanları gerçeğe dönüştürüyoruz",
-              en: "We turn your dream spaces into reality",
-            },
-            buttonText: { tr: "Keşfet", en: "Explore" },
-            backgroundImage: "/images/hero-image.png",
-            showAnimation: true,
-            isVisible: true,
+      hero: {
+        title: "SHINEST",
+        subtitle: "İÇ MİMARLIK",
+        description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
+        image: "/images/hero-image.png",
+      },
+      bigText: {
+        line1: "MEKANLARINIZ",
+        line2: "YAŞAMINIZA",
+        line3: "IŞIK TUTAR!",
+      },
+      gallery: {
+        images: [
+          "/images/gallery-1.png",
+          "/images/gallery-2.png",
+          "/images/gallery-3.png",
+          "/images/gallery-4.png",
+          "/images/gallery-5.png",
+        ],
+      },
+      services: {
+        title: "Hizmetlerimiz",
+        items: [
+          {
+            title: "Danışmanlık",
+            description: "Profesyonel iç mimarlık danışmanlığı",
+            image: "/images/consulting-service.png",
           },
-          order: 0,
-        },
-        {
-          id: "text-home",
-          type: "text",
-          title: "Büyük Metin Bölümü",
-          content: {
-            mainText1: { tr: "MEKANLARINIZ", en: "YOUR SPACES" },
-            mainText2: { tr: "YAŞAMINIZA", en: "BRING LIGHT TO" },
-            handwritingText: { tr: "ışık tutar!", en: "your life!" },
-            description: {
-              tr: "SHINEST İç Mimarlık olarak, yaşam alanlarınızı sanat eserine dönüştürüyoruz. Modern tasarım anlayışımız ve deneyimli ekibimizle, her projeyi özenle hayata geçiriyoruz.",
-              en: "As SHINEST Interior Architecture, we transform your living spaces into works of art. With our modern design approach and experienced team, we carefully bring each project to life.",
-            },
-            isVisible: true,
+          {
+            title: "Tasarım",
+            description: "Yaratıcı ve fonksiyonel tasarım çözümleri",
+            image: "/images/design-service.png",
           },
-          order: 1,
-        },
-        {
-          id: "about-home",
-          type: "text", // Using text type for about section for simplicity in ContentEditor
-          title: "Hakkımızda Bölümü",
-          content: {
-            title: { tr: "Hakkımızda", en: "About Us" },
-            subtitle: { tr: "Tasarım Felsefemiz", en: "Our Design Philosophy" },
-            text: {
-              tr: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz. Her proje, müşterilerimizin hayallerini gerçeğe dönüştüren benzersiz bir hikaye anlatır.",
-              en: "We transform your living spaces into works of art. Each project tells a unique story that turns our clients' dreams into reality.",
-            },
-            isVisible: true,
+          {
+            title: "Uygulama",
+            description: "Tasarımdan uygulamaya kadar tüm süreçler",
+            image: "/images/implementation-service.png",
           },
-          order: 2,
-        },
-        {
-          id: "services-home",
-          type: "services",
-          title: "Hizmetler Bölümü",
-          content: {
-            title: { tr: "Hizmetlerimiz", en: "Our Services" },
-            subtitle: {
-              tr: "SHINEST İç Mimarlık olarak müşterilerimize özel, yenilikçi ve fonksiyonel tasarım çözümleri sunuyoruz.",
-              en: "As SHINEST Interior Architecture, we offer special, innovative and functional design solutions to our customers.",
-            },
-            services: [
-              {
-                id: "s1",
-                title: { tr: "Danışmanlık", en: "Consulting" },
-                description: {
-                  tr: "Profesyonel iç mimarlık danışmanlığı hizmeti",
-                  en: "Professional interior architecture consulting service",
-                },
-                image: "/images/consulting-service.png",
-              },
-              {
-                id: "s2",
-                title: { tr: "Tasarım", en: "Design" },
-                description: {
-                  tr: "Yaratıcı ve işlevsel tasarım çözümleri",
-                  en: "Creative and functional design solutions",
-                },
-                image: "/images/design-service.png",
-              },
-              {
-                id: "s3",
-                title: { tr: "Uygulama", en: "Implementation" },
-                description: {
-                  tr: "Tasarımdan gerçeğe dönüşüm süreci",
-                  en: "Design to reality transformation process",
-                },
-                image: "/images/implementation-service.png",
-              },
-            ],
-            isVisible: true,
-          },
-          order: 3,
-        },
-        {
-          id: "gallery-home",
-          type: "gallery",
-          title: "Galeri Bölümü",
-          content: {
-            title: { tr: "Projelerimizden", en: "From Our Projects" },
-            images: [
-              { id: "g1", url: "/images/gallery-1.png", alt: { tr: "Modern Salon", en: "Modern Living Room" } },
-              { id: "g2", url: "/images/gallery-2.png", alt: { tr: "Lüks Banyo", en: "Luxury Bathroom" } },
-              { id: "g3", url: "/images/gallery-3.png", alt: { tr: "Kafe Tasarımı", en: "Cafe Design" } },
-              { id: "g4", url: "/images/gallery-4.png", alt: { tr: "Yatak Odası", en: "Bedroom" } },
-              { id: "g5", url: "/images/gallery-5.png", alt: { tr: "Mutfak Tasarımı", en: "Kitchen Design" } },
-            ],
-            isVisible: true,
-          },
-          order: 4,
-        },
-      ],
+        ],
+      },
     },
     about: {
-      sections: [
-        {
-          id: "about-page-main",
-          type: "text",
-          title: "Hakkımızda Sayfası",
-          content: {
-            title: { tr: "Hakkımızda", en: "About Us" },
-            text: {
-              tr: "SHINEST İç Mimarlık olarak, yaşam alanlarınızı sanat eserine dönüştürüyoruz. Modern tasarım anlayışımız ve deneyimli ekibimizle, her projeyi özenle hayata geçiriyoruz. Müşteri memnuniyeti odaklı çalışarak, estetik ve fonksiyonelliği bir araya getiren benzersiz mekanlar yaratıyoruz.",
-              en: "As SHINEST Interior Architecture, we transform your living spaces into works of art. With our modern design approach and experienced team, we carefully bring each project to life. By working with a focus on customer satisfaction, we create unique spaces that combine aesthetics and functionality.",
-            },
-            isVisible: true,
-          },
-          order: 0,
-        },
-      ],
+      title: "Hakkımızda",
+      description: "SHINEST İç Mimarlık olarak, yaşam alanlarınızı sanat eserine dönüştürüyoruz.",
+      content: "Modern tasarım anlayışı ile fonksiyonel ve estetik mekanlar yaratıyoruz.",
     },
     services: {
-      sections: [
+      title: "Hizmetlerimiz",
+      description: "Profesyonel iç mimarlık hizmetleri",
+      services: [
         {
-          id: "services-page-main",
-          type: "services",
-          title: "Hizmetler Sayfası",
-          content: {
-            title: { tr: "Hizmetlerimiz", en: "Our Services" },
-            subtitle: {
-              tr: "SHINEST İç Mimarlık olarak müşterilerimize özel, yenilikçi ve fonksiyonel tasarım çözümleri sunuyoruz.",
-              en: "As SHINEST Interior Architecture, we offer special, innovative and functional design solutions to our customers.",
-            },
-            services: [
-              {
-                id: "s1",
-                title: { tr: "Danışmanlık", en: "Consulting" },
-                description: {
-                  tr: "Profesyonel iç mimarlık danışmanlığı hizmeti",
-                  en: "Professional interior architecture consulting service",
-                },
-                image: "/images/consulting-service.png",
-              },
-              {
-                id: "s2",
-                title: { tr: "Tasarım", en: "Design" },
-                description: {
-                  tr: "Yaratıcı ve işlevsel tasarım çözümleri",
-                  en: "Creative and functional design solutions",
-                },
-                image: "/images/design-service.png",
-              },
-              {
-                id: "s3",
-                title: { tr: "Uygulama", en: "Implementation" },
-                description: {
-                  tr: "Tasarımdan gerçeğe dönüşüm süreci",
-                  en: "Design to reality transformation process",
-                },
-                image: "/images/implementation-service.png",
-              },
-            ],
-            isVisible: true,
-          },
-          order: 0,
+          title: "Danışmanlık",
+          description: "Profesyonel iç mimarlık danışmanlığı",
+          image: "/images/consulting-service.png",
+        },
+        {
+          title: "Tasarım",
+          description: "Yaratıcı ve fonksiyonel tasarım çözümleri",
+          image: "/images/design-service.png",
+        },
+        {
+          title: "Uygulama",
+          description: "Tasarımdan uygulamaya kadar tüm süreçler",
+          image: "/images/implementation-service.png",
         },
       ],
-    },
-  }
-
-  private adminSettings: LocalAdminSettings = {
-    company: {
-      name: "SHINEST İç Mimarlık",
-      nameEn: "SHINEST Interior Architecture",
-      logo: "/images/shinest-logo.png",
-      phone: "+90 555 123 4567",
-      email: "info@shinest.com",
-      address: "İstanbul, Türkiye",
-      addressEn: "Istanbul, Turkey",
-    },
-    social: {
-      instagram: "https://instagram.com/shinest",
-      facebook: "https://facebook.com/shinest",
-      linkedin: "https://linkedin.com/company/shinest",
-      youtube: "https://youtube.com/shinest",
-    },
-    seo: {
-      title: "SHINEST İç Mimarlık - Lüks İç Mekan Tasarımı",
-      titleEn: "SHINEST Interior Architecture - Luxury Interior Design",
-      description: "Profesyonel iç mimarlık hizmetleri ile yaşam alanlarınızı sanat eserine dönüştürüyoruz.",
-      descriptionEn:
-        "We transform your living spaces into works of art with professional interior architecture services.",
-      keywords: "iç mimarlık, interior design, lüks tasarım, ev dekorasyonu",
-      keywordsEn: "interior architecture, luxury design, home decoration, interior design",
-    },
-    contact: {
-      workingHours: "Pazartesi - Cuma: 09:00 - 18:00",
-      workingHoursEn: "Monday - Friday: 09:00 - 18:00",
-      whatsapp: "+90 555 123 4567",
-    },
-    security: {
-      twoFactorAuth: false,
-      captchaEnabled: true,
-      sessionTimeout: 30,
-      maxLoginAttempts: 5,
     },
   }
 
   // Projects
   getProjects(): LocalProject[] {
-    // In a real app, you'd load from localStorage if available, otherwise use initial data
-    if (typeof window !== "undefined") {
-      const storedProjects = localStorage.getItem("shinest_projects")
-      return storedProjects ? JSON.parse(storedProjects) : [...this.projects]
-    }
     return [...this.projects]
   }
 
   getProject(id: string): LocalProject | null {
-    return this.getProjects().find((p) => p.id === id) || null
+    return this.projects.find((p) => p.id === id) || null
   }
 
-  createProject(project: Omit<LocalProject, "id" | "createdAt" | "updatedAt" | "slug">): LocalProject {
+  createProject(project: Omit<LocalProject, "id" | "createdAt" | "updatedAt">): LocalProject {
     const newProject: LocalProject = {
       ...project,
       id: Date.now().toString(),
-      slug: this.generateSlug(project.title.tr || project.title.en),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
     this.projects.unshift(newProject)
-    if (typeof window !== "undefined") {
-      localStorage.setItem("shinest_projects", JSON.stringify(this.projects))
-    }
     return newProject
   }
 
@@ -477,38 +272,24 @@ class LocalStorageManager {
     const updatedProject = {
       ...this.projects[index],
       ...updates,
-      slug:
-        updates.title?.tr || updates.title?.en
-          ? this.generateSlug(updates.title.tr || updates.title.en)
-          : this.projects[index].slug,
       updatedAt: new Date().toISOString(),
     }
 
     this.projects[index] = updatedProject
-    if (typeof window !== "undefined") {
-      localStorage.setItem("shinest_projects", JSON.stringify(this.projects))
-    }
     return updatedProject
   }
 
   deleteProject(id: string): void {
     this.projects = this.projects.filter((p) => p.id !== id)
-    if (typeof window !== "undefined") {
-      localStorage.setItem("shinest_projects", JSON.stringify(this.projects))
-    }
   }
 
   // Blog Posts
   getBlogPosts(): LocalBlogPost[] {
-    if (typeof window !== "undefined") {
-      const storedBlogs = localStorage.getItem("shinest_blogs")
-      return storedBlogs ? JSON.parse(storedBlogs) : [...this.blogPosts]
-    }
     return [...this.blogPosts]
   }
 
   getBlogPost(id: string): LocalBlogPost | null {
-    return this.getBlogPosts().find((p) => p.id === id) || null
+    return this.blogPosts.find((p) => p.id === id) || null
   }
 
   createBlogPost(post: Omit<LocalBlogPost, "id" | "createdAt" | "updatedAt">): LocalBlogPost {
@@ -519,9 +300,6 @@ class LocalStorageManager {
       updatedAt: new Date().toISOString(),
     }
     this.blogPosts.unshift(newPost)
-    if (typeof window !== "undefined") {
-      localStorage.setItem("shinest_blogs", JSON.stringify(this.blogPosts))
-    }
     return newPost
   }
 
@@ -538,68 +316,25 @@ class LocalStorageManager {
     }
 
     this.blogPosts[index] = updatedPost
-    if (typeof window !== "undefined") {
-      localStorage.setItem("shinest_blogs", JSON.stringify(this.blogPosts))
-    }
     return updatedPost
   }
 
   deleteBlogPost(id: string): void {
     this.blogPosts = this.blogPosts.filter((p) => p.id !== id)
-    if (typeof window !== "undefined") {
-      localStorage.setItem("shinest_blogs", JSON.stringify(this.blogPosts))
-    }
   }
 
   // Page Content
-  getPageContent(page: string): LocalPageContent | null {
-    if (typeof window !== "undefined") {
-      const storedContent = localStorage.getItem(`shinest_page_content_${page}`)
-      return storedContent ? JSON.parse(storedContent) : this.pageContents[page] || null
-    }
-    return this.pageContents[page] || null
+  getPageContent(page: string): any {
+    return this.pageContents[page] || {}
   }
 
-  savePageContent(page: string, content: LocalPageContent): void {
+  savePageContent(page: string, content: any): void {
     this.pageContents[page] = {
       ...content,
-      updatedAt: new Date().toISOString(), // Add updatedAt for consistency
+      updatedAt: new Date().toISOString(),
     }
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`shinest_page_content_${page}`, JSON.stringify(this.pageContents[page]))
-    }
-  }
-
-  // Admin Settings
-  getAdminSettings(): LocalAdminSettings {
-    if (typeof window !== "undefined") {
-      const storedSettings = localStorage.getItem("shinest_admin_settings")
-      return storedSettings ? JSON.parse(storedSettings) : this.adminSettings
-    }
-    return this.adminSettings
-  }
-
-  saveAdminSettings(settings: LocalAdminSettings): void {
-    this.adminSettings = settings
-    if (typeof window !== "undefined") {
-      localStorage.setItem("shinest_admin_settings", JSON.stringify(this.adminSettings))
-    }
-  }
-
-  private generateSlug(title: string): string {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-ğüşöçİı]/g, "") // Remove non-alphanumeric chars except spaces and Turkish chars
-      .replace(/[\s_-]+/g, "-") // Replace spaces and underscores with a single dash
-      .replace(/^-+|-+$/g, "") // Remove leading/trailing dashes
-      .replace(/ğ/g, "g")
-      .replace(/ü/g, "u")
-      .replace(/ş/g, "s")
-      .replace(/ı/g, "i")
-      .replace(/ö/g, "o")
-      .replace(/ç/g, "c")
-      .replace(/i/g, "i") // Ensure 'i' is handled correctly if it was capitalized
   }
 }
 
-export const localStorageManager = new LocalStorageManager()
+export const localStorage = new LocalStorage()
+export type { LocalProject, LocalBlogPost }

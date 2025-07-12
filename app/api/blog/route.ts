@@ -1,34 +1,41 @@
 import { NextResponse } from "next/server"
 import { dataManager } from "@/lib/data-manager"
+import { revalidatePath } from "next/cache"
 
 export async function GET() {
   try {
-    const { posts } = await dataManager.getBlogPosts()
-    return NextResponse.json({ posts })
+    const posts = await dataManager.getBlogPosts()
+    return NextResponse.json(posts)
   } catch (error) {
     console.error("Error fetching blog posts:", error)
-    return NextResponse.json({ error: "Failed to fetch blog posts" }, { status: 500 })
+    return NextResponse.json([])
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const newBlogPostData = await request.json()
-    const newPost = await dataManager.createBlogPost(newBlogPostData)
+    const postData = await request.json()
+    const newPost = await dataManager.createBlogPost(postData)
 
-    // Trigger revalidation for blog page
-    await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/revalidate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.REVALIDATE_TOKEN}`,
-      },
-      body: JSON.stringify({ path: "/blog" }),
+    // Revalidate all relevant pages
+    revalidatePath("/")
+    revalidatePath("/blog")
+    revalidatePath("/admin/blog")
+
+    return NextResponse.json({
+      success: true,
+      post: newPost,
+      message: "Blog yazısı başarıyla oluşturuldu",
     })
-
-    return NextResponse.json(newPost, { status: 201 })
   } catch (error) {
     console.error("Error creating blog post:", error)
-    return NextResponse.json({ error: "Failed to create blog post" }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Blog yazısı oluşturulurken hata oluştu",
+        error: error instanceof Error ? error.message : "Bilinmeyen hata",
+      },
+      { status: 500 },
+    )
   }
 }

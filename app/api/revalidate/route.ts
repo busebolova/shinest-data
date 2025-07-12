@@ -4,21 +4,13 @@ import { revalidatePath, revalidateTag } from "next/cache"
 export async function POST(request: Request) {
   try {
     const { path, tag, all } = await request.json()
-    const authHeader = request.headers.get("Authorization")
-    const token = authHeader?.split(" ")[1]
-
-    if (token !== process.env.REVALIDATE_TOKEN) {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 })
-    }
 
     if (path) {
       revalidatePath(path)
-      console.log(`Revalidated path: ${path}`)
     }
 
     if (tag) {
       revalidateTag(tag)
-      console.log(`Revalidated tag: ${tag}`)
     }
 
     if (all) {
@@ -29,8 +21,6 @@ export async function POST(request: Request) {
       revalidatePath("/about")
       revalidatePath("/services")
       revalidatePath("/contact")
-      revalidatePath("/admin/dashboard") // Revalidate admin dashboard as well
-      console.log("Revalidated all common paths.")
     }
 
     return NextResponse.json({

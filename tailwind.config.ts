@@ -1,24 +1,21 @@
 import type { Config } from "tailwindcss"
 
-const config = {
+const config: Config = {
   darkMode: ["class"],
   content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "*.{js,ts,jsx,tsx,mdx}",
   ],
-  prefix: "",
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
     extend: {
+      fontFamily: {
+        display: ["var(--font-didot)"],
+        sans: ["var(--font-poppins)"],
+        serif: ["var(--font-cormorant)"],
+        handwriting: ["var(--font-allura)"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -33,6 +30,10 @@ const config = {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
         },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -41,39 +42,17 @@ const config = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
         },
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        // Custom Shinest Colors
-        shinest: {
-          primary: "hsl(var(--shinest-primary))",
-          secondary: "hsl(var(--shinest-secondary))",
-          accent: "hsl(var(--shinest-accent))",
-          text: "hsl(var(--shinest-text))",
-          "light-text": "hsl(var(--shinest-light-text))",
-          background: "hsl(var(--shinest-background))",
-          border: "hsl(var(--shinest-border))",
-        },
-        // Sidebar specific colors
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
-        },
+        // Shinest özel renkleri
+        "shinest-blue": "#15415b",
+        "shinest-gold": "#cfaf76",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -95,8 +74,7 @@ const config = {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       spacing: {
-        "sidebar-width": "var(--sidebar-width)",
-        "sidebar-width-icon": "var(--sidebar-width-icon)",
+        "30": "7.5rem",
       },
     },
   },

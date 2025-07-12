@@ -4,7 +4,6 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { LanguageProvider } from "@/contexts/language-context"
 import { QuoteFormProvider } from "@/contexts/quote-form-context"
-import { Toaster } from "@/components/ui/toaster" // Toaster'ı ekledik
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -31,7 +30,6 @@ export default function RootLayout({
         <LanguageProvider>
           <QuoteFormProvider>{children}</QuoteFormProvider>
         </LanguageProvider>
-        <Toaster /> {/* Toaster'ı body'nin sonuna ekledik */}
       </body>
     </html>
   )
