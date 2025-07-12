@@ -27,8 +27,10 @@ const nextConfig = {
     unoptimized: true,
   },
   async headers() {
-    return [
-      {
+    const headers = [];
+    // Sadece canlı ortamda (production) katı güvenlik başlıklarını ekle
+    if (process.env.NODE_ENV === 'production') {
+      headers.push({
         source: '/(.*)',
         headers: [
           {
@@ -45,11 +47,12 @@ const nextConfig = {
           },
           {
             key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains',
+            value: 'max-age=31536000; includeSubDomains; preload',
           },
         ],
-      },
-    ]
+      });
+    }
+    return headers;
   },
   async redirects() {
     return [

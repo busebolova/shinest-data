@@ -5,11 +5,15 @@ import { revalidatePath } from "next/cache"
 export async function GET() {
   try {
     const content = await dataManager.getPageContent("home")
+    // Add a check to ensure content is not null or empty
+    if (!content || Object.keys(content).length === 0) {
+      throw new Error("Home content from data source is null or empty.")
+    }
     return NextResponse.json(content)
   } catch (error) {
-    console.error("Error fetching home content:", error)
+    console.error("Error fetching home content, serving fallback:", error)
 
-    // Return fallback content
+    // Return fallback content if the primary fetch fails or returns empty
     const fallbackContent = {
       hero: {
         title: "SHINEST",

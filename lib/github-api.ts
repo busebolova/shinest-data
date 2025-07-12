@@ -1,4 +1,3 @@
-// lib/github-api.ts
 import { Octokit } from "@octokit/core"
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN
@@ -57,7 +56,7 @@ class GitHubAPI {
       return []
     } catch (error) {
       console.error("Error fetching projects from GitHub:", error)
-      return this.getMockProjects() // Fallback on error
+      throw error
     }
   }
 
@@ -82,7 +81,7 @@ class GitHubAPI {
       return []
     } catch (error) {
       console.error("Error fetching blog posts from GitHub:", error)
-      return this.getMockBlogPosts() // Fallback on error
+      throw error
     }
   }
 
@@ -150,4 +149,4 @@ class GitHubAPI {
   }
 }
 
-export const githubAPI = new GitHubAPI()
+export const githubApi = new GitHubAPI()

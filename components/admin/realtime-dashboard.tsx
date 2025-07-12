@@ -18,92 +18,39 @@ import {
   Settings,
 } from "lucide-react"
 import { githubRealtime, type RealtimeData } from "@/lib/github-realtime"
-import { githubAPI } from "@/lib/github-api"
-
-interface DashboardStats {
-  projects: number
-  blogPosts: number
-  messages: number
-  visitors: number
-  githubConnected: boolean
-  lastSync: string
-}
 
 export function RealtimeDashboard() {
   const [data, setData] = useState<RealtimeData>(githubRealtime.getData())
-  const [loading, setLoading] = useState(true)
-  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [isSyncing, setIsSyncing] = useState(true)
 
   useEffect(() => {
+    githubRealtime.init()
+
     const unsubscribe = githubRealtime.subscribe((newData) => {
       setData(newData)
-      setLoading(false)
-    })
-
-    const fetchInitialData = async () => {
-      // Fetch initial data for recent activity
-      try {
-        const isConnected = githubAPI.isConfigured()
-        if (isConnected) {
-          const commits = await githubAPI.getCommits(5)
-          setRecentActivity(
-            commits.map((commit) => ({
-              id: commit.sha,
-              type: "commit",
-              title: commit.commit.message.split("\n")[0],
-              description: `by ${commit.commit.author.name}`,
-              timestamp: commit.commit.author.date,
-              url: commit.html_url,
-            })),
-          )
-        }
-      } catch (error) {
-        console.error("Failed to fetch initial GitHub activity:", error)
+      if (newData.connectionStatus !== "connecting") {
+        setIsSyncing(false)
       }
-      setLoading(false)
-    }
-
-    fetchInitialData()
+    })
 
     return () => unsubscribe()
   }, [])
 
   const handleGithubSync = async () => {
-    setLoading(true)
-    try {
-      await githubRealtime.refresh()
-      const isConnected = githubAPI.isConfigured()
-      if (isConnected) {
-        const commits = await githubAPI.getCommits(5)
-        setRecentActivity(
-          commits.map((commit) => ({
-            id: commit.sha,
-            type: "commit",
-            title: commit.commit.message.split("\n")[0],
-            description: `by ${commit.commit.author.name}`,
-            timestamp: commit.commit.author.date,
-            url: commit.html_url,
-          })),
-        )
-      }
-    } catch (error) {
-      console.error("GitHub sync failed:", error)
-    } finally {
-      setLoading(false)
-    }
+    setIsSyncing(true)
+    await githubRealtime.refresh()
   }
 
-  const githubStatus = data.connectionStatus
-  const stats: DashboardStats = {
-    projects: data.projects?.length || 0,
-    blogPosts: data.blogs?.length || 0,
-    messages: data.dashboard?.messages || 0,
-    visitors: data.dashboard?.visitors || 0,
-    githubConnected: githubRealtime.isGitHubConfigured() && data.connectionStatus === "connected",
-    lastSync: data.lastUpdate,
+  const { connectionStatus, projects, blogs, dashboard, events, lastUpdate, isGitHubConfigured } = data
+
+  const stats = {
+    projects: projects?.length || 0,
+    blogPosts: blogs?.length || 0,
+    messages: dashboard?.messages || 0,
+    visitors: dashboard?.visitors || 0,
   }
 
-  if (loading) {
+  if (connectionStatus === "connecting" && !lastUpdate) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -127,11 +74,11 @@ export function RealtimeDashboard() {
         <div className="flex items-center gap-3">
           <Button
             onClick={handleGithubSync}
-            disabled={githubStatus === "connecting"}
+            disabled={isSyncing}
             variant="outline"
             className="border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${githubStatus === "connecting" ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
             Senkronize Et
           </Button>
         </div>
@@ -144,19 +91,19 @@ export function RealtimeDashboard() {
             <div className="flex items-center gap-3">
               <Github className="w-5 h-5 text-gray-700" />
               <div>
-                <CardTitle className="text-lg">GitHub Bağlantısı</CardTitle>
+                <CardTitle className="text-lg">Veri Kaynağı</CardTitle>
                 <CardDescription>İçerik senkronizasyon durumu</CardDescription>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {stats.githubConnected ? (
+              {connectionStatus === "connected" ? (
                 <>
                   <Wifi className="w-4 h-4 text-green-500" />
                   <Badge variant="secondary" className="bg-green-50 text-green-700">
                     Bağlı
                   </Badge>
                 </>
-              ) : githubStatus === "connecting" ? (
+              ) : connectionStatus === "connecting" ? (
                 <>
                   <RefreshCw className="w-4 h-4 text-yellow-500 animate-spin" />
                   <Badge variant="secondary" className="bg-yellow-50 text-yellow-700">
@@ -178,25 +125,29 @@ export function RealtimeDashboard() {
               <span className="text-gray-500">Durum:</span>
               <span
                 className={`ml-2 font-medium ${
-                  stats.githubConnected
+                  connectionStatus === "connected"
                     ? "text-green-600"
-                    : githubStatus === "connecting"
+                    : connectionStatus === "connecting"
                       ? "text-yellow-600"
                       : "text-red-600"
                 }`}
               >
-                {stats.githubConnected ? "Aktif" : githubStatus === "connecting" ? "Kontrol Ediliyor" : "Pasif"}
+                {connectionStatus === "connected"
+                  ? "Aktif"
+                  : connectionStatus === "connecting"
+                    ? "Kontrol Ediliyor"
+                    : "Pasif"}
               </span>
             </div>
             <div>
               <span className="text-gray-500">Son Senkronizasyon:</span>
               <span className="ml-2 font-medium">
-                {stats.lastSync ? new Date(stats.lastSync).toLocaleString("tr-TR") : "Henüz yok"}
+                {lastUpdate ? new Date(lastUpdate).toLocaleString("tr-TR") : "Henüz yok"}
               </span>
             </div>
             <div>
-              <span className="text-gray-500">Otomatik Güncelleme:</span>
-              <span className="ml-2 font-medium">{stats.githubConnected ? "30 saniye" : "Durduruldu"}</span>
+              <span className="text-gray-500">Kaynak:</span>
+              <span className="ml-2 font-medium">{isGitHubConfigured ? "GitHub" : "Yerel"}</span>
             </div>
           </div>
         </CardContent>
@@ -258,12 +209,14 @@ export function RealtimeDashboard() {
               <Activity className="w-5 h-5 text-[#c4975a]" />
               Son Aktiviteler
             </CardTitle>
-            <CardDescription>GitHub'dan son değişiklikler</CardDescription>
+            <CardDescription>
+              {isGitHubConfigured ? "GitHub'dan son değişiklikler" : "Yerel sistem bilgileri"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.length > 0 ? (
-                recentActivity.map((activity) => (
+              {events && events.length > 0 ? (
+                events.map((activity) => (
                   <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
                     <div className="w-2 h-2 bg-[#c4975a] rounded-full mt-2"></div>
                     <div className="flex-1">

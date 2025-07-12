@@ -1,18 +1,18 @@
-import { githubAPI } from "./github-api"
+import { githubApi } from "./github-api"
 import { localStorage } from "./local-storage"
 
 class DataManager {
   private useGitHub: boolean
 
   constructor() {
-    this.useGitHub = githubAPI.isConfigured()
+    this.useGitHub = githubApi.isConfigured()
   }
 
   // Projects
   async getProjects() {
     try {
       if (this.useGitHub) {
-        return await githubAPI.getProjects()
+        return await githubApi.getProjects()
       } else {
         return localStorage.getProjects()
       }
@@ -25,7 +25,7 @@ class DataManager {
   async getProject(id: string) {
     try {
       if (this.useGitHub) {
-        return await githubAPI.getProject(id)
+        return await githubApi.getProject(id)
       } else {
         return localStorage.getProject(id)
       }
@@ -38,7 +38,7 @@ class DataManager {
   async createProject(project: any) {
     try {
       if (this.useGitHub) {
-        return await githubAPI.createProject(project)
+        return await githubApi.createProject(project)
       } else {
         return localStorage.createProject(project)
       }
@@ -51,7 +51,7 @@ class DataManager {
   async updateProject(id: string, updates: any) {
     try {
       if (this.useGitHub) {
-        return await githubAPI.updateProject(id, updates)
+        return await githubApi.updateProject(id, updates)
       } else {
         return localStorage.updateProject(id, updates)
       }
@@ -64,7 +64,7 @@ class DataManager {
   async deleteProject(id: string) {
     try {
       if (this.useGitHub) {
-        await githubAPI.deleteProject(id)
+        await githubApi.deleteProject(id)
       } else {
         localStorage.deleteProject(id)
       }
@@ -78,7 +78,7 @@ class DataManager {
   async getBlogPosts() {
     try {
       if (this.useGitHub) {
-        return await githubAPI.getBlogPosts()
+        return await githubApi.getBlogPosts()
       } else {
         return localStorage.getBlogPosts()
       }
@@ -91,7 +91,7 @@ class DataManager {
   async createBlogPost(post: any) {
     try {
       if (this.useGitHub) {
-        return await githubAPI.createBlogPost(post)
+        return await githubApi.createBlogPost(post)
       } else {
         return localStorage.createBlogPost(post)
       }
@@ -105,7 +105,7 @@ class DataManager {
   async getPageContent(page: string) {
     try {
       if (this.useGitHub) {
-        return await githubAPI.getPageContent(page)
+        return await githubApi.getPageContent(page)
       } else {
         return localStorage.getPageContent(page)
       }
@@ -118,7 +118,7 @@ class DataManager {
   async savePageContent(page: string, content: any) {
     try {
       if (this.useGitHub) {
-        await githubAPI.savePageContent(page, content)
+        await githubApi.savePageContent(page, content)
       } else {
         localStorage.savePageContent(page, content)
       }

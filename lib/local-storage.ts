@@ -25,7 +25,7 @@ interface LocalBlogPost {
   updatedAt: string
 }
 
-class LocalStorage {
+export class LocalStorage {
   private projects: LocalProject[] = [
     {
       id: "1",
