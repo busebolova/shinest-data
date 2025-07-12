@@ -1,313 +1,203 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import {
-  Activity,
-  Users,
-  FileText,
-  MessageSquare,
-  RefreshCw,
-  Wifi,
-  WifiOff,
-  Clock,
-  TrendingUp,
-  Eye,
-  Calendar,
-} from "lucide-react"
+import { cn } from "@/lib/utils"
 
-interface DashboardStats {
-  totalProjects: number
-  totalBlogs: number
-  totalViews: number
-  totalMessages: number
-  recentActivities: Array<{
-    id: string
-    type: string
-    description: string
-    timestamp: string
-  }>
-}
+import { useEffect, useState, useCallback } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { RefreshCw, FileText, LayoutDashboard, Wifi, WifiOff, AlertTriangle } from "lucide-react"
+import { githubRealtime, type ConnectionStatus, type RealtimeData, type RealtimeMessage } from "@/lib/github-realtime"
+import { formatDistanceToNow, parseISO } from "date-fns"
+import { tr } from "date-fns/locale"
+import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export function RealtimeDashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalProjects: 0,
-    totalBlogs: 0,
-    totalViews: 0,
-    totalMessages: 0,
-    recentActivities: [],
-  })
-  const [isOnline, setIsOnline] = useState(true)
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [data, setData] = useState<RealtimeData>(githubRealtime.getData())
+  const [messages, setMessages] = useState<RealtimeMessage[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const fetchStats = async () => {
-    try {
-      setIsRefreshing(true)
+  const handleDataUpdate = useCallback((updatedData: RealtimeData) => {
+    setData(updatedData)
+    setLoading(false)
+  }, [])
 
-      // localStorage'dan verileri al
-      const projects = JSON.parse(localStorage.getItem("projects") || "[]")
-      const blogs = JSON.parse(localStorage.getItem("blogs") || "[]")
-      const messages = JSON.parse(localStorage.getItem("messages") || "[]")
-
-      // Mock views data
-      const views = Math.floor(Math.random() * 10000) + 5000
-
-      // Recent activities oluştur
-      const activities = [
-        {
-          id: "1",
-          type: "project",
-          description: "Yeni proje eklendi",
-          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-        },
-        {
-          id: "2",
-          type: "blog",
-          description: "Blog yazısı güncellendi",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-        },
-        {
-          id: "3",
-          type: "message",
-          description: "Yeni mesaj alındı",
-          timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-        },
-      ]
-
-      setStats({
-        totalProjects: projects.length,
-        totalBlogs: blogs.length,
-        totalViews: views,
-        totalMessages: messages.length,
-        recentActivities: activities,
-      })
-
-      setLastUpdated(new Date())
-      setIsOnline(true)
-    } catch (error) {
-      console.error("Stats fetch error:", error)
-      setIsOnline(false)
-    } finally {
-      setIsRefreshing(false)
-    }
-  }
-
-  const handleRefresh = () => {
-    fetchStats()
-  }
-
-  useEffect(() => {
-    fetchStats()
-
-    // 30 saniyede bir güncelle
-    const interval = setInterval(fetchStats, 30000)
-
-    // Online/offline durumunu takip et
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-
-    window.addEventListener("online", handleOnline)
-    window.addEventListener("offline", handleOffline)
-
-    return () => {
-      clearInterval(interval)
-      window.removeEventListener("online", handleOnline)
-      window.removeEventListener("offline", handleOffline)
+  const handleMessage = useCallback((message: RealtimeMessage) => {
+    setMessages((prev) => [message, ...prev].slice(0, 10)) // Keep last 10 messages
+    if (message.type === "error") {
+      toast.error(`Gerçek Zamanlı Hata: ${message.data?.error || "Bilinmeyen hata"}`)
+    } else if (message.type === "connected") {
+      toast.success("Gerçek Zamanlı Bağlantı Kuruldu!")
+    } else if (message.type === "disconnected") {
+      toast.warning("Gerçek Zamanlı Bağlantı Kesildi.")
     }
   }, [])
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("tr-TR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    })
+  useEffect(() => {
+    const unsubscribeData = githubRealtime.subscribe(handleDataUpdate)
+    const unsubscribeMessages = githubRealtime.onMessage(handleMessage)
+
+    // Initial fetch if data is empty
+    if (data.projects.length === 0 && data.blogs.length === 0) {
+      setLoading(true)
+      githubRealtime.refresh().finally(() => setLoading(false))
+    }
+
+    return () => {
+      unsubscribeData()
+      unsubscribeMessages()
+    }
+  }, [handleDataUpdate, handleMessage, data.projects.length, data.blogs.length])
+
+  const handleRefresh = async () => {
+    setLoading(true)
+    await githubRealtime.refresh()
   }
 
-  const formatRelativeTime = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / (1000 * 60))
+  const renderConnectionStatus = (status: ConnectionStatus) => {
+    switch (status) {
+      case "connected":
+        return (
+          <Badge className="bg-green-500 hover:bg-green-500 text-white">
+            <Wifi className="w-3 h-3 mr-1" /> Çevrimiçi
+          </Badge>
+        )
+      case "disconnected":
+        return (
+          <Badge variant="destructive">
+            <WifiOff className="w-3 h-3 mr-1" /> Çevrimdışı
+          </Badge>
+        )
+      case "connecting":
+        return (
+          <Badge variant="secondary">
+            <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Bağlanıyor...
+          </Badge>
+        )
+      case "error":
+        return (
+          <Badge variant="destructive">
+            <AlertTriangle className="w-3 h-3 mr-1" /> Hata
+          </Badge>
+        )
+      default:
+        return null
+    }
+  }
 
-    if (minutes < 1) return "Az önce"
-    if (minutes < 60) return `${minutes} dakika önce`
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours} saat önce`
-    const days = Math.floor(hours / 24)
-    return `${days} gün önce`
+  const formatTimeAgo = (isoString: string) => {
+    if (!isoString) return "N/A"
+    try {
+      return formatDistanceToNow(parseISO(isoString), { addSuffix: true, locale: tr })
+    } catch (e) {
+      return "Geçersiz Tarih"
+    }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Sistem durumu ve gerçek zamanlı istatistikler</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Clock className="h-4 w-4" />
-            Son güncelleme: {formatTime(lastUpdated)}
-          </div>
-          <Button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            size="sm"
-            variant="outline"
-            className="border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-            Yenile
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* Real-time Status Card */}
+      <Card className="lg:col-span-1">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Gerçek Zamanlı Durum</CardTitle>
+          {renderConnectionStatus(data.connectionStatus)}
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{data.connectionStatus === "connected" ? "Aktif" : "Pasif"}</div>
+          <p className="text-xs text-muted-foreground mt-1">Son Güncelleme: {formatTimeAgo(data.lastUpdate)}</p>
+          <Button onClick={handleRefresh} disabled={loading} className="mt-4 w-full">
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+            {loading ? "Yenileniyor..." : "Şimdi Yenile"}
           </Button>
-        </div>
-      </div>
-
-      {/* Status Indicator */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {isOnline ? (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Wifi className="h-5 w-5 text-green-500" />
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  </div>
-                  <div>
-                    <span className="text-green-600 font-medium">Gerçek Zamanlı Bağlantı Aktif</span>
-                    <div className="text-sm text-gray-500">Veriler otomatik olarak güncelleniyor</div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2">
-                    <WifiOff className="h-5 w-5 text-red-500" />
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  </div>
-                  <div>
-                    <span className="text-red-600 font-medium">Bağlantı Sorunu</span>
-                    <div className="text-sm text-gray-500">Veriler manuel olarak güncelleniyor</div>
-                  </div>
-                </>
-              )}
-            </div>
-            <Badge
-              variant={isOnline ? "default" : "destructive"}
-              className={isOnline ? "bg-green-100 text-green-800" : ""}
-            >
-              {isOnline ? "Çevrimiçi" : "Çevrimdışı"}
-            </Badge>
-          </div>
+          {!githubRealtime.isGitHubConfigured() && (
+            <p className="text-sm text-orange-500 mt-2">
+              GitHub API yapılandırılmadı. Veriler yerel depolamadan çekiliyor.
+            </p>
+          )}
         </CardContent>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card className="bg-white border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Toplam Projeler</CardTitle>
-            <div className="bg-[#c4975a]/10 p-3 rounded-full">
-              <FileText className="h-4 w-4 text-[#c4975a]" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{stats.totalProjects}</div>
-            <p className="text-xs text-gray-500">
-              <TrendingUp className="h-3 w-3 inline mr-1 text-[#c4975a]" />
-              +2 bu ay
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Blog Yazıları</CardTitle>
-            <div className="bg-blue-100 p-3 rounded-full">
-              <Users className="h-4 w-4 text-blue-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{stats.totalBlogs}</div>
-            <p className="text-xs text-gray-500">
-              <TrendingUp className="h-3 w-3 inline mr-1 text-blue-600" />
-              +1 bu hafta
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Toplam Görüntüleme</CardTitle>
-            <div className="bg-green-100 p-3 rounded-full">
-              <Eye className="h-4 w-4 text-green-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{stats.totalViews.toLocaleString()}</div>
-            <p className="text-xs text-gray-500">
-              <TrendingUp className="h-3 w-3 inline mr-1 text-green-600" />
-              +12% bu ay
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Mesajlar</CardTitle>
-            <div className="bg-purple-100 p-3 rounded-full">
-              <MessageSquare className="h-4 w-4 text-purple-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{stats.totalMessages}</div>
-            <p className="text-xs text-gray-500">
-              <TrendingUp className="h-3 w-3 inline mr-1 text-purple-600" />
-              +3 bugün
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activities */}
+      {/* Key Metrics */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Son Aktiviteler
-          </CardTitle>
-          <CardDescription>Sistemdeki son değişiklikler ve güncellemeler</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Toplam Projeler</CardTitle>
+          <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {stats.recentActivities.map((activity, index) => (
-              <div key={activity.id}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    <div>
-                      <p className="text-sm font-medium">{activity.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3 inline mr-1" />
-                        {formatRelativeTime(activity.timestamp)}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    {activity.type}
-                  </Badge>
+          <div className="text-2xl font-bold">{data.projects.length}</div>
+          <p className="text-xs text-muted-foreground">{data.dashboard.projectsPublished || 0} yayınlanmış</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Toplam Blog Yazıları</CardTitle>
+          <FileText className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{data.blogs.length}</div>
+          <p className="text-xs text-muted-foreground">{data.dashboard.blogPostsPublished || 0} yayınlanmış</p>
+        </CardContent>
+      </Card>
+
+      {/* Recent Activity */}
+      <Card className="col-span-full lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Son Etkinlikler (Gerçek Zamanlı Mesajlar)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[200px] pr-4">
+            <div className="space-y-2">
+              {messages.length === 0 && <p className="text-muted-foreground text-sm">Henüz bir etkinlik yok.</p>}
+              {messages.map((msg, index) => (
+                <div key={index} className="flex items-center space-x-2 text-sm">
+                  <span className="text-muted-foreground">[{new Date(msg.timestamp).toLocaleTimeString()}]</span>
+                  {msg.type === "connected" && (
+                    <Badge variant="outline" className="bg-green-100 text-green-700">
+                      Bağlandı
+                    </Badge>
+                  )}
+                  {msg.type === "disconnected" && (
+                    <Badge variant="outline" className="bg-red-100 text-red-700">
+                      Bağlantı Kesildi
+                    </Badge>
+                  )}
+                  {msg.type === "connecting" && (
+                    <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                      Bağlanıyor
+                    </Badge>
+                  )}
+                  {msg.type === "error" && <Badge variant="destructive">Hata</Badge>}
+                  {msg.type === "sync" && <Badge variant="secondary">Senkronizasyon</Badge>}
+                  <span className="flex-1 text-gray-700">
+                    {msg.data?.source && `(${msg.data.source}) `}
+                    {msg.data?.message || msg.data?.error || msg.type}
+                  </span>
                 </div>
-                {index < stats.recentActivities.length - 1 && <Separator className="mt-4" />}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function Loader2({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn("animate-spin", className)}
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
   )
 }

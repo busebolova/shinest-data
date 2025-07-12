@@ -3,64 +3,32 @@ import { dataManager } from "@/lib/data-manager"
 
 export async function GET() {
   try {
-    const [projects, blogPosts] = await Promise.all([dataManager.getProjects(), dataManager.getBlogPosts()])
+    const projects = await dataManager.getProjects()
+    const blogPosts = await dataManager.getBlogPosts()
 
-    const stats = {
+    const projectsPublished = projects.filter((p: any) => p.status === "published").length
+    const blogPostsPublished = blogPosts.filter((b: any) => b.status === "published").length
+
+    const dashboardStats = {
       totalProjects: projects.length,
-      publishedProjects: projects.filter((p) => p.status === "published").length,
-      draftProjects: projects.filter((p) => p.status === "draft").length,
-      featuredProjects: projects.filter((p) => p.featured).length,
+      projectsPublished,
       totalBlogPosts: blogPosts.length,
-      publishedBlogPosts: blogPosts.filter((p) => p.status === "published").length,
-      lastUpdated: new Date().toISOString(),
+      blogPostsPublished,
+      // Add more stats as needed
     }
 
-    const recentActivity = [
-      {
-        id: "1",
-        type: "project",
-        action: "created",
-        title: "Yeni proje eklendi",
-        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      },
-      {
-        id: "2",
-        type: "blog",
-        action: "published",
-        title: "Blog yazısı yayınlandı",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-      },
-      {
-        id: "3",
-        type: "content",
-        action: "updated",
-        title: "Ana sayfa içeriği güncellendi",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-      },
-    ]
-
-    return NextResponse.json({
-      stats,
-      recentActivity,
-      isGitHubConnected: dataManager.isGitHubConfigured(),
-    })
+    return NextResponse.json(dashboardStats)
   } catch (error) {
-    console.error("Error fetching dashboard data:", error)
+    console.error("Error fetching dashboard stats:", error)
     return NextResponse.json(
       {
-        stats: {
-          totalProjects: 0,
-          publishedProjects: 0,
-          draftProjects: 0,
-          featuredProjects: 0,
-          totalBlogPosts: 0,
-          publishedBlogPosts: 0,
-          lastUpdated: new Date().toISOString(),
-        },
-        recentActivity: [],
-        isGitHubConnected: false,
+        totalProjects: 0,
+        projectsPublished: 0,
+        totalBlogPosts: 0,
+        blogPostsPublished: 0,
+        error: "Failed to fetch dashboard stats",
       },
-      { status: 200 },
+      { status: 500 },
     )
   }
 }

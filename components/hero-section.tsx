@@ -36,7 +36,7 @@ export function HeroSection() {
       {/* Container for the layout */}
       <div className="relative w-full max-w-7xl mx-auto px-4 flex flex-col items-center justify-center">
         {/* Large SHINEST Letters */}
-        <div className="relative z-30 flex items-center justify-center w-full mb-8">
+        <div className="relative z-30 flex items-center justify-center w-full mb-4">
           <motion.div
             className="font-display text-[25vw] sm:text-[22vw] md:text-[18vw] lg:text-[15vw] xl:text-[12vw] leading-[0.75] tracking-[0.02em] flex justify-center items-center text-[#c4975a] font-bold"
             initial={{ opacity: 0, y: -100, scale: 0.8 }}
@@ -57,6 +57,23 @@ export function HeroSection() {
             SHINEST
           </motion.div>
         </div>
+
+        {/* "Mekanlarını yaşamınıza ışık tutar." text */}
+        <motion.div
+          className="relative z-30 text-center text-[4vw] sm:text-[3.5vw] md:text-[3vw] lg:text-[2.5vw] xl:text-[2vw] text-[#c4975a] font-normal mb-8"
+          initial={{ opacity: 0, y: -50 }}
+          animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: -50 }}
+          transition={{
+            duration: 1.2,
+            delay: 0.8,
+            ease: [0.25, 0.46, 0.45, 0.94],
+          }}
+          style={{
+            fontFamily: "Didot, serif",
+          }}
+        >
+          Mekanlarını yaşamınıza ışık tutar.
+        </motion.div>
 
         {/* Interior Image - Positioned below and covering about half of the letters */}
         <motion.div

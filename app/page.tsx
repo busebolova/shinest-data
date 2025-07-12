@@ -8,7 +8,7 @@ import { SecondGallery } from "@/components/second-gallery"
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
 import { QuoteFormModal } from "@/components/quote-form-modal"
-import { LoadingScreen } from "@/components/loading-screen"
+import { LoadingScreen } from "@/components/loading-screen" // Zaten doğru şekilde içe aktarılmış
 
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true)

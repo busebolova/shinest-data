@@ -3,82 +3,32 @@ import { dataManager } from "@/lib/data-manager"
 
 export async function GET() {
   try {
-    const posts = await dataManager.getBlogPosts()
-    
-    return NextResponse.json({
-      success: true,
-      data: posts,
-      count: posts.length,
-    })
+    const { posts } = await dataManager.getBlogPosts()
+    return NextResponse.json({ posts })
   } catch (error) {
     console.error("Error fetching blog posts:", error)
-    
-    // Return fallback data on error
-    const fallbackPosts = [
-      {
-        id: "1",
-        title: { tr: "2024 İç Mimarlık Trendleri", en: "2024 Interior Design Trends" },
-        content: {
-          tr: "2024 yılında iç mimarlık dünyasında öne çıkan trendler...",
-          en: "Trends that stand out in the interior design world in 2024...",
-        },
-        excerpt: {
-          tr: "Bu yıl öne çıkan tasarım trendleri",
-          en: "Design trends that stand out this year",
-        },
-        image: "/modern-interior-2024.png",
-        status: "published",
-        publishedAt: "2024-01-15T10:00:00Z",
-        createdAt: "2024-01-15T10:00:00Z",
-        updatedAt: "2024-01-15T10:00:00Z",
-      },
-      {
-        id: "2",
-        title: { tr: "Küçük Mekanlar İçin İpuçları", en: "Tips for Small Spaces" },
-        content: {
-          tr: "Küçük mekanları büyük göstermenin yolları...",
-          en: "Ways to make small spaces look bigger...",
-        },
-        excerpt: {
-          tr: "Küçük alanları verimli kullanma",
-          en: "Efficient use of small areas",
-        },
-        image: "/small-space-interior.png",
-        status: "published",
-        publishedAt: "2024-01-10T10:00:00Z",
-        createdAt: "2024-01-10T10:00:00Z",
-        updatedAt: "2024-01-10T10:00:00Z",
-      },
-    ]
-
-    return NextResponse.json({
-      success: true,
-      data: fallbackPosts,
-      count: fallbackPosts.length,
-      fallback: true,
-    })
+    return NextResponse.json({ error: "Failed to fetch blog posts" }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const newPost = await dataManager.createBlogPost(body)
-    
-    return NextResponse.json({
-      success: true,
-      data: newPost,
-      message: "Blog post created successfully",
+    const newBlogPostData = await request.json()
+    const newPost = await dataManager.createBlogPost(newBlogPostData)
+
+    // Trigger revalidation for blog page
+    await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/revalidate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.REVALIDATE_TOKEN}`,
+      },
+      body: JSON.stringify({ path: "/blog" }),
     })
+
+    return NextResponse.json(newPost, { status: 201 })
   } catch (error) {
     console.error("Error creating blog post:", error)
-    
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to create blog post",
-      },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to create blog post" }, { status: 500 })
   }
 }

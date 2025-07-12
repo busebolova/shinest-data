@@ -1,299 +1,407 @@
-import LocalStorage from "./local-storage"
-import { githubApi } from "./github-api"
+import { githubAPI } from "./github-api"
+import { localStorageManager } from "./local-storage" // Renamed to avoid conflict with global localStorage
 
-interface DataManagerConfig {
-  useGitHub: boolean
-  fallbackToLocalStorage: boolean
+// This class acts as an abstraction layer for data access.
+// It tries to use GitHub API if configured, otherwise falls back to localStorage.
+// For write operations, it will attempt to write to GitHub and then update localStorage.
+// For read operations, it will prioritize GitHub if configured, otherwise read from localStorage.
+
+interface Project {
+  id: string
+  title: { tr: string; en: string }
+  description: { tr: string; en: string }
+  category: string
+  location: string
+  year: string
+  status: "published" | "draft" | "archived"
+  featured: boolean
+  images: string[]
+  slug: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface BlogPost {
+  id: string
+  title: { tr: string; en: string }
+  content: { tr: string; en: string }
+  excerpt: { tr: string; en: string }
+  image: string
+  status: "published" | "draft"
+  publishedAt: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface PageContent {
+  sections: Array<{
+    id: string
+    type: string
+    title: string
+    content: any
+    order: number
+  }>
+}
+
+interface AdminSettings {
+  company: {
+    name: string
+    nameEn: string
+    logo: string
+    phone: string
+    email: string
+    address: string
+    addressEn: string
+  }
+  social: {
+    instagram: string
+    facebook: string
+    linkedin: string
+    youtube: string
+  }
+  seo: {
+    title: string
+    titleEn: string
+    description: string
+    descriptionEn: string
+    keywords: string
+    keywordsEn: string
+  }
+  contact: {
+    workingHours: string
+    workingHoursEn: string
+    whatsapp: string
+  }
+  security: {
+    twoFactorAuth: boolean
+    captchaEnabled: boolean
+    sessionTimeout: number
+    maxLoginAttempts: number
+  }
 }
 
 class DataManager {
-  private config: DataManagerConfig
-
-  constructor(config: DataManagerConfig = { useGitHub: true, fallbackToLocalStorage: true }) {
-    this.config = config
-  }
-
-  private async tryGitHub<T>(operation: () => Promise<T>): Promise<T | null> {
-    if (!this.config.useGitHub || !githubApi.isConfigured()) {
-      return null
-    }
-
-    try {
-      return await operation()
-    } catch (error) {
-      console.error("GitHub operation failed:", error)
-      return null
-    }
-  }
-
   // Projects
-  async getProjects(): Promise<any[]> {
-    const githubResult = await this.tryGitHub(() => githubApi.getProjects())
-
-    if (githubResult) {
-      if (this.config.fallbackToLocalStorage) {
-        LocalStorage.saveProjects(githubResult)
+  async getProjects(): Promise<Project[]> {
+    if (githubAPI.isConfigured()) {
+      try {
+        const { projects } = await githubAPI.getProjects()
+        localStorageManager.saveProjects(projects) // Sync to local storage
+        return projects
+      } catch (error) {
+        console.warn("Failed to fetch projects from GitHub, falling back to local storage:", error)
+        return localStorageManager.getProjects()
       }
-      return githubResult
     }
-
-    if (this.config.fallbackToLocalStorage) {
-      return LocalStorage.getProjects()
-    }
-
-    return []
+    return localStorageManager.getProjects()
   }
 
-  async getProject(id: string): Promise<any | null> {
-    const githubResult = await this.tryGitHub(() => githubApi.getProject(id))
-
-    if (githubResult) {
-      return githubResult
+  async getProject(id: string): Promise<Project | null> {
+    if (githubAPI.isConfigured()) {
+      try {
+        const { projects } = await githubAPI.getProjects() // Fetch all and find
+        const project = projects.find((p: Project) => p.id === id)
+        if (project) {
+          localStorageManager.saveProjects(projects) // Sync to local storage
+          return project
+        }
+      } catch (error) {
+        console.warn("Failed to fetch project from GitHub, falling back to local storage:", error)
+      }
     }
-
-    if (this.config.fallbackToLocalStorage) {
-      const projects = LocalStorage.getProjects()
-      return projects.find((p) => p.id === id) || null
-    }
-
-    return null
+    return localStorageManager.getProject(id)
   }
 
-  async createProject(project: any): Promise<any> {
-    const githubResult = await this.tryGitHub(() => githubApi.createProject(project))
-
-    if (githubResult) {
-      if (this.config.fallbackToLocalStorage) {
-        const projects = LocalStorage.getProjects()
-        LocalStorage.saveProjects([githubResult, ...projects])
-      }
-      return githubResult
+  async createProject(projectData: Omit<Project, "id" | "createdAt" | "updatedAt" | "slug">): Promise<Project> {
+    const projects = await this.getProjects() // Get current projects (from GitHub or local)
+    const newProject: Project = {
+      ...projectData,
+      id: Date.now().toString(), // Simple ID generation
+      slug: this.generateSlug(projectData.title.tr || projectData.title.en),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
+    const updatedProjects = [newProject, ...projects]
 
-    if (this.config.fallbackToLocalStorage) {
-      const newProject = {
-        ...project,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+    if (githubAPI.isConfigured()) {
+      try {
+        await githubAPI.updateFile(
+          "data/projects.json",
+          JSON.stringify({ projects: updatedProjects }, null, 2),
+          `feat: Add new project: ${newProject.title.en}`,
+        )
+        localStorageManager.saveProjects(updatedProjects) // Sync to local storage
+        return newProject
+      } catch (error) {
+        console.error("Failed to create project on GitHub, saving to local storage only:", error)
+        localStorageManager.createProject(projectData) // Fallback to local storage
+        throw error // Re-throw to indicate failure to GitHub
       }
-      const projects = LocalStorage.getProjects()
-      LocalStorage.saveProjects([newProject, ...projects])
+    } else {
+      localStorageManager.createProject(projectData) // Save to local storage
       return newProject
     }
-
-    throw new Error("Unable to create project")
   }
 
-  async updateProject(id: string, updates: any): Promise<any> {
-    const githubResult = await this.tryGitHub(() => githubApi.updateProject(id, updates))
-
-    if (githubResult) {
-      if (this.config.fallbackToLocalStorage) {
-        const projects = LocalStorage.getProjects()
-        const index = projects.findIndex((p) => p.id === id)
-        if (index !== -1) {
-          projects[index] = githubResult
-          LocalStorage.saveProjects(projects)
-        }
-      }
-      return githubResult
+  async updateProject(id: string, updates: Partial<Project>): Promise<Project> {
+    const projects = await this.getProjects() // Get current projects (from GitHub or local)
+    const index = projects.findIndex((p) => p.id === id)
+    if (index === -1) {
+      throw new Error("Project not found")
     }
 
-    if (this.config.fallbackToLocalStorage) {
-      const projects = LocalStorage.getProjects()
-      const index = projects.findIndex((p) => p.id === id)
-      if (index === -1) {
-        throw new Error("Project not found")
-      }
+    const updatedProject = {
+      ...projects[index],
+      ...updates,
+      slug:
+        updates.title?.tr || updates.title?.en
+          ? this.generateSlug(updates.title.tr || updates.title.en)
+          : projects[index].slug,
+      updatedAt: new Date().toISOString(),
+    }
+    projects[index] = updatedProject
 
-      const updatedProject = {
-        ...projects[index],
-        ...updates,
-        updatedAt: new Date().toISOString(),
+    if (githubAPI.isConfigured()) {
+      try {
+        await githubAPI.updateFile(
+          "data/projects.json",
+          JSON.stringify({ projects: projects }, null, 2),
+          `feat: Update project: ${updatedProject.title.en}`,
+        )
+        localStorageManager.saveProjects(projects) // Sync to local storage
+        return updatedProject
+      } catch (error) {
+        console.error("Failed to update project on GitHub, updating local storage only:", error)
+        localStorageManager.updateProject(id, updates) // Fallback to local storage
+        throw error // Re-throw to indicate failure to GitHub
       }
-      projects[index] = updatedProject
-      LocalStorage.saveProjects(projects)
+    } else {
+      localStorageManager.updateProject(id, updates) // Update local storage
       return updatedProject
     }
-
-    throw new Error("Unable to update project")
   }
 
   async deleteProject(id: string): Promise<void> {
-    const githubSuccess = await this.tryGitHub(() => githubApi.deleteProject(id))
+    const projects = await this.getProjects() // Get current projects (from GitHub or local)
+    const updatedProjects = projects.filter((p) => p.id !== id)
 
-    if (githubSuccess !== null) {
-      if (this.config.fallbackToLocalStorage) {
-        const projects = LocalStorage.getProjects()
-        const filteredProjects = projects.filter((p) => p.id !== id)
-        LocalStorage.saveProjects(filteredProjects)
+    if (githubAPI.isConfigured()) {
+      try {
+        await githubAPI.updateFile(
+          "data/projects.json",
+          JSON.stringify({ projects: updatedProjects }, null, 2),
+          `feat: Delete project with ID: ${id}`,
+        )
+        localStorageManager.saveProjects(updatedProjects) // Sync to local storage
+      } catch (error) {
+        console.error("Failed to delete project on GitHub, deleting from local storage only:", error)
+        localStorageManager.deleteProject(id) // Fallback to local storage
+        throw error // Re-throw to indicate failure to GitHub
       }
-      return
+    } else {
+      localStorageManager.deleteProject(id) // Delete from local storage
     }
-
-    if (this.config.fallbackToLocalStorage) {
-      const projects = LocalStorage.getProjects()
-      const filteredProjects = projects.filter((p) => p.id !== id)
-      LocalStorage.saveProjects(filteredProjects)
-      return
-    }
-
-    throw new Error("Unable to delete project")
   }
 
   // Blog Posts
-  async getBlogPosts(): Promise<any[]> {
-    const githubResult = await this.tryGitHub(() => githubApi.getBlogPosts())
-
-    if (githubResult) {
-      if (this.config.fallbackToLocalStorage) {
-        LocalStorage.saveBlogPosts(githubResult)
+  async getBlogPosts(): Promise<{ posts: BlogPost[] }> {
+    if (githubAPI.isConfigured()) {
+      try {
+        const data = await githubAPI.getBlogPosts()
+        localStorageManager.saveBlogPosts(data.posts) // Sync to local storage
+        return data
+      } catch (error) {
+        console.warn("Failed to fetch blog posts from GitHub, falling back to local storage:", error)
+        return { posts: localStorageManager.getBlogPosts() }
       }
-      return githubResult
     }
-
-    if (this.config.fallbackToLocalStorage) {
-      return LocalStorage.getBlogPosts()
-    }
-
-    return []
+    return { posts: localStorageManager.getBlogPosts() }
   }
 
-  async getBlogPost(id: string): Promise<any | null> {
-    const githubResult = await this.tryGitHub(() => githubApi.getBlogPost(id))
-
-    if (githubResult) {
-      return githubResult
+  async getBlogPost(id: string): Promise<BlogPost | null> {
+    if (githubAPI.isConfigured()) {
+      try {
+        const { posts } = await githubAPI.getBlogPosts()
+        const post = posts.find((p: BlogPost) => p.id === id)
+        if (post) {
+          localStorageManager.saveBlogPosts(posts) // Sync to local storage
+          return post
+        }
+      } catch (error) {
+        console.warn("Failed to fetch blog post from GitHub, falling back to local storage:", error)
+      }
     }
-
-    if (this.config.fallbackToLocalStorage) {
-      const posts = LocalStorage.getBlogPosts()
-      return posts.find((p) => p.id === id) || null
-    }
-
-    return null
+    return localStorageManager.getBlogPost(id)
   }
 
-  async createBlogPost(post: any): Promise<any> {
-    const githubResult = await this.tryGitHub(() => githubApi.createBlogPost(post))
-
-    if (githubResult) {
-      if (this.config.fallbackToLocalStorage) {
-        const posts = LocalStorage.getBlogPosts()
-        LocalStorage.saveBlogPosts([githubResult, ...posts])
-      }
-      return githubResult
+  async createBlogPost(postData: Omit<BlogPost, "id" | "createdAt" | "updatedAt">): Promise<BlogPost> {
+    const { posts } = await this.getBlogPosts() // Get current posts (from GitHub or local)
+    const newPost: BlogPost = {
+      ...postData,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
+    const updatedPosts = [newPost, ...posts]
 
-    if (this.config.fallbackToLocalStorage) {
-      const newPost = {
-        ...post,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+    if (githubAPI.isConfigured()) {
+      try {
+        await githubAPI.updateFile(
+          "data/blog.json",
+          JSON.stringify({ posts: updatedPosts }, null, 2),
+          `feat: Add new blog post: ${newPost.title.en}`,
+        )
+        localStorageManager.saveBlogPosts(updatedPosts) // Sync to local storage
+        return newPost
+      } catch (error) {
+        console.error("Failed to create blog post on GitHub, saving to local storage only:", error)
+        localStorageManager.createBlogPost(postData) // Fallback to local storage
+        throw error
       }
-      const posts = LocalStorage.getBlogPosts()
-      LocalStorage.saveBlogPosts([newPost, ...posts])
+    } else {
+      localStorageManager.createBlogPost(postData) // Save to local storage
       return newPost
     }
-
-    throw new Error("Unable to create blog post")
   }
 
-  async updateBlogPost(id: string, updates: any): Promise<any> {
-    const githubResult = await this.tryGitHub(() => githubApi.updateBlogPost(id, updates))
-
-    if (githubResult) {
-      if (this.config.fallbackToLocalStorage) {
-        const posts = LocalStorage.getBlogPosts()
-        const index = posts.findIndex((p) => p.id === id)
-        if (index !== -1) {
-          posts[index] = githubResult
-          LocalStorage.saveBlogPosts(posts)
-        }
-      }
-      return githubResult
+  async updateBlogPost(id: string, updates: Partial<BlogPost>): Promise<BlogPost> {
+    const { posts } = await this.getBlogPosts() // Get current posts (from GitHub or local)
+    const index = posts.findIndex((p) => p.id === id)
+    if (index === -1) {
+      throw new Error("Blog post not found")
     }
 
-    if (this.config.fallbackToLocalStorage) {
-      const posts = LocalStorage.getBlogPosts()
-      const index = posts.findIndex((p) => p.id === id)
-      if (index === -1) {
-        throw new Error("Blog post not found")
-      }
+    const updatedPost = {
+      ...posts[index],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    }
+    posts[index] = updatedPost
 
-      const updatedPost = {
-        ...posts[index],
-        ...updates,
-        updatedAt: new Date().toISOString(),
+    if (githubAPI.isConfigured()) {
+      try {
+        await githubAPI.updateFile(
+          "data/blog.json",
+          JSON.stringify({ posts: posts }, null, 2),
+          `feat: Update blog post: ${updatedPost.title.en}`,
+        )
+        localStorageManager.saveBlogPosts(posts) // Sync to local storage
+        return updatedPost
+      } catch (error) {
+        console.error("Failed to update blog post on GitHub, updating local storage only:", error)
+        localStorageManager.updateBlogPost(id, updates) // Fallback to local storage
+        throw error
       }
-      posts[index] = updatedPost
-      LocalStorage.saveBlogPosts(posts)
+    } else {
+      localStorageManager.updateBlogPost(id, updates) // Update local storage
       return updatedPost
     }
-
-    throw new Error("Unable to update blog post")
   }
 
   async deleteBlogPost(id: string): Promise<void> {
-    const githubSuccess = await this.tryGitHub(() => githubApi.deleteBlogPost(id))
+    const { posts } = await this.getBlogPosts() // Get current posts (from GitHub or local)
+    const updatedPosts = posts.filter((p) => p.id !== id)
 
-    if (githubSuccess !== null) {
-      if (this.config.fallbackToLocalStorage) {
-        const posts = LocalStorage.getBlogPosts()
-        const filteredPosts = posts.filter((p) => p.id !== id)
-        LocalStorage.saveBlogPosts(filteredPosts)
+    if (githubAPI.isConfigured()) {
+      try {
+        await githubAPI.updateFile(
+          "data/blog.json",
+          JSON.stringify({ posts: updatedPosts }, null, 2),
+          `feat: Delete blog post with ID: ${id}`,
+        )
+        localStorageManager.saveBlogPosts(updatedPosts) // Sync to local storage
+      } catch (error) {
+        console.error("Failed to delete blog post on GitHub, deleting from local storage only:", error)
+        localStorageManager.deleteBlogPost(id) // Fallback to local storage
+        throw error
       }
-      return
+    } else {
+      localStorageManager.deleteBlogPost(id) // Delete from local storage
     }
-
-    if (this.config.fallbackToLocalStorage) {
-      const posts = LocalStorage.getBlogPosts()
-      const filteredPosts = posts.filter((p) => p.id !== id)
-      LocalStorage.saveBlogPosts(filteredPosts)
-      return
-    }
-
-    throw new Error("Unable to delete blog post")
   }
 
   // Page Content
-  async getPageContent(page: string): Promise<any> {
-    const githubResult = await this.tryGitHub(() => githubApi.getPageContent(page))
-
-    if (githubResult) {
-      if (this.config.fallbackToLocalStorage) {
-        LocalStorage.savePageContent(page, githubResult)
+  async getPageContent(page: string): Promise<PageContent | null> {
+    if (githubAPI.isConfigured()) {
+      try {
+        const content = await githubAPI.getPageContent(page)
+        localStorageManager.savePageContent(page, content) // Sync to local storage
+        return content
+      } catch (error) {
+        console.warn(`Failed to fetch page content for ${page} from GitHub, falling back to local storage:`, error)
+        return localStorageManager.getPageContent(page)
       }
-      return githubResult
     }
-
-    if (this.config.fallbackToLocalStorage) {
-      return LocalStorage.getPageContent(page)
-    }
-
-    return {}
+    return localStorageManager.getPageContent(page)
   }
 
-  async savePageContent(page: string, content: any): Promise<void> {
-    const githubSuccess = await this.tryGitHub(() => githubApi.savePageContent(page, content))
-
-    if (githubSuccess !== null) {
-      if (this.config.fallbackToLocalStorage) {
-        LocalStorage.savePageContent(page, content)
+  async savePageContent(page: string, content: PageContent): Promise<void> {
+    if (githubAPI.isConfigured()) {
+      try {
+        await githubAPI.updateFile(
+          `data/pages/${page}.json`,
+          JSON.stringify(content, null, 2),
+          `feat: Update content for page: ${page}`,
+        )
+        localStorageManager.savePageContent(page, content) // Sync to local storage
+      } catch (error) {
+        console.error(`Failed to save page content for ${page} on GitHub, saving to local storage only:`, error)
+        localStorageManager.savePageContent(page, content) // Fallback to local storage
+        throw error
       }
-      return
+    } else {
+      localStorageManager.savePageContent(page, content) // Save to local storage
     }
+  }
 
-    if (this.config.fallbackToLocalStorage) {
-      LocalStorage.savePageContent(page, content)
-      return
+  // Admin Settings
+  async getAdminSettings(): Promise<AdminSettings> {
+    if (githubAPI.isConfigured()) {
+      try {
+        const settings = await githubAPI.getAdminSettings()
+        localStorageManager.saveAdminSettings(settings) // Sync to local storage
+        return settings
+      } catch (error) {
+        console.warn("Failed to fetch admin settings from GitHub, falling back to local storage:", error)
+        return localStorageManager.getAdminSettings()
+      }
     }
+    return localStorageManager.getAdminSettings()
+  }
 
-    throw new Error("Unable to save page content")
+  async saveAdminSettings(settings: AdminSettings): Promise<void> {
+    if (githubAPI.isConfigured()) {
+      try {
+        await githubAPI.updateFile(
+          "data/settings.json",
+          JSON.stringify(settings, null, 2),
+          `feat: Update admin settings`,
+        )
+        localStorageManager.saveAdminSettings(settings) // Sync to local storage
+      } catch (error) {
+        console.error("Failed to save admin settings on GitHub, saving to local storage only:", error)
+        localStorageManager.saveAdminSettings(settings) // Fallback to local storage
+        throw error
+      }
+    } else {
+      localStorageManager.saveAdminSettings(settings) // Save to local storage
+    }
+  }
+
+  private generateSlug(title: string): string {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-ğüşöçİı]/g, "") // Remove non-alphanumeric chars except spaces and Turkish chars
+      .replace(/[\s_-]+/g, "-") // Replace spaces and underscores with a single dash
+      .replace(/^-+|-+$/g, "") // Remove leading/trailing dashes
+      .replace(/ğ/g, "g")
+      .replace(/ü/g, "u")
+      .replace(/ş/g, "s")
+      .replace(/ı/g, "i")
+      .replace(/ö/g, "o")
+      .replace(/ç/g, "c")
+      .replace(/i/g, "i") // Ensure 'i' is handled correctly if it was capitalized
   }
 }
 
 export const dataManager = new DataManager()
-export default DataManager

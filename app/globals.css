@@ -5,75 +5,85 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 206 93% 32%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 0 0% 0%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
     --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
 
-    /* SHINEST Brand Colors */
-    --shinest-blue: 210 61% 22%; /* #15415b */
-    --shinest-gold: 38 55% 54%; /* #cfaf76 */
-    --shinest-gold-light: 42 65% 65%; /* #d4a76a */
-    --shinest-gold-dark: 35 50% 45%; /* #b8935a */
+    /* Custom Shinest Colors */
+    --shinest-primary: 30 60% 40%; /* A warm, earthy tone */
+    --shinest-secondary: 210 10% 20%; /* A deep, muted blue/grey */
+    --shinest-accent: 40 100% 70%; /* A bright, warm accent */
+    --shinest-text: 240 10% 10%; /* Dark text */
+    --shinest-light-text: 240 5% 40%; /* Lighter text */
+    --shinest-background: 0 0% 98%; /* Light background */
+    --shinest-border: 220 13% 91%; /* Light border */
 
-    /* Typography */
-    --font-didot: "Didot", "Didot LT STD", "Hoefler Text", "Playfair Display", "Times New Roman", serif;
-    --font-poppins: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --font-cormorant: "Cormorant Garamond", Georgia, serif;
-    --font-allura: "Allura", cursive;
+    /* Sidebar specific variables */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 206 93% 32%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 0 0% 0%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
 
-    /* SHINEST Brand Colors - Dark Mode */
-    --shinest-blue: 210 61% 22%;
-    --shinest-gold: 38 55% 54%;
-    --shinest-gold-light: 42 65% 65%;
-    --shinest-gold-dark: 35 50% 45%;
+    /* Custom Shinest Dark Colors */
+    --shinest-primary: 30 60% 50%;
+    --shinest-secondary: 210 10% 80%;
+    --shinest-accent: 40 100% 60%;
+    --shinest-text: 0 0% 90%;
+    --shinest-light-text: 240 5% 60%;
+    --shinest-background: 240 10% 5%;
+    --shinest-border: 240 3.7% 25.9%;
+
+    /* Sidebar specific variables */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -83,137 +93,111 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-poppins);
+    font-family: "Poppins", sans-serif;
   }
 }
 
-/* Typography Classes */
-.font-display {
-  font-family: var(--font-didot);
-  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
-  font-optical-sizing: auto;
-  letter-spacing: -0.02em;
-  font-weight: 400;
-  font-style: normal;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+/* Custom scrollbar for better aesthetics */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.font-sans {
-  font-family: var(--font-poppins);
-  font-weight: 400;
-  font-style: normal;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  letter-spacing: 0.01em;
+::-webkit-scrollbar-track {
+  background: var(--shinest-background);
+  border-radius: 10px;
 }
 
-.font-serif {
-  font-family: var(--font-cormorant);
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--shinest-primary));
+  border-radius: 10px;
 }
 
-.font-handwriting {
-  font-family: var(--font-allura);
-  font-weight: 400;
-  font-style: normal;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  letter-spacing: 0.02em;
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--shinest-primary) / 0.8);
 }
 
-/* Brand Color Utilities */
-.text-shinest-blue {
-  color: hsl(var(--shinest-blue));
+/* Specific styles for handwriting animation */
+.handwriting-svg path {
+  stroke-dasharray: var(--length);
+  stroke-dashoffset: var(--length);
+  animation: draw var(--duration) ease-in-out forwards;
+  stroke: black; /* Default stroke color, can be overridden by CSS variables */
+  stroke-width: 2;
+  fill: none;
 }
 
-.text-shinest-gold {
-  color: hsl(var(--shinest-gold));
+.dark .handwriting-svg path {
+  stroke: white; /* Adjust for dark mode */
 }
 
-.bg-shinest-blue {
-  background-color: hsl(var(--shinest-blue));
-}
-
-.bg-shinest-gold {
-  background-color: hsl(var(--shinest-gold));
-}
-
-.border-shinest-blue {
-  border-color: hsl(var(--shinest-blue));
-}
-
-.border-shinest-gold {
-  border-color: hsl(var(--shinest-gold));
-}
-
-/* Smooth Scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  overflow-x: hidden;
-}
-
-/* Hero Section Specific Styles */
-.hero-text-mask {
-  background: linear-gradient(135deg, #c4975a 0%, #d4a76a 50%, #b8935a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.1));
-}
-
-/* Custom Animations */
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
+/* Custom styles for the admin panel */
+.admin-panel-bg {
+  background-color: hsl(var(--shinest-background));
 }
 
-@keyframes pulse-gold {
-  0%,
-  100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.8;
-  }
+.admin-panel-card {
+  background-color: hsl(var(--card));
+  border-color: hsl(var(--border));
 }
 
-.animate-pulse-gold {
-  animation: pulse-gold 2s ease-in-out infinite;
+.admin-panel-button {
+  background-color: hsl(var(--shinest-primary));
+  color: hsl(var(--shinest-primary-foreground));
 }
 
-/* Responsive Typography */
-@media (max-width: 640px) {
-  .font-display {
-    letter-spacing: -0.01em;
-  }
+.admin-panel-button:hover {
+  background-color: hsl(var(--shinest-primary) / 0.9);
 }
 
-/* High DPI Display Optimizations */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .font-display {
-    -webkit-font-smoothing: subpixel-antialiased;
-  }
+/* Custom colors for admin panel */
+.bg-shinest-primary {
+  background-color: hsl(var(--shinest-primary));
 }
 
-/* Print Styles */
-@media print {
-  .font-display {
-    -webkit-print-color-adjust: exact;
-    color-adjust: exact;
-  }
+.hover\:bg-shinest-primary\/90:hover {
+  background-color: hsl(var(--shinest-primary) / 0.9);
+}
+
+.text-shinest-primary {
+  color: hsl(var(--shinest-primary));
+}
+
+.border-shinest-primary {
+  border-color: hsl(var(--shinest-primary));
+}
+
+.ring-shinest-primary {
+  --tw-ring-color: hsl(var(--shinest-primary));
+}
+
+/* Admin Sidebar Custom Colors */
+.bg-sidebar {
+  background-color: hsl(var(--sidebar-background));
+}
+
+.text-sidebar-foreground {
+  color: hsl(var(--sidebar-foreground));
+}
+
+.bg-sidebar-accent {
+  background-color: hsl(var(--sidebar-accent));
+}
+
+.text-sidebar-accent-foreground {
+  color: hsl(var(--sidebar-accent-foreground));
+}
+
+.bg-sidebar-border {
+  background-color: hsl(var(--sidebar-border));
+}
+
+.ring-sidebar-ring {
+  --tw-ring-color: hsl(var(--sidebar-ring));
 }

@@ -1,6 +1,9 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 
+// Authentication is now handled by `lib/simple-auth.ts` and `contexts/auth-context.tsx`.
+// This file might be a remnant or a placeholder for a different auth system.
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({

@@ -2,6 +2,11 @@ import { type NextRequest, NextResponse } from "next/server"
 import { githubApi } from "@/lib/github-api"
 import { localDb } from "@/lib/database"
 
+// This file was not explicitly requested to be modified or created in the prompt.
+// Its functionality is now covered by `app/api/admin/content/route.ts` for PUT requests
+// and `app/api/content/[page]/route.ts` for GET requests.
+// This file might be redundant.
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

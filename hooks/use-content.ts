@@ -1,97 +1,65 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { dataManager } from "@/lib/data-manager"
+import { toast } from "sonner"
 
-interface UseContentOptions {
-  fallbackData?: any
-  autoRefresh?: boolean
-  refreshInterval?: number
+interface ContentSection {
+  id: string
+  type: "hero" | "text" | "gallery" | "quote" | "services"
+  title: string
+  content: any
+  order: number
 }
 
-export function useContent(page: string, options: UseContentOptions = {}) {
-  const [content, setContent] = useState<any>(options.fallbackData || {})
+interface PageContent {
+  sections: ContentSection[]
+}
+
+export function useContent(pageName: string) {
+  const [content, setContent] = useState<PageContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
 
-  const fetchContent = async () => {
+  const fetchContent = useCallback(async () => {
+    setLoading(true)
+    setError(null)
     try {
-      setLoading(true)
-      setError(null)
-
-      const response = await fetch(`/api/content/${page}`)
-      const result = await response.json()
-
-      if (result.success) {
-        setContent(result.data)
-        setLastUpdated(result.timestamp)
-      } else {
-        throw new Error(result.error || "Failed to fetch content")
-      }
+      const fetchedContent = await dataManager.getPageContent(pageName)
+      setContent(fetchedContent)
     } catch (err) {
-      console.error(`Error fetching content for ${page}:`, err)
-      setError(err instanceof Error ? err.message : "Unknown error")
-
-      // Use fallback data if available
-      if (options.fallbackData) {
-        setContent(options.fallbackData)
-      }
+      console.error(`Error fetching content for ${pageName}:`, err)
+      setError("İçerik yüklenirken bir hata oluştu.")
+      toast.error("İçerik yüklenirken bir hata oluştu.")
     } finally {
       setLoading(false)
     }
-  }
+  }, [pageName])
 
-  const saveContent = async (newContent: any) => {
-    try {
+  useEffect(() => {
+    fetchContent()
+  }, [fetchContent])
+
+  const saveContent = useCallback(
+    async (newSections: ContentSection[]) => {
+      setLoading(true)
       setError(null)
-
-      const response = await fetch(`/api/content/${page}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newContent),
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        setContent(newContent)
-        setLastUpdated(result.timestamp)
-        return true
-      } else {
-        throw new Error(result.error || "Failed to save content")
+      try {
+        const contentToSave: PageContent = { sections: newSections }
+        await dataManager.savePageContent(pageName, contentToSave)
+        setContent(contentToSave) // Update state with saved content
+        toast.success("İçerik başarıyla kaydedildi!")
+      } catch (err) {
+        console.error(`Error saving content for ${pageName}:`, err)
+        setError("İçerik kaydedilirken bir hata oluştu.")
+        toast.error("İçerik kaydedilirken bir hata oluştu.")
+        throw err // Re-throw to allow UI to handle saving state
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      console.error(`Error saving content for ${page}:`, err)
-      setError(err instanceof Error ? err.message : "Unknown error")
-      return false
-    }
-  }
+    },
+    [pageName],
+  )
 
-  const refreshContent = () => {
-    fetchContent()
-  }
-
-  useEffect(() => {
-    fetchContent()
-  }, [page])
-
-  useEffect(() => {
-    if (options.autoRefresh && options.refreshInterval) {
-      const interval = setInterval(fetchContent, options.refreshInterval)
-      return () => clearInterval(interval)
-    }
-  }, [options.autoRefresh, options.refreshInterval, page])
-
-  return {
-    content,
-    loading,
-    error,
-    lastUpdated,
-    saveContent,
-    refreshContent,
-  }
+  return { content, loading, error, saveContent, refreshContent: fetchContent }
 }
-
-export default useContent

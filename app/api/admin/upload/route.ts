@@ -1,51 +1,41 @@
-import { getServerSession } from "next-auth/next"
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 
-export async function POST(req: NextRequest) {
-  const session = await getServerSession()
+// This route is a placeholder.
+// Given the strict constraint "Only GitHub as Backend – No Supabase / No DBs"
+// and "No third-party services or packages that could break the current deployment",
+// direct file uploads to GitHub via a simple API route are not feasible without
+// implementing complex Git Data API logic (creating blobs, trees, commits)
+// or using an external service (which is forbidden).
+//
+// Therefore, for image management, the admin panel will expect image URLs
+// (paths relative to the public folder). Users would manually upload images
+// to the GitHub repository's public folder.
+//
+// This route can be used for future expansion if a more sophisticated
+// GitHub-based binary upload mechanism is implemented, or if the constraints change.
 
-  if (!session) {
-    return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
-      status: 401,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-  }
+export async function POST(request: Request) {
+  // const formData = await request.formData();
+  // const file = formData.get("file") as File;
 
-  try {
-    const formData = await req.formData()
-    const file = formData.get("file") as Blob | null
+  // if (!file) {
+  //   return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+  // }
 
-    if (!file) {
-      return new NextResponse(JSON.stringify({ message: "No file uploaded" }), {
-        status: 400,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-    }
+  // // In a real GitHub-only scenario, you'd need to:
+  // // 1. Read the file content.
+  // // 2. Encode it to Base64.
+  // // 3. Use Octokit to commit the file to the GitHub repository.
+  // // This is a complex operation involving multiple Git Data API calls (create blob, create tree, create commit).
+  // // For now, we'll return a placeholder response.
 
-    const buffer = Buffer.from(await file.arrayBuffer())
-
-    // Implement your file upload logic here.  This is a placeholder.
-    // You'll likely want to upload to a cloud storage service like AWS S3,
-    // Google Cloud Storage, or Azure Blob Storage.
-
-    // For demonstration purposes, we'll just return a success message.
-    return new NextResponse(JSON.stringify({ message: "File uploaded successfully" }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-  } catch (error) {
-    console.error("Error uploading file:", error)
-    return new NextResponse(JSON.stringify({ message: "Error uploading file" }), {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-  }
+  return NextResponse.json(
+    {
+      success: false,
+      message:
+        "Image upload is not directly supported via this API due to GitHub-only backend constraint. Please upload images to your public folder and use their paths.",
+      // imageUrl: "/placeholder.svg", // Example of what it might return
+    },
+    { status: 501 },
+  ) // 501 Not Implemented
 }

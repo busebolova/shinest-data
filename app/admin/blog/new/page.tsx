@@ -3,241 +3,178 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Save, Eye } from "lucide-react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { apiClient } from "@/lib/api-client"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Save, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+import { dataManager } from "@/lib/data-manager"
 
-export default function NewBlogPost() {
+export default function NewBlogPostPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    title: { tr: "", en: "" },
-    content: { tr: "", en: "" },
-    excerpt: { tr: "", en: "" },
-    image: "",
-    status: "draft" as "draft" | "published",
-  })
+  const [titleTR, setTitleTR] = useState("")
+  const [titleEN, setTitleEN] = useState("")
+  const [excerptTR, setExcerptTR] = useState("")
+  const [excerptEN, setExcerptEN] = useState("")
+  const [contentTR, setContentTR] = useState("")
+  const [contentEN, setContentEN] = useState("")
+  const [image, setImage] = useState("")
+  const [status, setStatus] = useState<"published" | "draft">("draft")
+  const [saving, setSaving] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setSaving(true)
+
+    if (!titleTR || !titleEN || !contentTR || !contentEN || !excerptTR || !excerptEN) {
+      toast.error("Lütfen tüm zorunlu alanları doldurun (Türkçe ve İngilizce).")
+      setSaving(false)
+      return
+    }
 
     try {
-      const blogPost = {
-        ...formData,
-        publishedAt: formData.status === "published" ? new Date().toISOString() : "",
+      const newPost = {
+        title: { tr: titleTR, en: titleEN },
+        excerpt: { tr: excerptTR, en: excerptEN },
+        content: { tr: contentTR, en: contentEN },
+        image,
+        status,
+        publishedAt: status === "published" ? new Date().toISOString() : "",
       }
-
-      await apiClient.createBlogPost(blogPost)
+      await dataManager.createBlogPost(newPost)
+      toast.success("Blog yazısı başarıyla oluşturuldu!")
       router.push("/admin/blog")
     } catch (error) {
       console.error("Error creating blog post:", error)
-      alert("Blog yazısı oluşturulurken hata oluştu")
+      toast.error("Blog yazısı oluşturulurken hata oluştu.")
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
-  }
-
-  const handleInputChange = (field: string, value: string, lang?: string) => {
-    setFormData((prev) => {
-      if (lang) {
-        return {
-          ...prev,
-          [field]: {
-            ...prev[field as keyof typeof prev],
-            [lang]: value,
-          },
-        }
-      }
-      return {
-        ...prev,
-        [field]: value,
-      }
-    })
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/admin/blog">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
-        </Link>
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Yeni Blog Yazısı</h1>
-          <p className="text-gray-600 mt-1">Yeni bir blog yazısı oluşturun</p>
+          <p className="text-gray-600 mt-2">Yeni bir blog yazısı oluşturun</p>
         </div>
+        <Button onClick={handleSubmit} disabled={saving} className="bg-[#c4975a] hover:bg-[#a67d4e]">
+          {saving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Kaydediliyor...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4 mr-2" />
+              Kaydet
+            </>
+          )}
+        </Button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Title */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Başlık</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="title-tr">Türkçe Başlık</Label>
-                  <Input
-                    id="title-tr"
-                    value={formData.title.tr}
-                    onChange={(e) => handleInputChange("title", e.target.value, "tr")}
-                    placeholder="Blog yazısı başlığı..."
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="title-en">İngilizce Başlık</Label>
-                  <Input
-                    id="title-en"
-                    value={formData.title.en}
-                    onChange={(e) => handleInputChange("title", e.target.value, "en")}
-                    placeholder="Blog post title..."
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Excerpt */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Özet</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="excerpt-tr">Türkçe Özet</Label>
-                  <Textarea
-                    id="excerpt-tr"
-                    value={formData.excerpt.tr}
-                    onChange={(e) => handleInputChange("excerpt", e.target.value, "tr")}
-                    placeholder="Blog yazısının kısa özeti..."
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="excerpt-en">İngilizce Özet</Label>
-                  <Textarea
-                    id="excerpt-en"
-                    value={formData.excerpt.en}
-                    onChange={(e) => handleInputChange("excerpt", e.target.value, "en")}
-                    placeholder="Short summary of the blog post..."
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Content */}
-            <Card>
-              <CardHeader>
-                <CardTitle>İçerik</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="content-tr">Türkçe İçerik</Label>
-                  <Textarea
-                    id="content-tr"
-                    value={formData.content.tr}
-                    onChange={(e) => handleInputChange("content", e.target.value, "tr")}
-                    placeholder="Blog yazısının tam içeriği..."
-                    rows={10}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="content-en">İngilizce İçerik</Label>
-                  <Textarea
-                    id="content-en"
-                    value={formData.content.en}
-                    onChange={(e) => handleInputChange("content", e.target.value, "en")}
-                    placeholder="Full content of the blog post..."
-                    rows={10}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Yazı Detayları</CardTitle>
+          <CardDescription>Blog yazısının temel bilgilerini girin</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="title-tr">Başlık (Türkçe)</Label>
+              <Input id="title-tr" value={titleTR} onChange={(e) => setTitleTR(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="title-en">Başlık (İngilizce)</Label>
+              <Input id="title-en" value={titleEN} onChange={(e) => setTitleEN(e.target.value)} required />
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Publish Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Yayın Ayarları</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="status">Durum</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value: "draft" | "published") => handleInputChange("status", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Taslak</SelectItem>
-                      <SelectItem value="published">Yayında</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Featured Image */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Öne Çıkan Görsel</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div>
-                  <Label htmlFor="image">Görsel URL</Label>
-                  <Input
-                    id="image"
-                    value={formData.image}
-                    onChange={(e) => handleInputChange("image", e.target.value)}
-                    placeholder="/images/blog-image.jpg"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Actions */}
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-2">
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {loading ? "Kaydediliyor..." : "Kaydet"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full bg-transparent"
-                    onClick={() => window.open("https://www.shinesticmimarlik.com/blog", "_blank")}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Önizleme
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="excerpt-tr">Özet (Türkçe)</Label>
+              <Textarea
+                id="excerpt-tr"
+                value={excerptTR}
+                onChange={(e) => setExcerptTR(e.target.value)}
+                rows={3}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="excerpt-en">Özet (İngilizce)</Label>
+              <Textarea
+                id="excerpt-en"
+                value={excerptEN}
+                onChange={(e) => setExcerptEN(e.target.value)}
+                rows={3}
+                required
+              />
+            </div>
           </div>
-        </div>
-      </form>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="content-tr">İçerik (Türkçe)</Label>
+              <Textarea
+                id="content-tr"
+                value={contentTR}
+                onChange={(e) => setContentTR(e.target.value)}
+                rows={10}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="content-en">İçerik (İngilizce)</Label>
+              <Textarea
+                id="content-en"
+                value={contentEN}
+                onChange={(e) => setContentEN(e.target.value)}
+                rows={10}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="image">Görsel URL (public/images/blog-post.png gibi)</Label>
+            <Input
+              id="image"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              placeholder="/modern-interior-2024.png"
+            />
+            {image && (
+              <img
+                src={image || "/placeholder.svg"}
+                alt="Görsel Önizleme"
+                className="mt-2 h-32 w-auto object-cover rounded-md"
+              />
+            )}
+            <p className="text-sm text-muted-foreground mt-1">
+              Görseli `public` klasörüne yükleyip buraya yolunu girin.
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="status">Durum</Label>
+            <Select value={status} onValueChange={(value: "published" | "draft") => setStatus(value)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Durum Seç" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="published">Yayınlandı</SelectItem>
+                <SelectItem value="draft">Taslak</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

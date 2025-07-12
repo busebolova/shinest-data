@@ -7,53 +7,8 @@ export async function GET() {
     const content = await dataManager.getPageContent("home")
     return NextResponse.json(content)
   } catch (error) {
-    console.error("Error fetching home content:", error)
-
-    // Return fallback content
-    const fallbackContent = {
-      hero: {
-        title: "SHINEST",
-        subtitle: "İÇ MİMARLIK",
-        description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
-        image: "/images/hero-image.png",
-      },
-      bigText: {
-        line1: "MEKANLARINIZ",
-        line2: "YAŞAMINIZA",
-        line3: "IŞIK TUTAR!",
-      },
-      gallery: {
-        images: [
-          "/images/gallery-1.png",
-          "/images/gallery-2.png",
-          "/images/gallery-3.png",
-          "/images/gallery-4.png",
-          "/images/gallery-5.png",
-        ],
-      },
-      services: {
-        title: "Hizmetlerimiz",
-        items: [
-          {
-            title: "Danışmanlık",
-            description: "Profesyonel iç mimarlık danışmanlığı",
-            image: "/images/consulting-service.png",
-          },
-          {
-            title: "Tasarım",
-            description: "Yaratıcı ve fonksiyonel tasarım çözümleri",
-            image: "/images/design-service.png",
-          },
-          {
-            title: "Uygulama",
-            description: "Tasarımdan uygulamaya kadar tüm süreçler",
-            image: "/images/implementation-service.png",
-          },
-        ],
-      },
-    }
-
-    return NextResponse.json(fallbackContent)
+    console.error("Error fetching home page content:", error)
+    return NextResponse.json({ error: "Failed to fetch home page content" }, { status: 500 })
   }
 }
 

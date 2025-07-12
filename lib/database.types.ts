@@ -93,13 +93,13 @@ export interface Database {
       }
     }
     Views: {
-      [_ in never]: never
+      // No views are relevant to the current implementation.
     }
     Functions: {
-      [_ in never]: never
+      // No functions are relevant to the current implementation.
     }
     Enums: {
-      [_ in never]: never
+      // No enums are relevant to the current implementation.
     }
   }
 }

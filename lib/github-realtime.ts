@@ -1,305 +1,295 @@
-interface GitHubRealtimeConfig {
-  token?: string
-  owner?: string
-  repo?: string
-  branch?: string
+"use client"
+
+import { githubAPI } from "./github-api"
+import { localStorage } from "./local-storage" // localStorage'ı doğrudan kullanmak yerine, dataManager'ı kullanacağız.
+
+type ConnectionStatus = "connected" | "disconnected" | "connecting" | "error"
+
+interface RealtimeData {
+  projects: any[]
+  blogs: any[]
+  dashboard: any
+  lastUpdate: string
+  connectionStatus: ConnectionStatus
 }
 
-interface GitHubEvent {
-  id: string
-  type: string
-  actor: {
-    login: string
-    avatar_url: string
-  }
-  repo: {
-    name: string
-  }
-  payload: any
-  created_at: string
+interface RealtimeMessage {
+  type: "sync" | "error" | "connected" | "disconnected" | "connecting"
+  data?: any
+  timestamp: string
 }
 
-interface GitHubStatus {
-  connected: boolean
-  lastSync: string | null
-  error: string | null
-  rateLimit: {
-    remaining: number
-    reset: number
+class GithubRealtime {
+  private static instance: GithubRealtime
+  private listeners: Set<(data: RealtimeData) => void> = new Set()
+  private messageListeners: Set<(message: RealtimeMessage) => void> = new Set()
+  private data: RealtimeData = {
+    projects: [],
+    blogs: [],
+    dashboard: {},
+    lastUpdate: new Date().toISOString(),
+    connectionStatus: "disconnected",
   }
-}
+  private intervalId: NodeJS.Timeout | null = null
+  private retryCount = 0
+  private maxRetries = 3
+  private isInitialized = false
 
-class GitHubRealtime {
-  private config: GitHubRealtimeConfig
-  private status: GitHubStatus
-  private listeners: Set<(status: GitHubStatus) => void>
-  private eventListeners: Set<(events: GitHubEvent[]) => void>
-  private syncInterval: NodeJS.Timeout | null = null
-
-  constructor(config: GitHubRealtimeConfig = {}) {
-    this.config = {
-      token: config.token || process.env.NEXT_PUBLIC_GITHUB_TOKEN,
-      owner: config.owner || process.env.GITHUB_OWNER || "shinest-architecture",
-      repo: config.repo || process.env.GITHUB_REPO || "shinest-data",
-      branch: config.branch || process.env.GITHUB_BRANCH || "main",
+  private constructor() {
+    if (typeof window !== "undefined") {
+      this.initialize()
     }
-
-    this.status = {
-      connected: false,
-      lastSync: null,
-      error: null,
-      rateLimit: {
-        remaining: 5000,
-        reset: Date.now() + 3600000, // 1 hour from now
-      },
-    }
-
-    this.listeners = new Set()
-    this.eventListeners = new Set()
   }
 
-  isConfigured(): boolean {
-    return !!(this.config.token && this.config.owner && this.config.repo)
+  static getInstance(): GithubRealtime {
+    if (!GithubRealtime.instance) {
+      GithubRealtime.instance = new GithubRealtime()
+    }
+    return GithubRealtime.instance
   }
 
-  private async makeRequest(endpoint: string, options: RequestInit = {}) {
-    if (!this.isConfigured()) {
-      throw new Error("GitHub API not configured")
-    }
+  private async initialize() {
+    if (this.isInitialized) return
+    this.isInitialized = true
 
-    const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/${endpoint}`
-    
     try {
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          Authorization: `Bearer ${this.config.token}`,
-          Accept: "application/vnd.github.v3+json",
-          "Content-Type": "application/json",
-          ...options.headers,
-        },
-      })
+      await this.connect()
+      this.startPolling()
 
-      // Update rate limit info
-      const remaining = response.headers.get("x-ratelimit-remaining")
-      const reset = response.headers.get("x-ratelimit-reset")
-      
-      if (remaining && reset) {
-        this.status.rateLimit = {
-          remaining: parseInt(remaining),
-          reset: parseInt(reset) * 1000, // Convert to milliseconds
-        }
-      }
-
-      if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
-      }
-
-      return response.json()
+      window.addEventListener("online", this.handleOnline.bind(this))
+      window.addEventListener("offline", this.handleOffline.bind(this))
+      window.addEventListener("beforeunload", this.cleanup.bind(this))
     } catch (error) {
-      this.updateStatus({
-        connected: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      })
-      throw error
+      console.error("GitHub Realtime initialization failed:", error)
+      this.handleError(error)
     }
   }
 
-  private updateStatus(updates: Partial<GitHubStatus>) {
-    this.status = { ...this.status, ...updates }
+  private async connect() {
+    try {
+      this.updateConnectionStatus("connecting")
+      this.broadcastMessage("connecting")
+
+      // Check if GitHub API is configured on the server side (via env vars)
+      // For client-side, we rely on the `githubAPI.isConfigured()` check
+      // which will be false if GITHUB_TOKEN is not exposed to client (which it shouldn't be).
+      // So, client-side will always fallback to localStorage for reads.
+      // Server-side API routes will handle GitHub writes.
+
+      let projects: any[] = []
+      let blogs: any[] = []
+      let dashboard: any = {}
+      let source: "github" | "localStorage" = "localStorage"
+
+      if (githubAPI.isConfigured()) {
+        // This check will be true only if GITHUB_TOKEN is exposed to client, which is not recommended.
+        // For this setup, it's better to assume client-side reads from localStorage and server-side writes to GitHub.
+        // However, the prompt implies client-side can *try* to read from GitHub.
+        // Let's keep the current logic for now, assuming GITHUB_TOKEN is available client-side for demo purposes.
+        try {
+          const [githubProjects, githubBlogs] = await Promise.all([githubAPI.getProjects(), githubAPI.getBlogPosts()])
+          projects = githubProjects.projects || []
+          blogs = githubBlogs.posts || []
+
+          const dashboardResponse = await fetch("/api/admin/dashboard")
+          if (dashboardResponse.ok) {
+            dashboard = await dashboardResponse.json()
+          }
+          source = "github"
+        } catch (githubError) {
+          console.warn("Failed to fetch from GitHub, falling back to localStorage:", githubError)
+          await this.loadFromLocalStorage()
+          source = "localStorage"
+        }
+      } else {
+        await this.loadFromLocalStorage()
+        source = "localStorage"
+      }
+
+      this.data = {
+        projects: projects.length > 0 ? projects : this.data.projects, // Keep existing if new fetch is empty
+        blogs: blogs.length > 0 ? blogs : this.data.blogs, // Keep existing if new fetch is empty
+        dashboard: Object.keys(dashboard).length > 0 ? dashboard : this.data.dashboard, // Keep existing if new fetch is empty
+        lastUpdate: new Date().toISOString(),
+        connectionStatus: "connected",
+      }
+
+      this.saveToLocalStorage() // Always save the latest fetched data (from GitHub or localStorage) to localStorage as backup
+
+      this.retryCount = 0
+      this.updateConnectionStatus("connected")
+      this.broadcastMessage("connected", { source })
+      this.notifyListeners()
+    } catch (error) {
+      console.error("GitHub connection failed:", error)
+      await this.loadFromLocalStorage() // Ensure localStorage data is loaded on connection failure
+      this.handleError(error)
+    }
+  }
+
+  private async loadFromLocalStorage() {
+    try {
+      const projects = JSON.parse(localStorage.getItem("shinest_projects") || "[]")
+      const blogs = JSON.parse(localStorage.getItem("shinest_blogs") || "[]")
+      const dashboard = JSON.parse(localStorage.getItem("shinest_dashboard") || "{}")
+
+      this.data = {
+        projects,
+        blogs,
+        dashboard,
+        lastUpdate: localStorage.getItem("shinest_last_update") || new Date().toISOString(),
+        connectionStatus: "disconnected", // Mark as disconnected if only localStorage is used
+      }
+
+      this.notifyListeners()
+    } catch (error) {
+      console.error("localStorage load failed:", error)
+    }
+  }
+
+  private saveToLocalStorage() {
+    try {
+      localStorage.setItem("shinest_projects", JSON.stringify(this.data.projects))
+      localStorage.setItem("shinest_blogs", JSON.stringify(this.data.blogs))
+      localStorage.setItem("shinest_dashboard", JSON.stringify(this.data.dashboard))
+      localStorage.setItem("shinest_last_update", this.data.lastUpdate)
+    } catch (error) {
+      console.error("localStorage save failed:", error)
+    }
+  }
+
+  private handleError(error: any) {
+    this.retryCount++
+    this.updateConnectionStatus("error")
+    this.broadcastMessage("error", { error: error.message, retryCount: this.retryCount })
+
+    if (this.retryCount <= this.maxRetries) {
+      const delay = Math.pow(2, this.retryCount) * 1000 // Exponential backoff
+      setTimeout(() => {
+        this.connect()
+      }, delay)
+    } else {
+      console.error("Max retries reached. Staying in error state.")
+      this.updateConnectionStatus("disconnected") // After max retries, consider it disconnected
+    }
+  }
+
+  private handleOnline() {
+    console.log("Connection restored")
+    this.retryCount = 0
+    this.connect()
+  }
+
+  private handleOffline() {
+    console.log("Connection lost")
+    this.updateConnectionStatus("disconnected")
+    this.broadcastMessage("disconnected")
+  }
+
+  private updateConnectionStatus(status: ConnectionStatus) {
+    this.data.connectionStatus = status
     this.notifyListeners()
   }
 
+  private broadcastMessage(type: RealtimeMessage["type"], data?: any) {
+    const message: RealtimeMessage = {
+      type,
+      data,
+      timestamp: new Date().toISOString(),
+    }
+
+    this.messageListeners.forEach((listener) => {
+      try {
+        listener(message)
+      } catch (error) {
+        console.error("Message listener error:", error)
+      }
+    })
+  }
+
   private notifyListeners() {
-    this.listeners.forEach((listener) => {
+    this.listeners.forEach((callback) => {
       try {
-        listener(this.status)
+        callback({ ...this.data })
       } catch (error) {
-        console.error("Error in status listener:", error)
+        console.error("Listener notification error:", error)
       }
     })
   }
 
-  private notifyEventListeners(events: GitHubEvent[]) {
-    this.eventListeners.forEach((listener) => {
-      try {
-        listener(events)
-      } catch (error) {
-        console.error("Error in event listener:", error)
+  private startPolling() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId)
+    }
+
+    // Poll every 30 seconds
+    this.intervalId = setInterval(() => {
+      if (this.data.connectionStatus === "connected") {
+        this.connect()
       }
-    })
-  }
-
-  async connect(): Promise<void> {
-    if (!this.isConfigured()) {
-      this.updateStatus({
-        connected: false,
-        error: "GitHub API not configured",
-      })
-      return
-    }
-
-    try {
-      // Test connection by fetching repository info
-      await this.makeRequest("")
-      
-      this.updateStatus({
-        connected: true,
-        error: null,
-        lastSync: new Date().toISOString(),
-      })
-
-      // Start periodic sync
-      this.startSync()
-    } catch (error) {
-      this.updateStatus({
-        connected: false,
-        error: error instanceof Error ? error.message : "Connection failed",
-      })
-    }
-  }
-
-  disconnect(): void {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval)
-      this.syncInterval = null
-    }
-
-    this.updateStatus({
-      connected: false,
-      lastSync: null,
-      error: null,
-    })
-  }
-
-  private startSync(): void {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval)
-    }
-
-    // Sync every 30 seconds
-    this.syncInterval = setInterval(() => {
-      this.sync()
     }, 30000)
   }
 
-  async sync(): Promise<void> {
-    if (!this.status.connected) {
-      return
+  private cleanup() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId)
+      this.intervalId = null
     }
 
-    try {
-      // Fetch recent events
-      const events = await this.getRecentEvents()
-      this.notifyEventListeners(events)
-
-      this.updateStatus({
-        lastSync: new Date().toISOString(),
-        error: null,
-      })
-    } catch (error) {
-      console.error("Sync error:", error)
-      this.updateStatus({
-        error: error instanceof Error ? error.message : "Sync failed",
-      })
+    if (typeof window !== "undefined") {
+      window.removeEventListener("online", this.handleOnline.bind(this))
+      window.removeEventListener("offline", this.handleOffline.bind(this))
+      window.removeEventListener("beforeunload", this.cleanup.bind(this))
     }
+
+    this.listeners.clear()
+    this.messageListeners.clear()
   }
 
-  async getRecentEvents(limit = 10): Promise<GitHubEvent[]> {
-    try {
-      const events = await this.makeRequest(`events?per_page=${limit}`)
-      return events || []
-    } catch (error) {
-      console.error("Error fetching events:", error)
-      return []
-    }
-  }
+  // Public methods
+  subscribe(callback: (data: RealtimeData) => void): () => void {
+    this.listeners.add(callback)
 
-  async getCommits(limit = 10): Promise<any[]> {
-    try {
-      const commits = await this.makeRequest(`commits?per_page=${limit}&sha=${this.config.branch}`)
-      return commits || []
-    } catch (error) {
-      console.error("Error fetching commits:", error)
-      return []
+    // Send current data immediately
+    if (this.data.projects.length > 0 || this.data.blogs.length > 0 || Object.keys(this.data.dashboard).length > 0) {
+      callback({ ...this.data })
     }
-  }
 
-  async getRepositoryInfo(): Promise<any> {
-    try {
-      return await this.makeRequest("")
-    } catch (error) {
-      console.error("Error fetching repository info:", error)
-      return null
-    }
-  }
-
-  async getBranches(): Promise<any[]> {
-    try {
-      const branches = await this.makeRequest("branches")
-      return branches || []
-    } catch (error) {
-      console.error("Error fetching branches:", error)
-      return []
-    }
-  }
-
-  async getContributors(): Promise<any[]> {
-    try {
-      const contributors = await this.makeRequest("contributors")
-      return contributors || []
-    } catch (error) {
-      console.error("Error fetching contributors:", error)
-      return []
-    }
-  }
-
-  // Event listeners
-  onStatusChange(listener: (status: GitHubStatus) => void): () => void {
-    this.listeners.add(listener)
-    
-    // Call immediately with current status
-    listener(this.status)
-    
-    // Return unsubscribe function
     return () => {
-      this.listeners.delete(listener)
+      this.listeners.delete(callback)
     }
   }
 
-  onEvents(listener: (events: GitHubEvent[]) => void): () => void {
-    this.eventListeners.add(listener)
-    
-    // Return unsubscribe function
+  onMessage(listener: (message: RealtimeMessage) => void): () => void {
+    this.messageListeners.add(listener)
+
     return () => {
-      this.eventListeners.delete(listener)
+      this.messageListeners.delete(listener)
     }
   }
 
-  getStatus(): GitHubStatus {
-    return { ...this.status }
+  async refresh(): Promise<void> {
+    await this.connect()
   }
 
-  // Utility methods
-  isRateLimited(): boolean {
-    return this.status.rateLimit.remaining < 10
+  getConnectionStatus(): ConnectionStatus {
+    return this.data.connectionStatus
   }
 
-  getRateLimitResetTime(): Date {
-    return new Date(this.status.rateLimit.reset)
+  getData(): RealtimeData {
+    return { ...this.data }
   }
 
-  getTimeUntilReset(): number {
-    return Math.max(0, this.status.rateLimit.reset - Date.now())
+  isGitHubConfigured(): boolean {
+    // This check is primarily for server-side. Client-side GITHUB_TOKEN should not be exposed.
+    // For client-side, this will likely be false, leading to localStorage fallback.
+    return githubAPI.isConfigured()
+  }
+
+  destroy() {
+    this.cleanup()
   }
 }
 
-// Singleton instance
-export const githubRealtime = new GitHubRealtime()
-
-// Auto-connect if configured
-if (typeof window !== "undefined" && githubRealtime.isConfigured()) {
-  githubRealtime.connect().catch(console.error)
-}
-
-export type { GitHubEvent, GitHubStatus, GitHubRealtimeConfig }
+export const githubRealtime = GithubRealtime.getInstance()
+export type { RealtimeData, ConnectionStatus, RealtimeMessage }

@@ -6,38 +6,17 @@ export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest) {
   try {
-    const events = []
-
     if (githubAPI.isConfigured()) {
       try {
-        const commits = await githubAPI.getCommits(10)
-        events.push(
-          ...commits.map((commit) => ({
-            id: commit.sha,
-            type: "commit",
-            action: "committed",
-            title: commit.commit.message.split("\n")[0],
-            description: `by ${commit.commit.author.name}`,
-            timestamp: commit.commit.author.date,
-            url: commit.html_url,
-          })),
-        )
+        const commits = await githubAPI.getCommits(10) // Fetch last 10 commits
+        return NextResponse.json(commits)
       } catch (error) {
         console.error("Error fetching GitHub commits:", error)
-        // Add fallback event
-        events.push({
-          id: "fallback-" + Date.now(),
-          type: "system",
-          action: "update",
-          title: "System Status",
-          description: "Running in local mode",
-          timestamp: new Date().toISOString(),
-          url: "#",
-        })
+        return NextResponse.json({ error: "Failed to fetch GitHub commits" }, { status: 500 })
       }
     } else {
       // Add default events when GitHub is not configured
-      events.push({
+      return NextResponse.json({
         id: "default-" + Date.now(),
         type: "system",
         action: "info",
@@ -47,10 +26,8 @@ export async function GET(request: NextRequest) {
         url: "#",
       })
     }
-
-    return NextResponse.json(events)
   } catch (error) {
     console.error("Error in GitHub events endpoint:", error)
-    return NextResponse.json([])
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
