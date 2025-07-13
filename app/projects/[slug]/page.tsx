@@ -1,218 +1,166 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
+import Image from "next/image"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import Image from "next/image"
-import Link from "next/link"
-import { ArrowLeft, Calendar, MapPin, Tag } from "lucide-react"
+import { LanguageContext } from "@/contexts/language-context"
+import { Loader2, AlertCircle, Calendar, MapPin, Check } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 
 interface Project {
   id: string
   title: { tr: string; en: string }
   description: { tr: string; en: string }
-  category: string
-  location: string
-  year: string
-  status: string
-  featured: boolean
+  category: { tr: string; en: string }
   images: string[]
-  slug: string
-  createdAt: string
-  updatedAt: string
+  year: string
+  location: string
+  features?: { tr: string[]; en: string[] }
 }
 
 export default function ProjectDetailPage({ params }: { params: { slug: string } }) {
+  const { language } = useContext(LanguageContext)
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedImage, setSelectedImage] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const fetchProject = async () => {
+      if (!params.slug) return
+      setLoading(true)
+      setError(null)
+      try {
+        const response = await fetch(`/api/projects?slug=${params.slug}`)
+        if (!response.ok) {
+          throw new Error("Project not found.")
+        }
+        const data = await response.json()
+        setProject(data.project)
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred."
+        setError(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchProject()
   }, [params.slug])
 
-  const fetchProject = async () => {
-    try {
-      // First get all projects to find the one with matching slug
-      const response = await fetch("/api/projects")
-      if (response.ok) {
-        const projects = await response.json()
-        const foundProject = projects.find((p: Project) => p.slug === params.slug)
-        setProject(foundProject || null)
-      }
-    } catch (error) {
-      console.error("Error fetching project:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#c4975a] mx-auto mb-4"></div>
-            <p className="text-gray-600">Proje yükleniyor...</p>
-          </div>
-        </div>
-        <Footer />
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     )
   }
 
-  if (!project) {
+  if (error || !project) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Proje Bulunamadı</h1>
-            <p className="text-gray-600 mb-8">Aradığınız proje mevcut değil.</p>
-            <Link href="/projects">
-              <button className="bg-[#c4975a] text-white px-6 py-3 rounded-lg hover:bg-[#b8864d] transition-colors">
-                Projelere Dön
-              </button>
-            </Link>
-          </div>
-        </div>
-        <Footer />
+      <div className="flex flex-col items-center justify-center min-h-screen text-destructive">
+        <AlertCircle className="h-16 w-16 mb-4" />
+        <h1 className="text-2xl font-bold">Project Not Found</h1>
+        <p>{error}</p>
       </div>
     )
   }
+
+  const { title, description, category, images, year, location, features } = project
+  const currentTitle = title[language] || title.tr
+  const currentDescription = description[language] || description.tr
+  const currentCategory = category[language] || category.tr
+  const currentFeatures = features?.[language] || features?.tr || []
 
   return (
-    <div className="min-h-screen bg-white">
+    <>
       <Header />
-
-      {/* Back Button */}
-      <div className="container mx-auto px-4 py-6">
-        <Link href="/projects">
-          <button className="flex items-center gap-2 text-gray-600 hover:text-[#c4975a] transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Projelere Dön
-          </button>
-        </Link>
-      </div>
-
-      {/* Project Header */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex flex-wrap items-center gap-4 mb-6">
-              <span className="bg-[#c4975a] text-white px-3 py-1 rounded-full text-sm font-medium">
-                {project.category}
-              </span>
-              {project.featured && (
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                  Öne Çıkan
-                </span>
-              )}
-            </div>
-
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{project.title.tr}</h1>
-
-            <p className="text-xl text-gray-600 mb-6 leading-relaxed">{project.description.tr}</p>
-
-            <div className="flex flex-wrap gap-6 text-gray-600">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                <span>{project.location}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span>{project.year}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                <span>{project.category}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Project Images */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            {/* Main Image */}
-            <div className="mb-6">
-              <Image
-                src={project.images[selectedImage] || "/placeholder.svg?height=600&width=800"}
-                alt={`${project.title.tr} - ${selectedImage + 1}`}
-                width={800}
-                height={600}
-                className="w-full h-96 md:h-[500px] object-cover rounded-lg"
-              />
-            </div>
-
-            {/* Thumbnail Gallery */}
-            {project.images.length > 1 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {project.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`relative overflow-hidden rounded-lg ${
-                      selectedImage === index ? "ring-2 ring-[#c4975a]" : ""
-                    }`}
-                  >
-                    <Image
-                      src={image || "/placeholder.svg?height=150&width=200"}
-                      alt={`${project.title.tr} - ${index + 1}`}
-                      width={200}
-                      height={150}
-                      className="w-full h-24 object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Project Details */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8">Proje Detayları</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Proje Bilgileri</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Kategori:</span>
-                    <span className="font-medium">{project.category}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Konum:</span>
-                    <span className="font-medium">{project.location}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Yıl:</span>
-                    <span className="font-medium">{project.year}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Durum:</span>
-                    <span className="font-medium">{project.status === "published" ? "Yayınlandı" : "Taslak"}</span>
-                  </div>
+      <main className="pt-24 bg-gray-50">
+        <div className="container mx-auto px-4 py-12">
+          <article>
+            <header className="mb-12 text-center">
+              <Badge variant="secondary" className="mb-4">
+                {currentCategory}
+              </Badge>
+              <h1 className="text-4xl md:text-6xl font-bold text-gray-900">{currentTitle}</h1>
+              <div className="flex justify-center items-center gap-6 mt-6 text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  <span>{year}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  <span>{location}</span>
                 </div>
               </div>
+            </header>
 
+            {images && images.length > 0 && (
+              <div className="mb-12">
+                <div className="relative w-full h-[300px] md:h-[500px] lg:h-[600px] rounded-lg overflow-hidden shadow-lg">
+                  <Image
+                    src={images[0] || "/placeholder.svg"}
+                    alt={currentTitle}
+                    layout="fill"
+                    objectFit="cover"
+                    priority
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+              <div className="lg:col-span-2">
+                <h2 className="text-3xl font-bold mb-4">
+                  {language === "tr" ? "Proje Açıklaması" : "Project Description"}
+                </h2>
+                <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                  <p>{currentDescription}</p>
+                </div>
+              </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Proje Açıklaması</h3>
-                <p className="text-gray-600 leading-relaxed">{project.description.tr}</p>
+                {currentFeatures.length > 0 && (
+                  <Card>
+                    <CardContent className="p-6">
+                      <h3 className="text-2xl font-bold mb-4">{language === "tr" ? "Özellikler" : "Features"}</h3>
+                      <ul className="space-y-3">
+                        {currentFeatures.map((feature, index) => (
+                          <li key={index} className="flex items-start">
+                            <Check className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
-          </div>
-        </div>
-      </section>
 
+            {images && images.length > 1 && (
+              <div className="mt-16">
+                <h2 className="text-3xl font-bold mb-8 text-center">
+                  {language === "tr" ? "Proje Galerisi" : "Project Gallery"}
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {images.slice(1).map((img, index) => (
+                    <div key={index} className="relative h-64 w-full rounded-md overflow-hidden shadow-md">
+                      <Image
+                        src={img || "/placeholder.svg"}
+                        alt={`${currentTitle} gallery image ${index + 1}`}
+                        layout="fill"
+                        objectFit="cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </article>
+        </div>
+      </main>
       <Footer />
-    </div>
+    </>
   )
 }

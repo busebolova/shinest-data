@@ -5,7 +5,7 @@ import Image from "next/image"
 import { useLanguage } from "@/contexts/language-context"
 import { Instagram, Facebook, Twitter, Mail, Phone, MapPin } from "lucide-react"
 
-export function Footer() {
+export default function Footer() {
   const { language } = useLanguage()
 
   const content = {

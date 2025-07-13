@@ -1,114 +1,48 @@
-import { NextResponse } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
+import { revalidatePath } from "next/cache"
+import { dataManager } from "@/lib/data-manager"
 
-// Mock projects data - this would normally come from a database
-const projects = [
-  {
-    id: "api-1",
-    title: {
-      tr: "Modern Yaşam Alanı",
-      en: "Modern Living Space",
-    },
-    description: {
-      tr: "Minimalist tasarım anlayışıyla modern yaşam alanı projesi. Açık plan konsepti ile geniş ve ferah bir atmosfer yaratılmıştır.",
-      en: "Modern living space project with minimalist design approach. An open plan concept creates a spacious and airy atmosphere.",
-    },
-    category: {
-      tr: "Konut",
-      en: "Residential",
-    },
-    images: ["/images/poland-apartment-1.png", "/images/poland-apartment-2.png"],
-    featured: true,
-    status: "published",
-    year: "2024",
-    location: "İstanbul",
-    area: "120m²",
-    slug: "modern-yasam-alani",
-    features: {
-      tr: ["Açık Plan Konsept", "Modern Mobilyalar", "Doğal Aydınlatma"],
-      en: ["Open Plan Concept", "Modern Furniture", "Natural Lighting"],
-    },
-  },
-  {
-    id: "api-2",
-    title: {
-      tr: "Lüks Ofis Tasarımı",
-      en: "Luxury Office Design",
-    },
-    description: {
-      tr: "Profesyonel ve şık ofis iç mekan tasarımı projesi. Çalışan verimliliğini artıran ergonomik çözümler uygulanmıştır.",
-      en: "Professional and elegant office interior design project. Ergonomic solutions that increase employee productivity have been implemented.",
-    },
-    category: {
-      tr: "Ofis",
-      en: "Office",
-    },
-    images: ["/images/modern-wooden-office.png"],
-    featured: true,
-    status: "published",
-    year: "2024",
-    location: "Ankara",
-    area: "200m²",
-    slug: "luks-ofis-tasarimi",
-    features: {
-      tr: ["Ergonomik Tasarım", "Akıllı Sistemler", "Toplantı Odaları"],
-      en: ["Ergonomic Design", "Smart Systems", "Meeting Rooms"],
-    },
-  },
-  {
-    id: "api-3",
-    title: {
-      tr: "Butik Otel Lobisi",
-      en: "Boutique Hotel Lobby",
-    },
-    description: {
-      tr: "Konforlu ve etkileyici otel lobisi tasarım projesi. Misafirlere unutulmaz bir karşılama deneyimi sunmaktadır.",
-      en: "Comfortable and impressive hotel lobby design project. It offers guests an unforgettable welcome experience.",
-    },
-    category: {
-      tr: "Ticari",
-      en: "Commercial",
-    },
-    images: ["/images/luxury-hotel-lobby.png"],
-    featured: false,
-    status: "published",
-    year: "2024",
-    location: "İzmir",
-    area: "300m²",
-    slug: "butik-otel-lobisi",
-    features: {
-      tr: ["Lüks Mobilyalar", "Özel Aydınlatma", "Karşılama Alanı"],
-      en: ["Luxury Furniture", "Special Lighting", "Reception Area"],
-    },
-  },
-]
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const slug = searchParams.get("slug")
 
-export async function GET() {
   try {
-    // Filter only published projects
-    const publishedProjects = projects.filter((project) => project.status === "published")
+    const headers = {
+      "Cache-Control": "no-store, max-age=0",
+    }
+    const projects = await dataManager.getProjects()
 
-    return NextResponse.json(publishedProjects)
+    if (slug) {
+      const project = projects.find((p: any) => p.slug === slug)
+      if (project) {
+        return NextResponse.json({ project }, { headers })
+      } else {
+        return NextResponse.json({ error: "Project not found" }, { status: 404, headers })
+      }
+    }
+
+    return NextResponse.json({ projects }, { headers })
   } catch (error) {
     console.error("Error fetching projects:", error)
     return NextResponse.json({ error: "Failed to fetch projects" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    // Here you would normally save to a database
-    // For now, we'll just return the created project
-    const newProject = {
-      id: Date.now().toString(),
-      ...body,
-      status: "published",
-    }
+    // Create project using the data manager
+    const newProject = await dataManager.createProject(body)
 
-    return NextResponse.json(newProject, { status: 201 })
+    // Revalidate paths to show the new project immediately
+    revalidatePath("/")
+    revalidatePath("/projects")
+    revalidatePath("/api/projects")
+
+    return NextResponse.json({ success: true, project: newProject }, { status: 201 })
   } catch (error) {
     console.error("Error creating project:", error)
-    return NextResponse.json({ error: "Failed to create project" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Failed to create project" }, { status: 500 })
   }
 }

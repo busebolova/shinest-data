@@ -1,17 +1,4 @@
-interface LocalProject {
-  id: string
-  title: { tr: string; en: string }
-  description: { tr: string; en: string }
-  category: string
-  location: string
-  year: string
-  status: "published" | "draft" | "archived"
-  featured: boolean
-  images: string[]
-  slug: string
-  createdAt: string
-  updatedAt: string
-}
+import type { Project } from "@/types/project"
 
 interface LocalBlogPost {
   id: string
@@ -26,12 +13,12 @@ interface LocalBlogPost {
 }
 
 class LocalStorage {
-  private projects: LocalProject[] = [
+  private projects: Project[] = [
     {
       id: "1",
       title: { tr: "Modern Banyo Tasarımı", en: "Modern Bathroom Design" },
       description: { tr: "Lüks ve modern banyo tasarımı projesi", en: "Luxury modern bathroom design project" },
-      category: "Banyo",
+      category: { tr: "Banyo", en: "Bathroom" },
       location: "İstanbul",
       year: "2024",
       status: "published",
@@ -45,7 +32,7 @@ class LocalStorage {
       id: "2",
       title: { tr: "Kafe İç Mekan Tasarımı", en: "Cafe Interior Design" },
       description: { tr: "Sıcak ve davetkar kafe iç mekan tasarımı", en: "Warm and inviting cafe interior design" },
-      category: "Ticari",
+      category: { tr: "Ticari", en: "Commercial" },
       location: "Ankara",
       year: "2024",
       status: "published",
@@ -62,7 +49,7 @@ class LocalStorage {
         tr: "Doğal ışık alan modern kış bahçesi tasarımı",
         en: "Modern winter garden design with natural light",
       },
-      category: "Konut",
+      category: { tr: "Konut", en: "Residential" },
       location: "İzmir",
       year: "2024",
       status: "published",
@@ -76,7 +63,7 @@ class LocalStorage {
       id: "4",
       title: { tr: "Oturma Odası Tasarımı", en: "Living Room Design" },
       description: { tr: "Modern ve konforlu oturma odası tasarımı", en: "Modern and comfortable living room design" },
-      category: "Konut",
+      category: { tr: "Konut", en: "Residential" },
       location: "Bursa",
       year: "2024",
       status: "published",
@@ -90,7 +77,7 @@ class LocalStorage {
       id: "5",
       title: { tr: "Yatak Odası Tasarımı", en: "Bedroom Design" },
       description: { tr: "Huzurlu ve şık yatak odası tasarımı", en: "Peaceful and elegant bedroom design" },
-      category: "Konut",
+      category: { tr: "Konut", en: "Residential" },
       location: "Antalya",
       year: "2023",
       status: "published",
@@ -112,7 +99,7 @@ class LocalStorage {
         tr: "Polonya'da modern daire iç mekan tasarımı",
         en: "Modern apartment interior design in Poland",
       },
-      category: "Konut",
+      category: { tr: "Konut", en: "Residential" },
       location: "Polonya",
       year: "2023",
       status: "published",
@@ -244,16 +231,16 @@ class LocalStorage {
   }
 
   // Projects
-  getProjects(): LocalProject[] {
+  getProjects(): Project[] {
     return [...this.projects]
   }
 
-  getProject(id: string): LocalProject | null {
+  getProject(id: string): Project | null {
     return this.projects.find((p) => p.id === id) || null
   }
 
-  createProject(project: Omit<LocalProject, "id" | "createdAt" | "updatedAt">): LocalProject {
-    const newProject: LocalProject = {
+  createProject(project: Omit<Project, "id" | "createdAt" | "updatedAt">): Project {
+    const newProject: Project = {
       ...project,
       id: Date.now().toString(),
       createdAt: new Date().toISOString(),
@@ -263,7 +250,7 @@ class LocalStorage {
     return newProject
   }
 
-  updateProject(id: string, updates: Partial<LocalProject>): LocalProject {
+  updateProject(id: string, updates: Partial<Project>): Project {
     const index = this.projects.findIndex((p) => p.id === id)
     if (index === -1) {
       throw new Error("Project not found")
@@ -337,4 +324,4 @@ class LocalStorage {
 }
 
 export const localStorage = new LocalStorage()
-export type { LocalProject, LocalBlogPost }
+export type { LocalBlogPost }

@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { motion, AnimatePresence } from "framer-motion"
 
-export function Header() {
+export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const { language, setLanguage } = useLanguage()
