@@ -1,27 +1,15 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Poppins } from "next/font/google"
+import { Inter } from "next/font/google"
 import "./globals.css"
-// Düzeltme: 'import Header from ...' -> 'import { Header } from ...'
-import { Header } from "@/components/header"
-// Düzeltme: 'import Footer from ...' -> 'import { Footer } from ...'
-import { Footer } from "@/components/footer"
 import { LanguageProvider } from "@/contexts/language-context"
 import { QuoteFormProvider } from "@/contexts/quote-form-context"
-import QuoteFormModal from "@/components/quote-form-modal"
-import { Toaster } from "@/components/ui/toaster"
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
-})
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "SHINEST Interior Architecture",
-  description:
-    "We transform your living spaces into works of art. We create functional and aesthetic spaces with a modern design approach.",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  title: "SHINEST İç Mimarlık",
+  description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
     generator: 'v0.dev'
 }
 
@@ -31,16 +19,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="tr" suppressHydrationWarning>
-      <body className={poppins.className}>
+    <html lang="tr">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className={inter.className}>
         <LanguageProvider>
-          <QuoteFormProvider>
-            <Header />
-            <main className="pt-20 bg-white">{children}</main>
-            <Footer />
-            <QuoteFormModal />
-            <Toaster />
-          </QuoteFormProvider>
+          <QuoteFormProvider>{children}</QuoteFormProvider>
         </LanguageProvider>
       </body>
     </html>

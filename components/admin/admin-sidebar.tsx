@@ -1,142 +1,96 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
-  FolderKanban,
-  Newspaper,
+  FolderOpen,
+  FileText,
   ImageIcon,
-  MessageSquare,
-  PenSquare,
   Settings,
-  ChevronDown,
+  Home,
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  Globe,
 } from "lucide-react"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
-} from "@/components/ui/sidebar"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Button } from "@/components/ui/button"
 
-const menuItems = [
-  {
-    href: "/admin/dashboard",
-    icon: LayoutDashboard,
-    label: "Dashboard",
-  },
-  {
-    href: "/admin/projects",
-    icon: FolderKanban,
-    label: "Projeler",
-  },
-  {
-    label: "İçerik",
-    icon: PenSquare,
-    subItems: [
-      { href: "/admin/content/home", label: "Ana Sayfa" },
-      { href: "/admin/content/about", label: "Hakkımızda" },
-      { href: "/admin/content/services", label: "Hizmetler" },
-      { href: "/admin/content/global", label: "Global" },
-    ],
-  },
-  {
-    href: "/admin/blog",
-    icon: Newspaper,
-    label: "Blog",
-  },
-  {
-    href: "/admin/media",
-    icon: ImageIcon,
-    label: "Medya",
-  },
-  {
-    href: "/admin/messages",
-    icon: MessageSquare,
-    label: "Mesajlar",
-  },
-  {
-    href: "/admin/settings",
-    icon: Settings,
-    label: "Ayarlar",
-  },
+const navigation = [
+  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Ana Sayfa Düzenle", href: "/admin/content/home", icon: Home },
+  { name: "Sayfa İçerikleri", href: "/admin/content/pages", icon: Edit },
+  { name: "Global İçerik", href: "/admin/content/global", icon: Globe },
+  { name: "Projeler", href: "/admin/projects", icon: FolderOpen },
+  { name: "Blog", href: "/admin/blog", icon: FileText },
+  { name: "Medya", href: "/admin/media", icon: ImageIcon },
+  { name: "Ayarlar", href: "/admin/settings", icon: Settings },
 ]
 
 export function AdminSidebar() {
   const pathname = usePathname()
-
-  const isActive = (href: string) => pathname === href
-  const isParentActive = (subItems: any[] | undefined) => {
-    if (!subItems) return false
-    return subItems.some((item) => pathname.startsWith(item.href))
-  }
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <Sidebar collapsible="icon" className="border-r bg-background">
-      <SidebarHeader>
-        <Link href="/admin/dashboard" className="flex h-full items-center justify-center">
-          <Image
-            src="/images/shinest-logo-main.png"
-            width={40}
-            height={40}
-            alt="Shinest Logo"
-            className="transition-all group-data-[state=collapsed]:hidden"
-          />
-          <Image
-            src="/images/shinest-logo-main.png"
-            width={32}
-            height={32}
-            alt="Shinest Logo"
-            className="hidden transition-all group-data-[state=collapsed]:block"
-          />
-        </Link>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarMenu>
-          {menuItems.map((item) =>
-            item.subItems ? (
-              <Collapsible key={item.label} defaultOpen={isParentActive(item.subItems)} className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger className="w-full">
-                    <SidebarMenuButton tooltip={item.label} isActive={isParentActive(item.subItems)} className="w-full">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                      <ChevronDown className="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {item.subItems.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.href}>
-                          <SidebarMenuSubButton asChild isActive={isActive(subItem.href)}>
-                            <Link href={subItem.href}>{subItem.label}</Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            ) : (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton asChild tooltip={item.label} isActive={isActive(item.href!)}>
-                  <Link href={item.href!}>
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ),
-          )}
-        </SidebarMenu>
-      </SidebarContent>
-    </Sidebar>
+    <div
+      className={cn(
+        "fixed left-0 top-0 z-40 h-screen bg-white border-r border-gray-200 transition-all duration-300",
+        collapsed ? "w-16" : "w-64",
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        {!collapsed && (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">S</span>
+            </div>
+            <div>
+              <h2 className="font-semibold text-gray-900">SHINEST</h2>
+              <p className="text-xs text-gray-500">Admin Panel</p>
+            </div>
+          </div>
+        )}
+        <Button variant="ghost" size="sm" onClick={() => setCollapsed(!collapsed)} className="p-1.5 h-auto">
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </Button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="p-4 space-y-2">
+        {navigation.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                collapsed && "justify-center",
+              )}
+              title={collapsed ? item.name : undefined}
+            >
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && <span>{item.name}</span>}
+            </Link>
+          )
+        })}
+      </nav>
+
+      {/* Footer */}
+      {!collapsed && (
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+          <div className="text-xs text-gray-500 text-center">
+            <p>© 2024 SHINEST</p>
+            <p>Admin Panel v1.0</p>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

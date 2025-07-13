@@ -1,173 +1,109 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { githubRealtime, type ConnectionStatus, type RealtimeMessage } from "@/lib/github-realtime"
-import { WifiOff, RefreshCw, AlertCircle, Github, Database } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Button } from "@/components/ui/button"
+import { RefreshCw, Wifi, WifiOff, Loader2, Github } from "lucide-react"
+import { githubRealtime, type ConnectionStatus } from "@/lib/github-realtime"
+import { toast } from "sonner"
 
 export function RealtimeStatus() {
-  const [status, setStatus] = useState<ConnectionStatus>("disconnected")
-  const [lastUpdate, setLastUpdate] = useState<string>("")
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isGitHubConfigured, setIsGitHubConfigured] = useState(false)
-  const [lastMessage, setLastMessage] = useState<RealtimeMessage | null>(null)
+  const [status, setStatus] = useState<ConnectionStatus>({ status: "disconnected" })
+  const [syncing, setSyncing] = useState(false)
 
   useEffect(() => {
-    // Check GitHub configuration
-    setIsGitHubConfigured(githubRealtime.isGitHubConfigured())
+    const unsubscribe = githubRealtime.onStatusChange(setStatus)
 
-    // Subscribe to data updates
-    const unsubscribeData = githubRealtime.subscribe((data) => {
-      setStatus(data.connectionStatus)
-      setLastUpdate(data.lastUpdate)
-    })
+    // Get initial status
+    setStatus(githubRealtime.getStatus())
 
-    // Subscribe to messages
-    const unsubscribeMessages = githubRealtime.onMessage((message) => {
-      setLastMessage(message)
-    })
-
-    return () => {
-      unsubscribeData()
-      unsubscribeMessages()
-    }
+    return unsubscribe
   }, [])
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
+  useEffect(() => {
+    const unsubscribe = githubRealtime.onMessage((data) => {
+      if (data.type === "heartbeat") {
+        console.log("GitHub heartbeat:", data.data)
+      }
+    })
+
+    return unsubscribe
+  }, [])
+
+  const handleSync = async () => {
+    setSyncing(true)
     try {
-      await githubRealtime.refresh()
+      await githubRealtime.forceSync()
+      toast.success("Senkronizasyon tamamlandı!")
+    } catch (error) {
+      toast.error("Senkronizasyon başarısız: " + (error as Error).message)
     } finally {
-      setTimeout(() => setIsRefreshing(false), 1000)
+      setSyncing(false)
     }
   }
 
-  const getStatusIcon = () => {
-    switch (status) {
+  const getStatusBadge = () => {
+    switch (status.status) {
       case "connected":
-        return isGitHubConfigured ? (
-          <Github className="h-4 w-4 text-green-500" />
-        ) : (
-          <Database className="h-4 w-4 text-blue-500" />
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+            <Wifi className="w-3 h-3 mr-1" />
+            Bağlı
+          </Badge>
         )
       case "connecting":
-        return <RefreshCw className="h-4 w-4 text-yellow-500 animate-spin" />
+        return (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+            Bağlanıyor...
+          </Badge>
+        )
+      case "polling":
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+            <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+            Yerel Mod
+          </Badge>
+        )
       case "error":
-        return <AlertCircle className="h-4 w-4 text-red-500" />
+        return (
+          <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">
+            <WifiOff className="w-3 h-3 mr-1" />
+            Hata
+          </Badge>
+        )
       default:
-        return <WifiOff className="h-4 w-4 text-gray-500" />
+        return (
+          <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-200">
+            <WifiOff className="w-3 h-3 mr-1" />
+            Bağlantısız
+          </Badge>
+        )
     }
-  }
-
-  const getStatusText = () => {
-    switch (status) {
-      case "connected":
-        return isGitHubConfigured ? "GitHub Bağlı" : "Yerel Veri"
-      case "connecting":
-        return "Bağlanıyor..."
-      case "error":
-        return "Bağlantı Hatası"
-      default:
-        return "Bağlantı Yok"
-    }
-  }
-
-  const getStatusColor = () => {
-    switch (status) {
-      case "connected":
-        return isGitHubConfigured ? "text-green-600" : "text-blue-600"
-      case "connecting":
-        return "text-yellow-600"
-      case "error":
-        return "text-red-600"
-      default:
-        return "text-gray-600"
-    }
-  }
-
-  const getBadgeVariant = () => {
-    switch (status) {
-      case "connected":
-        return "secondary"
-      case "connecting":
-        return "secondary"
-      case "error":
-        return "destructive"
-      default:
-        return "outline"
-    }
-  }
-
-  const getBadgeText = () => {
-    switch (status) {
-      case "connected":
-        return isGitHubConfigured ? "GitHub" : "Yerel"
-      case "connecting":
-        return "Senkronize"
-      case "error":
-        return "Hata"
-      default:
-        return "Çevrimdışı"
-    }
-  }
-
-  const formatLastUpdate = (dateString: string) => {
-    if (!dateString) return "Henüz yok"
-
-    const date = new Date(dateString)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / (1000 * 60))
-
-    if (minutes < 1) return "Az önce"
-    if (minutes < 60) return `${minutes} dakika önce`
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours} saat önce`
-    return date.toLocaleDateString("tr-TR")
   }
 
   return (
-    <TooltipProvider>
-      <div className="flex items-center space-x-3">
-        <div className="flex items-center space-x-2">
-          {getStatusIcon()}
-          <span className={`text-sm font-medium ${getStatusColor()}`}>{getStatusText()}</span>
-          <Badge variant={getBadgeVariant()} className="text-xs">
-            {getBadgeText()}
-          </Badge>
-        </div>
+    <div className="flex items-center gap-2">
+      {getStatusBadge()}
 
-        {lastUpdate && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="text-xs text-gray-500 cursor-help">{formatLastUpdate(lastUpdate)}</span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Son güncelleme: {new Date(lastUpdate).toLocaleString("tr-TR")}</p>
-              {lastMessage && <p className="text-xs mt-1">Kaynak: {lastMessage.data?.source || "bilinmiyor"}</p>}
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="h-8 px-2 bg-transparent border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white"
-            >
-              <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Verileri yenile</p>
-          </TooltipContent>
-        </Tooltip>
+      <div className="flex items-center gap-1 text-xs text-gray-500">
+        <Github className="w-3 h-3" />
+        <span>Gerçek Zamanlı</span>
       </div>
-    </TooltipProvider>
+
+      <Button onClick={handleSync} disabled={syncing} variant="ghost" size="sm" className="h-6 px-2 text-xs">
+        {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+      </Button>
+
+      {status.message && (
+        <span className="text-xs text-gray-500 max-w-48 truncate" title={status.message}>
+          {status.message}
+        </span>
+      )}
+
+      {status.lastUpdate && (
+        <span className="text-xs text-gray-400">{status.lastUpdate.toLocaleTimeString("tr-TR")}</span>
+      )}
+    </div>
   )
 }

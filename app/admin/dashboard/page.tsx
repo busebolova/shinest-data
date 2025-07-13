@@ -17,10 +17,8 @@ import {
   Users,
   Globe,
   AlertCircle,
-  RefreshCw,
 } from "lucide-react"
 import Link from "next/link"
-import { githubRealtime } from "@/lib/github-realtime"
 
 interface DashboardData {
   totalProjects: number
@@ -53,49 +51,19 @@ export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [refreshing, setRefreshing] = useState(false)
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   useEffect(() => {
     fetchDashboardData()
-
-    // Subscribe to realtime updates
-    const unsubscribe = githubRealtime.onMessage((data) => {
-      if (data.type === "sync") {
-        // Refresh dashboard data when sync happens
-        fetchDashboardData()
-      }
-    })
-
-    return () => {
-      unsubscribe()
-    }
   }, [])
-
-  // Auto-hide notifications after 3 seconds
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => {
-        setNotification(null)
-      }, 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [notification])
 
   const fetchDashboardData = async () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("/api/admin/dashboard", {
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-      })
+      const response = await fetch("/api/admin/dashboard")
       if (response.ok) {
         const data = await response.json()
         setDashboardData(data)
-        setLastRefresh(new Date())
       } else {
         const errorData = await response.json()
         setError(errorData.message || "Dashboard verileri alınamadı")
@@ -108,19 +76,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    try {
-      await fetchDashboardData()
-      setNotification({ type: "success", message: "Dashboard verileri güncellendi" })
-    } catch (error) {
-      setNotification({ type: "error", message: "Veri yenileme başarısız" })
-    } finally {
-      setRefreshing(false)
-    }
-  }
-
-  if (loading && !dashboardData) {
+  if (loading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
@@ -133,7 +89,7 @@ export default function AdminDashboard() {
     )
   }
 
-  if (error && !dashboardData) {
+  if (error || !dashboardData) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center py-12">
@@ -182,46 +138,17 @@ export default function AdminDashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 relative">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Notification */}
-        {notification && (
-          <div
-            className={`fixed top-4 right-4 p-4 rounded-md z-50 ${
-              notification.type === "success"
-                ? "bg-green-100 text-green-800 border border-green-200"
-                : "bg-red-100 text-red-800 border border-red-200"
-            }`}
-          >
-            {notification.message}
-          </div>
-        )}
-
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-gray-600 mt-1">SHINEST Admin Panel</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Clock className="w-4 h-4" />
-              {lastRefresh ? (
-                <span>Son güncelleme: {lastRefresh.toLocaleTimeString("tr-TR")}</span>
-              ) : (
-                <span>Güncelleniyor...</span>
-              )}
-            </div>
-            <Button
-              onClick={handleRefresh}
-              disabled={refreshing || loading}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1 bg-transparent"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-              <span>Yenile</span>
-            </Button>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Clock className="w-4 h-4" />
+            Son güncelleme: {new Date(dashboardData.lastUpdate).toLocaleString("tr-TR")}
           </div>
         </div>
 
@@ -232,14 +159,14 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Toplam Proje</p>
-                  <p className="text-3xl font-bold text-gray-900">{dashboardData?.totalProjects || 0}</p>
+                  <p className="text-3xl font-bold text-gray-900">{dashboardData.totalProjects}</p>
                 </div>
                 <div className="bg-blue-100 p-3 rounded-full">
                   <FileText className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
               <div className="flex items-center mt-4 text-sm">
-                <span className="text-blue-600 font-medium">{dashboardData?.featuredProjects || 0} öne çıkan</span>
+                <span className="text-blue-600 font-medium">{dashboardData.featuredProjects} öne çıkan</span>
               </div>
             </CardContent>
           </Card>
@@ -249,14 +176,14 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Blog Yazısı</p>
-                  <p className="text-3xl font-bold text-gray-900">{dashboardData?.totalBlogPosts || 0}</p>
+                  <p className="text-3xl font-bold text-gray-900">{dashboardData.totalBlogPosts}</p>
                 </div>
                 <div className="bg-green-100 p-3 rounded-full">
                   <FileText className="w-6 h-6 text-green-600" />
                 </div>
               </div>
               <div className="flex items-center mt-4 text-sm">
-                <span className="text-green-600 font-medium">{dashboardData?.publishedPosts || 0} yayınlanmış</span>
+                <span className="text-green-600 font-medium">{dashboardData.publishedPosts} yayınlanmış</span>
               </div>
             </CardContent>
           </Card>
@@ -266,7 +193,7 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">GitHub Commit</p>
-                  <p className="text-3xl font-bold text-gray-900">{dashboardData?.recentCommits || 0}</p>
+                  <p className="text-3xl font-bold text-gray-900">{dashboardData.recentCommits}</p>
                 </div>
                 <div className="bg-purple-100 p-3 rounded-full">
                   <Activity className="w-6 h-6 text-purple-600" />
@@ -290,7 +217,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="flex items-center mt-4 text-sm">
-                <span className="text-green-600 font-medium">Gerçek zamanlı</span>
+                <span className="text-green-600 font-medium">GitHub bağlı</span>
               </div>
             </CardContent>
           </Card>
@@ -334,7 +261,7 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 ? (
+                {dashboardData.recentActivity.length > 0 ? (
                   <div className="space-y-4">
                     {dashboardData.recentActivity.slice(0, 8).map((activity) => (
                       <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50">
@@ -406,19 +333,19 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Yayınlanan</span>
-                  <span className="font-semibold text-green-600">{dashboardData?.completedProjects || 0}</span>
+                  <span className="font-semibold text-green-600">{dashboardData.completedProjects}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Devam Eden</span>
-                  <span className="font-semibold text-blue-600">{dashboardData?.inProgressProjects || 0}</span>
+                  <span className="font-semibold text-blue-600">{dashboardData.inProgressProjects}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Planlanan</span>
-                  <span className="font-semibold text-orange-600">{dashboardData?.plannedProjects || 0}</span>
+                  <span className="font-semibold text-orange-600">{dashboardData.plannedProjects}</span>
                 </div>
                 <div className="flex items-center justify-between border-t pt-2">
                   <span className="text-sm font-medium text-gray-900">Toplam</span>
-                  <span className="font-bold text-gray-900">{dashboardData?.totalProjects || 0}</span>
+                  <span className="font-bold text-gray-900">{dashboardData.totalProjects}</span>
                 </div>
               </div>
             </CardContent>
@@ -435,15 +362,15 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Blog Yazısı</span>
-                  <span className="font-semibold text-blue-600">{dashboardData?.totalBlogPosts || 0}</span>
+                  <span className="font-semibold text-blue-600">{dashboardData.totalBlogPosts}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Öne Çıkan Proje</span>
-                  <span className="font-semibold text-green-600">{dashboardData?.featuredProjects || 0}</span>
+                  <span className="font-semibold text-green-600">{dashboardData.featuredProjects}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">GitHub Commit</span>
-                  <span className="font-semibold text-purple-600">{dashboardData?.recentCommits || 0}</span>
+                  <span className="font-semibold text-purple-600">{dashboardData.recentCommits}</span>
                 </div>
                 <div className="flex items-center justify-between border-t pt-2">
                   <span className="text-sm font-medium text-gray-900">Sistem</span>
@@ -480,28 +407,13 @@ export default function AdminDashboard() {
               </div>
               <h3 className="text-lg font-semibold text-gray-700 mb-2">SHINEST İç Mimarlık</h3>
               <p className="text-gray-500 mb-6">
-                {dashboardData?.totalProjects || 0} proje, {dashboardData?.totalBlogPosts || 0} blog yazısı ile aktif
-                olarak çalışıyor
+                {dashboardData.totalProjects} proje, {dashboardData.totalBlogPosts} blog yazısı ile aktif olarak
+                çalışıyor
               </p>
-              <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500">
-                <span className="flex items-center gap-1">
-                  <Badge variant="outline" className="bg-green-50">
-                    ✓
-                  </Badge>
-                  Gerçek Zamanlı Bağlantı
-                </span>
-                <span className="flex items-center gap-1">
-                  <Badge variant="outline" className="bg-green-50">
-                    ✓
-                  </Badge>
-                  İçerikler Güncel
-                </span>
-                <span className="flex items-center gap-1">
-                  <Badge variant="outline" className="bg-green-50">
-                    ✓
-                  </Badge>
-                  Sistem Çalışıyor
-                </span>
+              <div className="flex justify-center space-x-4 text-sm text-gray-500">
+                <span>✅ GitHub Bağlantısı Aktif</span>
+                <span>✅ İçerikler Güncel</span>
+                <span>✅ Sistem Çalışıyor</span>
               </div>
             </div>
           </CardContent>

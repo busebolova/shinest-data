@@ -1,183 +1,114 @@
-// lib/github-realtime.ts
-import { LocalStorage } from "./local-storage"
+import { githubAPI } from "./github-api"
 
-export type ConnectionStatus = "connected" | "disconnected" | "connecting" | "error"
-
-export interface RealtimeMessage {
-  type: "sync-success" | "sync-error" | "connection-status"
-  data?: any
-}
-
-export interface RealtimeData {
-  connectionStatus: ConnectionStatus
-  projects: any[] | null
-  blogs: any[] | null
-  dashboard: { messages: number; visitors: number } | null
-  events: any[] | null
-  lastUpdate: string
+interface RealtimeConnection {
+  isConnected: boolean
+  lastSync: Date | null
   error: string | null
-  isGitHubConfigured: boolean
 }
-
-type Listener = (data: RealtimeData) => void
-type MessageListener = (message: RealtimeMessage) => void
-
-const CACHE_KEY = "shinest-realtime-cache"
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 class GitHubRealtime {
-  private listeners: Listener[] = []
-  private messageListeners: MessageListener[] = []
-  private data: RealtimeData
-  private intervalId: NodeJS.Timeout | null = null
-  private isInitialized = false
+  private connection: RealtimeConnection = {
+    isConnected: false,
+    lastSync: null,
+    error: null,
+  }
+
+  private listeners: Set<(connection: RealtimeConnection) => void> = new Set()
+  private syncInterval: NodeJS.Timeout | null = null
 
   constructor() {
-    const cachedData = LocalStorage.getItem(CACHE_KEY)
-    const now = new Date().getTime()
-
-    if (cachedData && now - new Date(cachedData.lastUpdate).getTime() < CACHE_TTL) {
-      this.data = { ...cachedData, connectionStatus: "disconnected" }
-    } else {
-      this.data = {
-        connectionStatus: "disconnected",
-        projects: null,
-        blogs: null,
-        dashboard: null,
-        events: null,
-        lastUpdate: "",
-        error: null,
-        isGitHubConfigured: false,
-      }
-    }
+    this.startSync()
   }
 
-  public init() {
-    if (this.isInitialized) return
-    this.isInitialized = true
+  // Start periodic sync
+  private startSync() {
+    // Sync every 30 seconds
+    this.syncInterval = setInterval(() => {
+      this.checkConnection()
+    }, 30000)
 
-    this.refresh()
-    if (this.intervalId) clearInterval(this.intervalId)
-    this.intervalId = setInterval(() => this.refresh(), 30000) // Refresh every 30 seconds
+    // Initial check
+    this.checkConnection()
   }
 
-  public subscribe(listener: Listener): () => void {
-    this.listeners.push(listener)
-    // Immediately notify the new listener with the current data
-    listener(this.data)
-    return () => {
-      this.listeners = this.listeners.filter((l) => l !== listener)
-    }
-  }
-
-  public onMessage(listener: MessageListener): () => void {
-    this.messageListeners.push(listener)
-    return () => {
-      this.messageListeners = this.messageListeners.filter((l) => l !== listener)
-    }
-  }
-
-  private notify() {
-    this.listeners.forEach((listener) => listener(this.data))
-  }
-
-  private sendMessage(message: RealtimeMessage) {
-    this.messageListeners.forEach((listener) => listener(message))
-  }
-
-  private updateState(updates: Partial<RealtimeData>) {
-    this.data = { ...this.data, ...updates }
-    this.notify()
-  }
-
-  private async fetchData(endpoint: string) {
+  // Check GitHub connection
+  private async checkConnection() {
     try {
-      const response = await fetch(`/api/github/${endpoint}`)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch ${endpoint}: ${response.statusText}`)
-      }
-      return await response.json()
-    } catch (error) {
-      console.error(`Error in fetchData for ${endpoint}:`, error)
-      return null
-    }
-  }
-
-  async getStatus() {
-    return this.fetchData("status")
-  }
-
-  async getEvents() {
-    return this.fetchData("events")
-  }
-
-  async sync() {
-    return this.fetchData("sync")
-  }
-
-  public async refresh() {
-    this.updateState({ connectionStatus: "connecting" })
-
-    try {
-      const statusRes = await fetch("/api/github/status")
-      const statusData = await statusRes.json()
-
-      const isConfigured = statusData.connected
-
-      if (!isConfigured) {
-        this.updateState({
-          connectionStatus: "disconnected",
-          error: "GitHub API not configured. Using local mock data.",
-          isGitHubConfigured: false,
+      if (githubAPI.isConfigured()) {
+        await githubAPI.getRepositoryInfo()
+        this.updateConnection({
+          isConnected: true,
+          lastSync: new Date(),
+          error: null,
         })
-        // In a real scenario, you might load mock data here
-        // For now, we just show disconnected state.
-        return
+      } else {
+        this.updateConnection({
+          isConnected: false,
+          lastSync: null,
+          error: "GitHub API not configured",
+        })
       }
-
-      const [projectsRes, blogsRes, eventsRes, dashboardRes] = await Promise.all([
-        fetch("/api/projects"),
-        fetch("/api/blog"),
-        fetch("/api/github/events"),
-        fetch("/api/admin/dashboard"),
-      ])
-
-      if (!projectsRes.ok || !blogsRes.ok || !eventsRes.ok || !dashboardRes.ok) {
-        throw new Error("Failed to fetch data from one or more endpoints.")
-      }
-
-      const [projects, blogs, events, dashboard] = await Promise.all([
-        projectsRes.json(),
-        blogsRes.json(),
-        eventsRes.json(),
-        dashboardRes.json(),
-      ])
-
-      const newState: RealtimeData = {
-        connectionStatus: "connected",
-        projects,
-        blogs,
-        events,
-        dashboard,
-        lastUpdate: new Date().toISOString(),
-        error: null,
-        isGitHubConfigured: true,
-      }
-
-      this.updateState(newState)
-      LocalStorage.setItem(CACHE_KEY, newState)
-      this.sendMessage({ type: "sync-success", data: { source: "github" } })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error"
-      this.updateState({ connectionStatus: "error", error: errorMessage })
-      this.sendMessage({ type: "sync-error", data: { error: errorMessage } })
-      console.error("Realtime refresh failed:", error)
+      this.updateConnection({
+        isConnected: false,
+        lastSync: this.connection.lastSync,
+        error: error instanceof Error ? error.message : "Connection failed",
+      })
     }
   }
 
-  public getData(): RealtimeData {
-    return this.data
+  // Update connection status
+  private updateConnection(newConnection: RealtimeConnection) {
+    this.connection = newConnection
+    this.notifyListeners()
+  }
+
+  // Notify all listeners
+  private notifyListeners() {
+    this.listeners.forEach((listener) => {
+      try {
+        listener(this.connection)
+      } catch (error) {
+        console.error("Error in realtime listener:", error)
+      }
+    })
+  }
+
+  // Subscribe to connection changes
+  subscribe(listener: (connection: RealtimeConnection) => void) {
+    this.listeners.add(listener)
+
+    // Immediately call with current state
+    listener(this.connection)
+
+    // Return unsubscribe function
+    return () => {
+      this.listeners.delete(listener)
+    }
+  }
+
+  // Get current connection status
+  getConnection(): RealtimeConnection {
+    return { ...this.connection }
+  }
+
+  // Manual sync
+  async sync(): Promise<void> {
+    await this.checkConnection()
+  }
+
+  // Cleanup
+  destroy() {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval)
+      this.syncInterval = null
+    }
+    this.listeners.clear()
   }
 }
 
+// Create singleton instance
 export const githubRealtime = new GitHubRealtime()
+
+// Export types
+export type { RealtimeConnection }

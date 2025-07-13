@@ -6,62 +6,34 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  experimental: {
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
-  },
   images: {
+    domains: ['blob.v0.dev', 'plus.unsplash.com', 'aebeleinteriors.com'],
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 60,
+    unoptimized: false,
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'blob.v0.dev',
+        port: '',
+        pathname: '/**',
       },
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3000',
+        protocol: 'https',
+        hostname: 'plus.unsplash.com',
+        port: '',
+        pathname: '/**',
       },
-    ],
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    unoptimized: true,
-  },
-  async headers() {
-    const headers = [];
-    // Sadece canlı ortamda (production) katı güvenlik başlıklarını ekle
-    if (process.env.NODE_ENV === 'production') {
-      headers.push({
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains; preload',
-          },
-        ],
-      });
-    }
-    return headers;
-  },
-  async redirects() {
-    return [
       {
-        source: '/admin',
-        destination: '/admin/dashboard',
-        permanent: false,
-      },
+        protocol: 'https',
+        hostname: 'aebeleinteriors.com',
+        port: '',
+        pathname: '/**',
+      }
     ]
+  },
+  experimental: {
+    optimizePackageImports: ['framer-motion'],
   },
 }
 

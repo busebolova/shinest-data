@@ -1,106 +1,107 @@
 "use client"
 
-import React from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Home, User, LogOut, ChevronDown } from "lucide-react"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { useAuth } from "@/contexts/auth-context"
+import { useState } from "react"
+import { motion } from "framer-motion"
+import { Bell, Settings, User, LogOut, Menu, X } from "lucide-react"
+import { RealtimeIndicator } from "./realtime-indicator"
 
-export default function AdminHeader() {
-  const { user, logout } = useAuth()
-  const pathname = usePathname()
+interface AdminHeaderProps {
+  title: string
+  onMenuToggle?: () => void
+  isMobileMenuOpen?: boolean
+}
 
-  const generateBreadcrumbs = () => {
-    const pathParts = pathname.split("/").filter((part) => part)
-    if (pathParts.length <= 1) {
-      return (
-        <BreadcrumbItem>
-          <BreadcrumbPage>Dashboard</BreadcrumbPage>
-        </BreadcrumbItem>
-      )
-    }
-
-    const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, " ")
-
-    return (
-      <>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href="/admin/dashboard">Admin</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        {pathParts.slice(1).map((part, index) => {
-          const href = "/admin/" + pathParts.slice(1, index + 2).join("/")
-          const isLast = index === pathParts.length - 2
-          return (
-            <React.Fragment key={part}>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                {isLast ? (
-                  <BreadcrumbPage>{capitalize(part)}</BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink asChild>
-                    <Link href={href}>{capitalize(part)}</Link>
-                  </BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-            </React.Fragment>
-          )
-        })}
-      </>
-    )
-  }
+export function AdminHeader({ title, onMenuToggle, isMobileMenuOpen }: AdminHeaderProps) {
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-      <div className="flex items-center gap-2">
-        <SidebarTrigger className="sm:hidden" />
-        <Breadcrumb className="hidden md:flex">
-          <BreadcrumbList>{generateBreadcrumbs()}</BreadcrumbList>
-        </Breadcrumb>
-      </div>
-      <div className="ml-auto flex items-center gap-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/" target="_blank" rel="noopener noreferrer">
-            <Home className="mr-2 h-4 w-4" />
-            Siteyi Görüntüle
-          </Link>
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              <span className="hidden md:inline">{user?.name ?? "Admin"}</span>
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Çıkış Yap</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+    <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="flex items-center justify-between">
+        {/* Left Side */}
+        <div className="flex items-center space-x-4">
+          {/* Mobile Menu Button */}
+          <button onClick={onMenuToggle} className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            {isMobileMenuOpen ? <X className="w-5 h-5 text-gray-600" /> : <Menu className="w-5 h-5 text-gray-600" />}
+          </button>
+
+          {/* Page Title */}
+          <h1 className={`text-2xl font-bold text-gray-600`}>{title}</h1>
+        </div>
+
+        {/* Right Side */}
+        <div className="flex items-center space-x-4">
+          {/* Realtime Indicator */}
+          <RealtimeIndicator />
+
+          {/* Notifications */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
+            >
+              <Bell className="w-5 h-5 text-gray-600" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+            </button>
+
+            {showNotifications && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+              >
+                <div className="p-4 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-900">Notifications</h3>
+                </div>
+                <div className="p-4">
+                  <p className="text-sm text-gray-500">No new notifications</p>
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Settings */}
+          <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <Settings className="w-5 h-5 text-gray-600" />
+          </button>
+
+          {/* User Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <div className="w-8 h-8 bg-[#15415b] rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-medium text-gray-700 hidden sm:block">Admin</span>
+            </button>
+
+            {showUserMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+              >
+                <div className="p-2">
+                  <button className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                    <User className="w-4 h-4" />
+                    <span>Profile</span>
+                  </button>
+                  <button className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                  </button>
+                  <hr className="my-2" />
+                  <button className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
       </div>
     </header>
   )
