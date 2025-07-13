@@ -1,27 +1,29 @@
 import { NextResponse } from "next/server"
 
-// Mock global content data
 const globalContent = {
-  site: {
+  company: {
     name: "SHINEST İç Mimarlık",
     description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
     logo: "/images/shinest-logo.png",
-    favicon: "/favicon.ico",
+    founded: "2020",
+    location: "İstanbul, Türkiye",
   },
   contact: {
     phone: "+90 (212) 123 45 67",
     email: "info@shinest.com",
     address: "İstanbul, Türkiye",
-    social: {
-      instagram: "#",
-      facebook: "#",
-      twitter: "#",
-    },
   },
-  colors: {
-    primary: "#15415b",
-    secondary: "#c4975a",
-    accent: "#b8864d",
+  social: {
+    instagram: "#",
+    facebook: "#",
+    twitter: "#",
+    linkedin: "#",
+  },
+  seo: {
+    title: "SHINEST İç Mimarlık - Yaşam Alanlarınızı Sanat Eserine Dönüştürüyoruz",
+    description:
+      "Modern tasarım anlayışı ile fonksiyonel ve estetik mekanlar yaratıyoruz. İç mimarlık danışmanlığı, mekan tasarımı ve uygulama hizmetleri.",
+    keywords: "iç mimarlık, mekan tasarımı, ev dekorasyonu, ofis tasarımı, istanbul iç mimar",
   },
 }
 
@@ -34,7 +36,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function PUT(request: Request) {
   try {
     const body = await request.json()
 

@@ -1,35 +1,37 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import "./globals.css"
+import { AuthProvider } from "@/contexts/auth-context"
+import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/contexts/language-context"
 import { QuoteFormProvider } from "@/contexts/quote-form-context"
+import { Inter } from "next/font/google"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "SHINEST İç Mimarlık",
-  description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
-    generator: 'v0.dev'
+  description: "Yenilikçi ve fonksiyonel iç mekan çözümleri",
+  generator: "v0.dev",
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="tr">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body className={inter.className}>
-        <LanguageProvider>
-          <QuoteFormProvider>{children}</QuoteFormProvider>
-        </LanguageProvider>
+        <AuthProvider>
+          <LanguageProvider>
+            <QuoteFormProvider>
+              <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+                {children}
+              </ThemeProvider>
+            </QuoteFormProvider>
+          </LanguageProvider>
+        </AuthProvider>
       </body>
     </html>
   )
