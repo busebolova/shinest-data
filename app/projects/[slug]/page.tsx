@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useContext } from "react"
 import Image from "next/image"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import Header from "@/components/header"
+import Footer from "@/components/footer"
 import { LanguageContext } from "@/contexts/language-context"
 import { Loader2, AlertCircle, Calendar, MapPin, Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"

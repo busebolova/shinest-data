@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { MapPin, Phone, Mail, Clock, Send } from "lucide-react"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import Header from "@/components/header"
+import Footer from "@/components/footer"
 
 export default function ContactPage() {
   const [isLoaded, setIsLoaded] = useState(false)

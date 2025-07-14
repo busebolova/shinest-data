@@ -5,8 +5,8 @@ import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Users, Award, Clock, Heart, ArrowRight, CheckCircle, Star, Target } from "lucide-react"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import Header from "@/components/header"
+import Footer from "@/components/footer"
 import Image from "next/image"
 
 export default function AboutPage() {
