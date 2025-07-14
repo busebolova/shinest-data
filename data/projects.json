@@ -2,79 +2,89 @@
   "projects": [
     {
       "id": "1",
-      "title": "Modern Living Room Design",
-      "description": "Contemporary living space with minimalist design principles and premium finishes",
-      "category": "residential",
-      "images": ["/images/living-room-design-1.png", "/images/living-room-design-2.png"],
-      "featured": true,
-      "year": "2024",
-      "location": "Istanbul, Turkey",
-      "area": "120m²",
-      "status": "completed",
-      "tags": ["modern", "minimalist", "living room", "residential"],
-      "client": "Private Client",
-      "duration": "3 months",
-      "budget": "€25,000",
-      "team": ["Interior Designer", "Project Manager", "Contractor"],
-      "challenges": ["Limited space", "Natural light optimization"],
-      "solutions": ["Open floor plan", "Strategic mirror placement", "Light color palette"],
-      "results": ["Increased perceived space by 40%", "Improved natural light distribution"],
-      "testimonial": {
-        "text": "The team transformed our small living room into a spacious, modern sanctuary. We couldn't be happier!",
-        "author": "Sarah Johnson",
-        "position": "Homeowner"
+      "title": {
+        "tr": "Modern Banyo Tasarımı",
+        "en": "Modern Bathroom Design"
       },
+      "description": {
+        "tr": "Lüks ve modern banyo iç mekan tasarımı projesi. Petrol yeşili dolap, altın detaylar ve beyaz mermer tezgah ile lüks bir atmosfer yaratılmıştır.",
+        "en": "Luxury modern bathroom interior design project. A luxurious atmosphere has been created with petroleum green cabinet, gold details and white marble countertop."
+      },
+      "category": "Banyo",
+      "location": "İstanbul",
+      "year": "2024",
+      "status": "published",
+      "featured": true,
+      "images": ["/images/bathroom-design-1.png", "/images/bathroom-design-2.png", "/images/bathroom-design-3.png"],
+      "slug": "modern-banyo-tasarimi",
       "createdAt": "2024-01-15T10:00:00Z",
       "updatedAt": "2024-01-15T10:00:00Z"
     },
     {
       "id": "2",
-      "title": "Luxury Hotel Lobby",
-      "description": "Elegant hotel lobby design with premium materials and sophisticated lighting",
-      "category": "hospitality",
-      "images": ["/images/cafe-design-1.png", "/images/cafe-design-2.png"],
-      "featured": false,
+      "title": {
+        "tr": "Kafe İç Mekan Tasarımı",
+        "en": "Cafe Interior Design"
+      },
+      "description": {
+        "tr": "Modern patisserie tasarımı. Yeşil fluted tezgah, beyaz asma lambalar ve şık vitrin dolabı ile sıcak ve davetkar bir atmosfer yaratılmıştır.",
+        "en": "Modern patisserie design. A warm and inviting atmosphere has been created with green fluted counter, white pendant lights and elegant display cabinet."
+      },
+      "category": "Ticari",
+      "location": "Ankara",
       "year": "2024",
-      "location": "Ankara, Turkey",
-      "area": "300m²",
-      "status": "in-progress",
-      "tags": ["luxury", "hotel", "lobby", "hospitality"],
-      "client": "Grand Hotel Ankara",
-      "duration": "6 months",
-      "budget": "€150,000",
-      "team": ["Lead Designer", "Lighting Specialist", "Project Coordinator"],
-      "challenges": ["High ceiling design", "Acoustic considerations", "Traffic flow"],
-      "solutions": ["Suspended art installations", "Sound-absorbing materials", "Strategic seating arrangement"],
-      "results": ["Enhanced guest experience", "Improved acoustics"],
-      "createdAt": "2024-02-01T14:30:00Z",
-      "updatedAt": "2024-02-01T14:30:00Z"
+      "status": "published",
+      "featured": false,
+      "images": ["/images/cafe-design-1.png", "/images/cafe-design-2.png"],
+      "slug": "kafe-ic-mekan-tasarimi",
+      "createdAt": "2024-01-10T10:00:00Z",
+      "updatedAt": "2024-01-10T10:00:00Z"
     },
     {
       "id": "3",
-      "title": "Modern Bathroom Suite",
-      "description": "Spa-like bathroom design with natural materials and smart technology",
-      "category": "residential",
-      "images": ["/images/bathroom-design-1.png", "/images/bathroom-design-2.png", "/images/bathroom-design-3.png"],
-      "featured": true,
-      "year": "2024",
-      "location": "Izmir, Turkey",
-      "area": "45m²",
-      "status": "completed",
-      "tags": ["bathroom", "spa", "modern", "smart home"],
-      "client": "Private Villa",
-      "duration": "2 months",
-      "budget": "€35,000",
-      "team": ["Bathroom Specialist", "Smart Home Integrator"],
-      "challenges": ["Waterproofing", "Smart system integration"],
-      "solutions": ["Premium waterproofing system", "Integrated smart controls"],
-      "results": ["Luxury spa experience", "Energy efficient systems"],
-      "testimonial": {
-        "text": "Our bathroom feels like a luxury spa. The smart features are incredible!",
-        "author": "Michael Chen",
-        "position": "Villa Owner"
+      "title": {
+        "tr": "Kış Bahçesi Tasarımı",
+        "en": "Winter Garden Design"
       },
-      "createdAt": "2024-03-10T09:15:00Z",
-      "updatedAt": "2024-03-10T09:15:00Z"
+      "description": {
+        "tr": "Modern cam kış bahçesi tasarımı. Beyaz çerçeveli büyük cam paneller ile doğal ışığın maksimize edildiği, dört mevsim kullanılabilen yaşam alanı.",
+        "en": "Modern glass winter garden design. A living space that can be used in all seasons, where natural light is maximized with large glass panels with white frames."
+      },
+      "category": "Konut",
+      "location": "İzmir",
+      "year": "2023",
+      "status": "published",
+      "featured": true,
+      "images": ["/images/winter-garden-1.png", "/images/winter-garden-2.png"],
+      "slug": "kis-bahcesi-tasarimi",
+      "createdAt": "2024-01-05T10:00:00Z",
+      "updatedAt": "2024-01-05T10:00:00Z"
+    },
+    {
+      "id": "4",
+      "title": {
+        "tr": "Polonya Konut Tasarımı",
+        "en": "Poland Apartment Design"
+      },
+      "description": {
+        "tr": "Modern Polonya dairesi tasarımı. Açık plan yaşam alanı, gri-beyaz renk paleti ve altın detaylar ile lüks bir yaşam alanı oluşturulmuştur.",
+        "en": "Modern Polish apartment design. A luxurious living space has been created with open plan living area, gray-white color palette and gold details."
+      },
+      "category": "Konut",
+      "location": "Polonya",
+      "year": "2024",
+      "status": "published",
+      "featured": true,
+      "images": [
+        "/images/poland-apartment-1.png",
+        "/images/poland-apartment-2.png",
+        "/images/poland-apartment-3.png",
+        "/images/poland-apartment-4.png",
+        "/images/poland-apartment-5.png"
+      ],
+      "slug": "polonya-konut-tasarimi",
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-01T10:00:00Z"
     }
   ]
 }

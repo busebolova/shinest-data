@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,117 +8,134 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Save, Upload, Globe, Mail, Phone, MapPin, Instagram, Youtube, Linkedin } from "lucide-react"
+import { Save, Upload, Settings, Globe, Shield, Phone } from "lucide-react"
 import { toast } from "sonner"
 
-export default function AdminSettings() {
+interface AdminSettings {
+  company: {
+    name: string
+    nameEn: string
+    logo: string
+    phone: string
+    email: string
+    address: string
+    addressEn: string
+  }
+  social: {
+    instagram: string
+    facebook: string
+    linkedin: string
+    youtube: string
+  }
+  seo: {
+    title: string
+    titleEn: string
+    description: string
+    descriptionEn: string
+    keywords: string
+    keywordsEn: string
+  }
+  contact: {
+    workingHours: string
+    workingHoursEn: string
+    whatsapp: string
+  }
+  security: {
+    twoFactorAuth: boolean
+    captchaEnabled: boolean
+    sessionTimeout: number
+    maxLoginAttempts: number
+  }
+}
+
+export default function AdminSettingsPage() {
+  const [settings, setSettings] = useState<AdminSettings | null>(null)
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [settings, setSettings] = useState({
-    site: {
-      name: "SHINEST İç Mimarlık",
-      description: "Profesyonel iç mimarlık ve tasarım hizmetleri",
-      logo: "/images/logo1.png",
-      favicon: "/favicon.ico",
-      language: "tr",
-      timezone: "Europe/Istanbul",
-    },
-    contact: {
-      email: "iletisim@shinesticmimarlik.com",
-      phone: "0 552 179 87 35",
-      address: "İzmir, Türkiye",
-      workingHours: {
-        weekdays: "Pazartesi - Cuma: 09:00 - 18:00",
-        saturday: "Cumartesi: 10:00 - 16:00",
-        sunday: "Pazar: Kapalı",
-      },
-    },
-    social: {
-      instagram: "https://www.instagram.com/icm.selin",
-      youtube: "https://www.youtube.com/@ShinestIcMimarlikk",
-      linkedin: "https://www.linkedin.com/company/shinesticmimarlik",
-      facebook: "",
-      twitter: "",
-    },
-    seo: {
-      metaTitle: "SHINEST İç Mimarlık - Profesyonel İç Mimarlık Hizmetleri",
-      metaDescription:
-        "Modern ve fonksiyonel tasarımlarla yaşam alanlarınızı dönüştürüyoruz. Profesyonel iç mimarlık hizmetleri için SHINEST İç Mimarlık.",
-      keywords: "iç mimarlık, tasarım, dekorasyon, mimarlık, İzmir",
-      googleAnalytics: "",
-      googleTagManager: "",
-    },
-    email: {
-      smtpHost: "",
-      smtpPort: "587",
-      smtpUser: "",
-      smtpPassword: "",
-      fromEmail: "noreply@shinesticmimarlik.com",
-      fromName: "SHINEST İç Mimarlık",
-    },
-    security: {
-      enableTwoFactor: false,
-      sessionTimeout: 60,
-      maxLoginAttempts: 5,
-      enableCaptcha: false,
-    },
-  })
 
-  const handleSave = async (section: string) => {
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch("/api/admin/settings")
+      if (response.ok) {
+        const data = await response.json()
+        setSettings(data)
+      }
+    } catch (error) {
+      console.error("Error fetching settings:", error)
+      toast.error("Ayarlar yüklenirken hata oluştu")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!settings) return
+
     setSaving(true)
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(settings),
+      })
 
-      // Save to localStorage for demo
-      localStorage.setItem(`settings_${section}`, JSON.stringify(settings[section]))
-      localStorage.setItem("settings_all", JSON.stringify(settings))
-
-      toast.success(`${section} ayarları kaydedildi!`)
+      if (response.ok) {
+        toast.success("Ayarlar başarıyla kaydedildi!")
+      } else {
+        throw new Error("Kaydetme başarısız")
+      }
     } catch (error) {
-      toast.error("Kaydetme sırasında hata oluştu!")
+      console.error("Error saving settings:", error)
+      toast.error("Ayarlar kaydedilirken hata oluştu")
     } finally {
       setSaving(false)
     }
   }
 
-  const handleSaveAll = async () => {
-    setSaving(true)
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+  const updateSettings = (section: keyof AdminSettings, field: string, value: any) => {
+    if (!settings) return
 
-      // Save all settings
-      localStorage.setItem("settings_all", JSON.stringify(settings))
-
-      toast.success("Tüm ayarlar kaydedildi!")
-    } catch (error) {
-      toast.error("Kaydetme sırasında hata oluştu!")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const updateSetting = (section: string, field: string, value: any) => {
-    setSettings((prev) => ({
-      ...prev,
+    setSettings({
+      ...settings,
       [section]: {
-        ...prev[section],
+        ...settings[section],
         [field]: value,
       },
-    }))
+    })
   }
 
-  const updateNestedSetting = (section: string, parent: string, field: string, value: any) => {
-    setSettings((prev) => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [parent]: {
-          ...prev[section][parent],
-          [field]: value,
-        },
-      },
-    }))
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Ayarlar</h1>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#c4975a]"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!settings) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Ayarlar</h1>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-gray-500">Ayarlar yüklenemedi</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -127,114 +144,115 @@ export default function AdminSettings() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Ayarlar</h1>
-          <p className="text-gray-600">Site ayarlarını yönetin ve yapılandırın</p>
+          <p className="text-gray-600">Site ayarlarını yönetin</p>
         </div>
-        <Button onClick={handleSaveAll} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving} className="bg-[#c4975a] hover:bg-[#b8864d]">
           <Save className="w-4 h-4 mr-2" />
-          {saving ? "Kaydediliyor..." : "Tümünü Kaydet"}
+          {saving ? "Kaydediliyor..." : "Kaydet"}
         </Button>
       </div>
 
       {/* Settings Tabs */}
-      <Tabs defaultValue="site" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="site">Site</TabsTrigger>
-          <TabsTrigger value="contact">İletişim</TabsTrigger>
-          <TabsTrigger value="social">Sosyal Medya</TabsTrigger>
-          <TabsTrigger value="seo">SEO</TabsTrigger>
-          <TabsTrigger value="email">E-posta</TabsTrigger>
-          <TabsTrigger value="security">Güvenlik</TabsTrigger>
+      <Tabs defaultValue="company" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="company" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Şirket
+          </TabsTrigger>
+          <TabsTrigger value="contact" className="flex items-center gap-2">
+            <Phone className="w-4 h-4" />
+            İletişim
+          </TabsTrigger>
+          <TabsTrigger value="seo" className="flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            SEO
+          </TabsTrigger>
+          <TabsTrigger value="social" className="flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            Sosyal Medya
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Güvenlik
+          </TabsTrigger>
         </TabsList>
 
-        {/* Site Settings */}
-        <TabsContent value="site">
+        {/* Company Settings */}
+        <TabsContent value="company">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Site Ayarları
-              </CardTitle>
-              <CardDescription>Genel site ayarlarını yönetin</CardDescription>
+              <CardTitle>Şirket Bilgileri</CardTitle>
+              <CardDescription>Şirket bilgilerini düzenleyin</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label>Site Adı</Label>
-                    <Input
-                      value={settings.site.name}
-                      onChange={(e) => updateSetting("site", "name", e.target.value)}
-                      placeholder="SHINEST İç Mimarlık"
-                    />
-                  </div>
-                  <div>
-                    <Label>Site Açıklaması</Label>
-                    <Textarea
-                      value={settings.site.description}
-                      onChange={(e) => updateSetting("site", "description", e.target.value)}
-                      placeholder="Site açıklaması"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label>Varsayılan Dil</Label>
-                    <select
-                      value={settings.site.language}
-                      onChange={(e) => updateSetting("site", "language", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="tr">Türkçe</option>
-                      <option value="en">English</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label>Zaman Dilimi</Label>
-                    <select
-                      value={settings.site.timezone}
-                      onChange={(e) => updateSetting("site", "timezone", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Europe/Istanbul">Europe/Istanbul</option>
-                      <option value="UTC">UTC</option>
-                    </select>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="company-name">Şirket Adı (Türkçe)</Label>
+                  <Input
+                    id="company-name"
+                    value={settings.company.name}
+                    onChange={(e) => updateSettings("company", "name", e.target.value)}
+                  />
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Site Logosu</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <img
-                        src={settings.site.logo || "/placeholder.svg"}
-                        alt="Logo"
-                        className="mx-auto h-16 w-auto mb-4"
-                      />
-                      <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600 mb-2">Logo yüklemek için tıklayın</p>
-                      <Button variant="outline" size="sm">
-                        Logo Seç
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Favicon</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                      <img
-                        src={settings.site.favicon || "/favicon.ico"}
-                        alt="Favicon"
-                        className="mx-auto h-8 w-8 mb-2"
-                      />
-                      <Button variant="outline" size="sm">
-                        Favicon Seç
-                      </Button>
-                    </div>
-                  </div>
+                <div>
+                  <Label htmlFor="company-name-en">Şirket Adı (İngilizce)</Label>
+                  <Input
+                    id="company-name-en"
+                    value={settings.company.nameEn}
+                    onChange={(e) => updateSettings("company", "nameEn", e.target.value)}
+                  />
                 </div>
               </div>
-              <div className="flex justify-end">
-                <Button onClick={() => handleSave("site")} disabled={saving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Site Ayarları Kaydet
-                </Button>
+
+              <div>
+                <Label htmlFor="logo">Logo URL</Label>
+                <Input
+                  id="logo"
+                  value={settings.company.logo}
+                  onChange={(e) => updateSettings("company", "logo", e.target.value)}
+                  placeholder="/images/logo.png"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="phone">Telefon</Label>
+                  <Input
+                    id="phone"
+                    value={settings.company.phone}
+                    onChange={(e) => updateSettings("company", "phone", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">E-posta</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={settings.company.email}
+                    onChange={(e) => updateSettings("company", "email", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="address">Adres (Türkçe)</Label>
+                  <Textarea
+                    id="address"
+                    value={settings.company.address}
+                    onChange={(e) => updateSettings("company", "address", e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="address-en">Adres (İngilizce)</Label>
+                  <Textarea
+                    id="address-en"
+                    value={settings.company.addressEn}
+                    onChange={(e) => updateSettings("company", "addressEn", e.target.value)}
+                    rows={3}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -244,156 +262,37 @@ export default function AdminSettings() {
         <TabsContent value="contact">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                İletişim Bilgileri
-              </CardTitle>
-              <CardDescription>İletişim bilgilerini yönetin</CardDescription>
+              <CardTitle>İletişim Ayarları</CardTitle>
+              <CardDescription>İletişim bilgilerini düzenleyin</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      E-posta
-                    </Label>
-                    <Input
-                      type="email"
-                      value={settings.contact.email}
-                      onChange={(e) => updateSetting("contact", "email", e.target.value)}
-                      placeholder="iletisim@shinesticmimarlik.com"
-                    />
-                  </div>
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      Telefon
-                    </Label>
-                    <Input
-                      value={settings.contact.phone}
-                      onChange={(e) => updateSetting("contact", "phone", e.target.value)}
-                      placeholder="0 552 179 87 35"
-                    />
-                  </div>
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      Adres
-                    </Label>
-                    <Textarea
-                      value={settings.contact.address}
-                      onChange={(e) => updateSetting("contact", "address", e.target.value)}
-                      placeholder="İzmir, Türkiye"
-                      rows={3}
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="working-hours">Çalışma Saatleri (Türkçe)</Label>
+                  <Input
+                    id="working-hours"
+                    value={settings.contact.workingHours}
+                    onChange={(e) => updateSettings("contact", "workingHours", e.target.value)}
+                  />
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Çalışma Saatleri - Hafta İçi</Label>
-                    <Input
-                      value={settings.contact.workingHours.weekdays}
-                      onChange={(e) => updateNestedSetting("contact", "workingHours", "weekdays", e.target.value)}
-                      placeholder="Pazartesi - Cuma: 09:00 - 18:00"
-                    />
-                  </div>
-                  <div>
-                    <Label>Çalışma Saatleri - Cumartesi</Label>
-                    <Input
-                      value={settings.contact.workingHours.saturday}
-                      onChange={(e) => updateNestedSetting("contact", "workingHours", "saturday", e.target.value)}
-                      placeholder="Cumartesi: 10:00 - 16:00"
-                    />
-                  </div>
-                  <div>
-                    <Label>Çalışma Saatleri - Pazar</Label>
-                    <Input
-                      value={settings.contact.workingHours.sunday}
-                      onChange={(e) => updateNestedSetting("contact", "workingHours", "sunday", e.target.value)}
-                      placeholder="Pazar: Kapalı"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="working-hours-en">Çalışma Saatleri (İngilizce)</Label>
+                  <Input
+                    id="working-hours-en"
+                    value={settings.contact.workingHoursEn}
+                    onChange={(e) => updateSettings("contact", "workingHoursEn", e.target.value)}
+                  />
                 </div>
               </div>
-              <div className="flex justify-end">
-                <Button onClick={() => handleSave("contact")} disabled={saving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  İletişim Bilgileri Kaydet
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Social Media Settings */}
-        <TabsContent value="social">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sosyal Medya Hesapları</CardTitle>
-              <CardDescription>Sosyal medya hesap linklerini yönetin</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <Instagram className="h-4 w-4" />
-                      Instagram
-                    </Label>
-                    <Input
-                      value={settings.social.instagram}
-                      onChange={(e) => updateSetting("social", "instagram", e.target.value)}
-                      placeholder="https://www.instagram.com/icm.selin"
-                    />
-                  </div>
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <Youtube className="h-4 w-4" />
-                      YouTube
-                    </Label>
-                    <Input
-                      value={settings.social.youtube}
-                      onChange={(e) => updateSetting("social", "youtube", e.target.value)}
-                      placeholder="https://www.youtube.com/@ShinestIcMimarlikk"
-                    />
-                  </div>
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <Linkedin className="h-4 w-4" />
-                      LinkedIn
-                    </Label>
-                    <Input
-                      value={settings.social.linkedin}
-                      onChange={(e) => updateSetting("social", "linkedin", e.target.value)}
-                      placeholder="https://www.linkedin.com/company/shinesticmimarlik"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Facebook</Label>
-                    <Input
-                      value={settings.social.facebook}
-                      onChange={(e) => updateSetting("social", "facebook", e.target.value)}
-                      placeholder="https://www.facebook.com/..."
-                    />
-                  </div>
-                  <div>
-                    <Label>Twitter</Label>
-                    <Input
-                      value={settings.social.twitter}
-                      onChange={(e) => updateSetting("social", "twitter", e.target.value)}
-                      placeholder="https://www.twitter.com/..."
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={() => handleSave("social")} disabled={saving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Sosyal Medya Kaydet
-                </Button>
+              <div>
+                <Label htmlFor="whatsapp">WhatsApp</Label>
+                <Input
+                  id="whatsapp"
+                  value={settings.contact.whatsapp}
+                  onChange={(e) => updateSettings("contact", "whatsapp", e.target.value)}
+                  placeholder="+90 555 123 4567"
+                />
               </div>
             </CardContent>
           </Card>
@@ -407,132 +306,118 @@ export default function AdminSettings() {
               <CardDescription>Arama motoru optimizasyonu ayarları</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Meta Başlık</Label>
+                  <Label htmlFor="seo-title">Site Başlığı (Türkçe)</Label>
                   <Input
-                    value={settings.seo.metaTitle}
-                    onChange={(e) => updateSetting("seo", "metaTitle", e.target.value)}
-                    placeholder="SHINEST İç Mimarlık - Profesyonel İç Mimarlık Hizmetleri"
+                    id="seo-title"
+                    value={settings.seo.title}
+                    onChange={(e) => updateSettings("seo", "title", e.target.value)}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Önerilen uzunluk: 50-60 karakter</p>
                 </div>
                 <div>
-                  <Label>Meta Açıklama</Label>
-                  <Textarea
-                    value={settings.seo.metaDescription}
-                    onChange={(e) => updateSetting("seo", "metaDescription", e.target.value)}
-                    placeholder="Modern ve fonksiyonel tasarımlarla yaşam alanlarınızı dönüştürüyoruz..."
-                    rows={3}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Önerilen uzunluk: 150-160 karakter</p>
-                </div>
-                <div>
-                  <Label>Anahtar Kelimeler</Label>
+                  <Label htmlFor="seo-title-en">Site Başlığı (İngilizce)</Label>
                   <Input
-                    value={settings.seo.keywords}
-                    onChange={(e) => updateSetting("seo", "keywords", e.target.value)}
-                    placeholder="iç mimarlık, tasarım, dekorasyon, mimarlık, İzmir"
+                    id="seo-title-en"
+                    value={settings.seo.titleEn}
+                    onChange={(e) => updateSettings("seo", "titleEn", e.target.value)}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Virgülle ayırarak yazın</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Google Analytics ID</Label>
-                    <Input
-                      value={settings.seo.googleAnalytics}
-                      onChange={(e) => updateSetting("seo", "googleAnalytics", e.target.value)}
-                      placeholder="G-XXXXXXXXXX"
-                    />
-                  </div>
-                  <div>
-                    <Label>Google Tag Manager ID</Label>
-                    <Input
-                      value={settings.seo.googleTagManager}
-                      onChange={(e) => updateSetting("seo", "googleTagManager", e.target.value)}
-                      placeholder="GTM-XXXXXXX"
-                    />
-                  </div>
                 </div>
               </div>
-              <div className="flex justify-end">
-                <Button onClick={() => handleSave("seo")} disabled={saving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  SEO Ayarları Kaydet
-                </Button>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="seo-description">Meta Açıklama (Türkçe)</Label>
+                  <Textarea
+                    id="seo-description"
+                    value={settings.seo.description}
+                    onChange={(e) => updateSettings("seo", "description", e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="seo-description-en">Meta Açıklama (İngilizce)</Label>
+                  <Textarea
+                    id="seo-description-en"
+                    value={settings.seo.descriptionEn}
+                    onChange={(e) => updateSettings("seo", "descriptionEn", e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="seo-keywords">Anahtar Kelimeler (Türkçe)</Label>
+                  <Input
+                    id="seo-keywords"
+                    value={settings.seo.keywords}
+                    onChange={(e) => updateSettings("seo", "keywords", e.target.value)}
+                    placeholder="iç mimarlık, tasarım, dekorasyon"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="seo-keywords-en">Anahtar Kelimeler (İngilizce)</Label>
+                  <Input
+                    id="seo-keywords-en"
+                    value={settings.seo.keywordsEn}
+                    onChange={(e) => updateSettings("seo", "keywordsEn", e.target.value)}
+                    placeholder="interior design, architecture, decoration"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Email Settings */}
-        <TabsContent value="email">
+        {/* Social Media Settings */}
+        <TabsContent value="social">
           <Card>
             <CardHeader>
-              <CardTitle>E-posta Ayarları</CardTitle>
-              <CardDescription>SMTP ve e-posta ayarlarını yapılandırın</CardDescription>
+              <CardTitle>Sosyal Medya</CardTitle>
+              <CardDescription>Sosyal medya hesap bağlantıları</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label>SMTP Host</Label>
-                    <Input
-                      value={settings.email.smtpHost}
-                      onChange={(e) => updateSetting("email", "smtpHost", e.target.value)}
-                      placeholder="smtp.gmail.com"
-                    />
-                  </div>
-                  <div>
-                    <Label>SMTP Port</Label>
-                    <Input
-                      value={settings.email.smtpPort}
-                      onChange={(e) => updateSetting("email", "smtpPort", e.target.value)}
-                      placeholder="587"
-                    />
-                  </div>
-                  <div>
-                    <Label>SMTP Kullanıcı Adı</Label>
-                    <Input
-                      value={settings.email.smtpUser}
-                      onChange={(e) => updateSetting("email", "smtpUser", e.target.value)}
-                      placeholder="your-email@gmail.com"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="instagram">Instagram</Label>
+                  <Input
+                    id="instagram"
+                    value={settings.social.instagram}
+                    onChange={(e) => updateSettings("social", "instagram", e.target.value)}
+                    placeholder="https://instagram.com/shinest"
+                  />
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label>SMTP Şifre</Label>
-                    <Input
-                      type="password"
-                      value={settings.email.smtpPassword}
-                      onChange={(e) => updateSetting("email", "smtpPassword", e.target.value)}
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <div>
-                    <Label>Gönderen E-posta</Label>
-                    <Input
-                      value={settings.email.fromEmail}
-                      onChange={(e) => updateSetting("email", "fromEmail", e.target.value)}
-                      placeholder="noreply@shinesticmimarlik.com"
-                    />
-                  </div>
-                  <div>
-                    <Label>Gönderen Adı</Label>
-                    <Input
-                      value={settings.email.fromName}
-                      onChange={(e) => updateSetting("email", "fromName", e.target.value)}
-                      placeholder="SHINEST İç Mimarlık"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="facebook">Facebook</Label>
+                  <Input
+                    id="facebook"
+                    value={settings.social.facebook}
+                    onChange={(e) => updateSettings("social", "facebook", e.target.value)}
+                    placeholder="https://facebook.com/shinest"
+                  />
                 </div>
               </div>
-              <div className="flex justify-end">
-                <Button onClick={() => handleSave("email")} disabled={saving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  E-posta Ayarları Kaydet
-                </Button>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="linkedin">LinkedIn</Label>
+                  <Input
+                    id="linkedin"
+                    value={settings.social.linkedin}
+                    onChange={(e) => updateSettings("social", "linkedin", e.target.value)}
+                    placeholder="https://linkedin.com/company/shinest"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="youtube">YouTube</Label>
+                  <Input
+                    id="youtube"
+                    value={settings.social.youtube}
+                    onChange={(e) => updateSettings("social", "youtube", e.target.value)}
+                    placeholder="https://youtube.com/shinest"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -543,56 +428,54 @@ export default function AdminSettings() {
           <Card>
             <CardHeader>
               <CardTitle>Güvenlik Ayarları</CardTitle>
-              <CardDescription>Güvenlik ve erişim ayarlarını yönetin</CardDescription>
+              <CardDescription>Sistem güvenlik ayarları</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>İki Faktörlü Kimlik Doğrulama</Label>
-                    <p className="text-sm text-gray-500">Hesap güvenliği için ek koruma katmanı</p>
-                  </div>
-                  <Switch
-                    checked={settings.security.enableTwoFactor}
-                    onCheckedChange={(checked) => updateSetting("security", "enableTwoFactor", checked)}
-                  />
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>İki Faktörlü Kimlik Doğrulama</Label>
+                  <p className="text-sm text-gray-500">Hesap güvenliği için ek doğrulama katmanı</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>CAPTCHA Koruması</Label>
-                    <p className="text-sm text-gray-500">Otomatik saldırılara karşı koruma</p>
-                  </div>
-                  <Switch
-                    checked={settings.security.enableCaptcha}
-                    onCheckedChange={(checked) => updateSetting("security", "enableCaptcha", checked)}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Oturum Zaman Aşımı (dakika)</Label>
-                    <Input
-                      type="number"
-                      value={settings.security.sessionTimeout}
-                      onChange={(e) => updateSetting("security", "sessionTimeout", Number.parseInt(e.target.value))}
-                      placeholder="60"
-                    />
-                  </div>
-                  <div>
-                    <Label>Maksimum Giriş Denemesi</Label>
-                    <Input
-                      type="number"
-                      value={settings.security.maxLoginAttempts}
-                      onChange={(e) => updateSetting("security", "maxLoginAttempts", Number.parseInt(e.target.value))}
-                      placeholder="5"
-                    />
-                  </div>
-                </div>
+                <Switch
+                  checked={settings.security.twoFactorAuth}
+                  onCheckedChange={(checked) => updateSettings("security", "twoFactorAuth", checked)}
+                />
               </div>
-              <div className="flex justify-end">
-                <Button onClick={() => handleSave("security")} disabled={saving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Güvenlik Ayarları Kaydet
-                </Button>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>CAPTCHA Koruması</Label>
+                  <p className="text-sm text-gray-500">Bot saldırılarına karşı koruma</p>
+                </div>
+                <Switch
+                  checked={settings.security.captchaEnabled}
+                  onCheckedChange={(checked) => updateSettings("security", "captchaEnabled", checked)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="session-timeout">Oturum Zaman Aşımı (dakika)</Label>
+                  <Input
+                    id="session-timeout"
+                    type="number"
+                    value={settings.security.sessionTimeout}
+                    onChange={(e) => updateSettings("security", "sessionTimeout", Number.parseInt(e.target.value))}
+                    min="5"
+                    max="120"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="max-login-attempts">Maksimum Giriş Denemesi</Label>
+                  <Input
+                    id="max-login-attempts"
+                    type="number"
+                    value={settings.security.maxLoginAttempts}
+                    onChange={(e) => updateSettings("security", "maxLoginAttempts", Number.parseInt(e.target.value))}
+                    min="3"
+                    max="10"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

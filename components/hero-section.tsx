@@ -54,7 +54,7 @@ export function HeroSection() {
               fontFamily: "Didot, serif",
             }}
           >
-            {heroData.title || "SHINEST"}
+            SHINEST
           </motion.div>
         </div>
 

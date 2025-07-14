@@ -1,79 +1,56 @@
 import type { NextRequest } from "next/server"
+import { NextResponse } from "next/server"
 import { githubAPI } from "@/lib/github-api"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(request: NextRequest) {
-  const encoder = new TextEncoder()
+  try {
+    const events = []
 
-  const stream = new ReadableStream({
-    start(controller) {
-      // Send initial connection message
-      const data = `data: ${JSON.stringify({
-        type: "connected",
-        message: "GitHub events stream connected",
+    if (githubAPI.isConfigured()) {
+      try {
+        const commits = await githubAPI.getCommits(10)
+        events.push(
+          ...commits.map((commit) => ({
+            id: commit.sha,
+            type: "commit",
+            action: "committed",
+            title: commit.commit.message.split("\n")[0],
+            description: `by ${commit.commit.author.name}`,
+            timestamp: commit.commit.author.date,
+            url: commit.html_url,
+          })),
+        )
+      } catch (error) {
+        console.error("Error fetching GitHub commits:", error)
+        // Add fallback event
+        events.push({
+          id: "fallback-" + Date.now(),
+          type: "system",
+          action: "update",
+          title: "System Status",
+          description: "Running in local mode",
+          timestamp: new Date().toISOString(),
+          url: "#",
+        })
+      }
+    } else {
+      // Add default events when GitHub is not configured
+      events.push({
+        id: "default-" + Date.now(),
+        type: "system",
+        action: "info",
+        title: "Local Mode",
+        description: "GitHub integration not configured",
         timestamp: new Date().toISOString(),
-      })}\n\n`
-      controller.enqueue(encoder.encode(data))
-
-      // Send heartbeat every 30 seconds
-      const heartbeatInterval = setInterval(() => {
-        try {
-          const heartbeat = `data: ${JSON.stringify({
-            type: "heartbeat",
-            timestamp: new Date().toISOString(),
-          })}\n\n`
-          controller.enqueue(encoder.encode(heartbeat))
-        } catch (error) {
-          console.error("Heartbeat error:", error)
-          clearInterval(heartbeatInterval)
-          controller.close()
-        }
-      }, 30000)
-
-      // Check for GitHub updates every 60 seconds
-      const updateInterval = setInterval(async () => {
-        try {
-          if (githubAPI.isConfigured()) {
-            const latestCommit = await githubAPI.getLatestCommit()
-            const updateData = `data: ${JSON.stringify({
-              type: "update",
-              commit: {
-                sha: latestCommit.sha.substring(0, 7),
-                message: latestCommit.commit.message,
-                author: latestCommit.commit.author.name,
-                date: latestCommit.commit.author.date,
-              },
-              timestamp: new Date().toISOString(),
-            })}\n\n`
-            controller.enqueue(encoder.encode(updateData))
-          }
-        } catch (error) {
-          console.error("Update check error:", error)
-          const errorData = `data: ${JSON.stringify({
-            type: "error",
-            message: error instanceof Error ? error.message : "Unknown error",
-            timestamp: new Date().toISOString(),
-          })}\n\n`
-          controller.enqueue(encoder.encode(errorData))
-        }
-      }, 60000)
-
-      // Cleanup on close
-      request.signal.addEventListener("abort", () => {
-        clearInterval(heartbeatInterval)
-        clearInterval(updateInterval)
-        controller.close()
+        url: "#",
       })
-    },
-  })
+    }
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET",
-      "Access-Control-Allow-Headers": "Cache-Control",
-    },
-  })
+    return NextResponse.json(events)
+  } catch (error) {
+    console.error("Error in GitHub events endpoint:", error)
+    return NextResponse.json([])
+  }
 }

@@ -1,10 +1,24 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { GitHubProject } from "@/lib/github-api"
+
+interface Project {
+  id: string
+  title: { tr: string; en: string }
+  description: { tr: string; en: string }
+  category: string
+  location: string
+  year: string
+  status: "published" | "draft" | "archived"
+  featured: boolean
+  images: string[]
+  slug: string
+  createdAt: string
+  updatedAt: string
+}
 
 export function useProjects() {
-  const [projects, setProjects] = useState<GitHubProject[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -12,21 +26,29 @@ export function useProjects() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("/api/projects")
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+
+      const response = await fetch("/api/projects", {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data)
+      } else {
+        throw new Error("Failed to fetch projects")
       }
-      const data = await response.json()
-      setProjects(data)
     } catch (err) {
-      console.error("Failed to fetch projects:", err)
-      setError(err instanceof Error ? err.message : "Failed to fetch projects")
+      console.error("Error fetching projects:", err)
+      setError(err instanceof Error ? err.message : "Unknown error")
     } finally {
       setLoading(false)
     }
   }
 
-  const createProject = async (projectData: Omit<GitHubProject, "id" | "createdAt" | "updatedAt">) => {
+  const createProject = async (projectData: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
     try {
       const response = await fetch("/api/projects", {
         method: "POST",
@@ -36,20 +58,25 @@ export function useProjects() {
         body: JSON.stringify(projectData),
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          await fetchProjects() // Refresh the list
+          return { success: true, project: result.project, message: result.message }
+        }
       }
 
-      const newProject = await response.json()
-      setProjects((prev) => [...prev, newProject])
-      return newProject
+      throw new Error("Failed to create project")
     } catch (err) {
-      console.error("Failed to create project:", err)
-      throw err
+      console.error("Error creating project:", err)
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }
     }
   }
 
-  const updateProject = async (id: string, updates: Partial<GitHubProject>) => {
+  const updateProject = async (id: string, updates: Partial<Project>) => {
     try {
       const response = await fetch(`/api/projects/${id}`, {
         method: "PUT",
@@ -59,16 +86,21 @@ export function useProjects() {
         body: JSON.stringify(updates),
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          await fetchProjects() // Refresh the list
+          return { success: true, project: result.project, message: result.message }
+        }
       }
 
-      const updatedProject = await response.json()
-      setProjects((prev) => prev.map((p) => (p.id === id ? updatedProject : p)))
-      return updatedProject
+      throw new Error("Failed to update project")
     } catch (err) {
-      console.error("Failed to update project:", err)
-      throw err
+      console.error("Error updating project:", err)
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }
     }
   }
 
@@ -78,14 +110,21 @@ export function useProjects() {
         method: "DELETE",
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          await fetchProjects() // Refresh the list
+          return { success: true, message: result.message }
+        }
       }
 
-      setProjects((prev) => prev.filter((p) => p.id !== id))
+      throw new Error("Failed to delete project")
     } catch (err) {
-      console.error("Failed to delete project:", err)
-      throw err
+      console.error("Error deleting project:", err)
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }
     }
   }
 

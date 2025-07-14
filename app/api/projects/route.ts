@@ -1,49 +1,48 @@
-import { NextResponse } from "next/server"
-import { githubAPI } from "@/lib/github-api"
+import { NextResponse, type NextRequest } from "next/server"
+import { revalidatePath } from "next/cache"
+import { dataManager } from "@/lib/data-manager"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const slug = searchParams.get("slug")
+
   try {
-    const projects = await githubAPI.getProjects()
-    return NextResponse.json(projects)
+    const headers = {
+      "Cache-Control": "no-store, max-age=0",
+    }
+    const projects = await dataManager.getProjects()
+
+    if (slug) {
+      const project = projects.find((p: any) => p.slug === slug)
+      if (project) {
+        return NextResponse.json({ project }, { headers })
+      } else {
+        return NextResponse.json({ error: "Project not found" }, { status: 404, headers })
+      }
+    }
+
+    return NextResponse.json({ projects }, { headers })
   } catch (error) {
-    console.error("Projects fetch failed:", error)
-
-    // Return default projects on error
-    const defaultProjects = [
-      {
-        id: "1",
-        title: "Modern Yaşam Alanı",
-        description: "Minimalist tasarım anlayışıyla modern yaşam alanı",
-        category: "Residential",
-        images: ["/images/living-room-design-1.png"],
-        featured: true,
-        year: "2024",
-        location: "İstanbul",
-        area: "120m²",
-        status: "completed",
-        tags: ["modern", "minimalist"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-
-    return NextResponse.json(defaultProjects)
+    console.error("Error fetching projects:", error)
+    return NextResponse.json({ error: "Failed to fetch projects" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const projectData = await request.json()
-    const newProject = await githubAPI.createProject(projectData)
-    return NextResponse.json(newProject, { status: 201 })
+    const body = await request.json()
+
+    // Create project using the data manager
+    const newProject = await dataManager.createProject(body)
+
+    // Revalidate paths to show the new project immediately
+    revalidatePath("/")
+    revalidatePath("/projects")
+    revalidatePath("/api/projects")
+
+    return NextResponse.json({ success: true, project: newProject }, { status: 201 })
   } catch (error) {
-    console.error("Project creation failed:", error)
-    return NextResponse.json(
-      {
-        error: "Proje oluşturulamadı",
-        message: error instanceof Error ? error.message : "Bilinmeyen hata",
-      },
-      { status: 500 },
-    )
+    console.error("Error creating project:", error)
+    return NextResponse.json({ success: false, error: "Failed to create project" }, { status: 500 })
   }
 }

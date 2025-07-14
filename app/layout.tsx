@@ -1,44 +1,38 @@
 import type React from "react"
-import { Inter } from "next/font/google"
+import type { Metadata } from "next"
 import "./globals.css"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { AuthProvider } from "@/contexts/auth-context"
+import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/contexts/language-context"
 import { QuoteFormProvider } from "@/contexts/quote-form-context"
-import { QuoteFormModal } from "@/components/quote-form-modal"
+import { Inter } from "next/font/google"
 
 const inter = Inter({ subsets: ["latin"] })
 
+export const metadata: Metadata = {
+  title: "SHINEST İç Mimarlık",
+  description: "Yenilikçi ve fonksiyonel iç mekan çözümleri",
+  generator: "v0.dev",
+}
+
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="tr">
-      <head>
-        <title>SHINEST - İç Mimarlık & Tasarım</title>
-        <meta
-          name="description"
-          content="Hayalinizdeki yaşam alanlarını gerçeğe dönüştürüyoruz. Modern tasarım anlayışı ile estetik ve fonksiyonelliği bir araya getiriyoruz."
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </head>
       <body className={inter.className}>
-        <LanguageProvider>
-          <QuoteFormProvider>
-            <Header />
-            <main>{children}</main>
-            <Footer />
-            <QuoteFormModal />
-          </QuoteFormProvider>
-        </LanguageProvider>
+        <AuthProvider>
+          <LanguageProvider>
+            <QuoteFormProvider>
+              <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+                {children}
+              </ThemeProvider>
+            </QuoteFormProvider>
+          </LanguageProvider>
+        </AuthProvider>
       </body>
     </html>
   )
 }
-
-export const metadata = {
-      generator: 'v0.dev'
-    };

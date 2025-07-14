@@ -1,124 +1,98 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { useInView } from "framer-motion"
-import { useRef } from "react"
-import Image from "next/image"
+import type React from "react"
 
-export function AboutInfoSection() {
+import { motion, useInView } from "framer-motion"
+import { useRef, useState } from "react"
+import { useLanguage } from "@/contexts/language-context"
+
+export default function AboutInfoSection() {
+  const { t } = useLanguage()
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
+  const [email, setEmail] = useState("")
+  const [isSubmitted, setIsSubmitted] = useState(false)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (email.trim()) {
+      // Burada e-posta kaydetme işlemi yapılabilir
+      setIsSubmitted(true)
+      setEmail("")
+
+      // 3 saniye sonra mesajı gizle
+      setTimeout(() => {
+        setIsSubmitted(false)
+      }, 3000)
+    }
+  }
 
   return (
-    <section ref={ref} className="py-20 lg:py-32 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* Left side - Text */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-            transition={{ duration: 0.8 }}
-            className="space-y-6"
+    <section ref={ref} className="py-20 bg-white">
+      <div className="container mx-auto px-6 max-w-6xl">
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 50 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+          transition={{ duration: 0.8 }}
+        >
+          {/* Ana Açıklama Metni */}
+          <motion.p
+            className="font-sans text-lg md:text-xl text-[#2a2a2a] leading-relaxed max-w-4xl mx-auto mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <motion.h2
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="font-display text-4xl lg:text-5xl font-bold text-[#15415b] leading-tight"
-            >
-              SHINEST İç Mimarlık
-            </motion.h2>
+            Yeni projeler, tasarım trendleri ve özel içerikler için bültenimize katılın
+          </motion.p>
 
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="font-sans text-lg text-gray-600 leading-relaxed"
-            >
-              SHINEST olarak, yaşam alanlarınızı dönüştüren, size özel tasarım çözümleri sunuyoruz. Her proje,
-              müşterilerimizin hayallerini gerçeğe dönüştüren bir yolculuktur.
-            </motion.p>
-
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="font-sans text-lg text-gray-600 leading-relaxed"
-            >
-              Deneyimli ekibimiz, modern tasarım anlayışını fonksiyonellikle birleştirerek, yaşam alanlarınıza ışık
-              tutar.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="pt-4"
-            >
-              <button className="bg-[#15415b] text-white px-8 py-3 rounded-full hover:bg-[#0f2d3f] transition-colors duration-300 font-sans font-medium">
-                Daha Fazla Bilgi
-              </button>
-            </motion.div>
-          </motion.div>
-
-          {/* Right side - Image */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative"
+          {/* İlham Bülteni Başlığı */}
+          <motion.h3
+            className="font-display text-3xl md:text-4xl text-shinest-blue mb-4"
+            initial={{ opacity: 0, y: 30 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
           >
-            <div className="relative h-[500px] lg:h-[600px] rounded-2xl overflow-hidden shadow-2xl">
-              <Image
-                src="/images/about-section-reference.png"
-                alt="SHINEST Hakkımızda"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-            </div>
+            İlham Bülteni
+          </motion.h3>
 
-            {/* Decorative elements */}
-            <motion.div
-              className="absolute -top-4 -right-4 w-8 h-8 bg-[#15415b] rounded-full opacity-80"
-              animate={
-                isInView
-                  ? {
-                      scale: [1, 1.2, 1],
-                      opacity: [0.8, 1, 0.8],
-                    }
-                  : { scale: 1, opacity: 0.8 }
-              }
-              transition={{
-                duration: 3,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeInOut",
-              }}
-            />
-
-            <motion.div
-              className="absolute -bottom-6 -left-6 w-6 h-6 bg-gray-400 rounded-full opacity-60"
-              animate={
-                isInView
-                  ? {
-                      scale: [1, 1.3, 1],
-                      opacity: [0.6, 0.9, 0.6],
-                    }
-                  : { scale: 1, opacity: 0.6 }
-              }
-              transition={{
-                duration: 4,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeInOut",
-                delay: 1,
-              }}
-            />
+          {/* E-posta Formu */}
+          <motion.div
+            className="max-w-md mx-auto"
+            initial={{ opacity: 0, y: 30 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+          >
+            {isSubmitted ? (
+              <motion.div
+                className="bg-green-50 border border-green-200 rounded-full px-6 py-3 text-green-700"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                ✓ Başarıyla kaydolundu! Teşekkür ederiz.
+              </motion.div>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="E-posta adresiniz"
+                  required
+                  className="flex-1 px-5 py-3 border-2 border-shinest-blue/20 rounded-full text-shinest-blue placeholder-shinest-blue/60 focus:outline-none focus:border-shinest-blue transition-colors duration-300 bg-white"
+                />
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-shinest-blue text-white rounded-full hover:bg-shinest-blue/90 transition-colors duration-300 flex items-center justify-center gap-2 font-medium whitespace-nowrap"
+                >
+                  <span>Katıl</span>
+                </button>
+              </form>
+            )}
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     </section>
   )
 }
-
-export default AboutInfoSection

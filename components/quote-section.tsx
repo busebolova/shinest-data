@@ -1,19 +1,78 @@
 "use client"
 
+import type React from "react"
 import { motion } from "framer-motion"
 import { useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { useQuoteForm } from "@/contexts/quote-form-context"
-import { ArrowRight, Phone, Mail } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
+import { useInView } from "react-intersection-observer" // Import useInView from react-intersection-observer
+import { useState } from "react" // Import useState from react
 
 export function QuoteSection() {
   const ref = useRef(null)
+  const { isInView } = useInView(ref, { once: true, margin: "-100px" }) // Declare useInView
   const { openForm } = useQuoteForm()
+  const { t } = useLanguage()
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    service: "",
+    message: "",
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      // WhatsApp integration
+      const whatsappMessage = `
+Yeni Teklif Talebi:
+İsim: ${formData.name}
+Email: ${formData.email}
+Telefon: ${formData.phone}
+Hizmet: ${formData.service}
+Mesaj: ${formData.message}
+      `.trim()
+
+      const whatsappUrl = `https://wa.me/905321234567?text=${encodeURIComponent(whatsappMessage)}`
+      window.open(whatsappUrl, "_blank")
+
+      setSubmitStatus("success")
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        service: "",
+        message: "",
+      })
+    } catch (error) {
+      setSubmitStatus("error")
+    } finally {
+      setIsSubmitting(false)
+      setTimeout(() => setSubmitStatus("idle"), 5000)
+    }
+  }
 
   return (
     <section
       ref={ref}
-      className="py-20 bg-gradient-to-br from-[#15415b] to-[#1a4d6b] text-white relative overflow-hidden"
+      className="py-20 bg-gradient-to-br from-[#c4975a] to-[#b8895a] text-white relative overflow-hidden"
     >
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
@@ -29,53 +88,37 @@ export function QuoteSection() {
       <div className="container mx-auto px-6 text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
           transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
           className="max-w-4xl mx-auto"
         >
           <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
             Hayalinizdeki Mekanı Birlikte Tasarlayalım
           </h2>
 
-          <p className="font-sans text-xl md:text-2xl mb-8 opacity-90 leading-relaxed">
+          <p className="text-xl md:text-2xl mb-8 opacity-90 leading-relaxed">
             Size özel tasarım çözümleri için ücretsiz keşif görüşmesi yapıyoruz
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
             <Button
               onClick={openForm}
               size="lg"
-              className="bg-white text-[#15415b] hover:bg-gray-100 px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-sans flex items-center space-x-2"
+              className="bg-white text-[#c4975a] hover:bg-gray-100 px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              <span>Ücretsiz Teklif Al</span>
-              <ArrowRight className="w-5 h-5" />
+              Ücretsiz Teklif Al
             </Button>
-
-            <div className="flex items-center space-x-6">
-              <a
-                href="tel:+905551234567"
-                className="flex items-center space-x-2 text-white/80 hover:text-white transition-colors duration-200"
-              >
-                <Phone className="w-5 h-5" />
-                <span className="font-sans">+90 555 123 45 67</span>
-              </a>
-              <a
-                href="mailto:info@shinest.com.tr"
-                className="flex items-center space-x-2 text-white/80 hover:text-white transition-colors duration-200"
-              >
-                <Mail className="w-5 h-5" />
-                <span className="font-sans">info@shinest.com.tr</span>
-              </a>
-            </div>
-          </div>
+          </motion.div>
 
           <motion.p
             initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+            animate={isInView ? { opacity: 1 } : { opacity: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            viewport={{ once: true }}
-            className="mt-6 font-sans text-sm opacity-80"
+            className="mt-6 text-sm opacity-80"
           >
             24 saat içinde size dönüş yapıyoruz
           </motion.p>
