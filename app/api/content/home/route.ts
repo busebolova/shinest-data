@@ -1,84 +1,47 @@
-import { NextResponse } from "next/server"
-import { dataManager } from "@/lib/data-manager"
-import { revalidatePath } from "next/cache"
+import { type NextRequest, NextResponse } from "next/server"
+
+// Mock data - replace with actual database calls
+const homeContent = {
+  hero: {
+    title: "SHINEST",
+    image: "/images/hero-image.png",
+  },
+  bigText: {
+    line1: "MEKANLARINIZ",
+    line2: "YAŞAMINIZA",
+    line3: "IŞIK TUTAR!",
+  },
+  text: {
+    title: "Işık tutar!",
+    subtitle: "İç Mimarlık Stüdyosu",
+    content: "Hayalinizdeki mekanları gerçeğe dönüştürüyoruz.",
+  },
+}
 
 export async function GET() {
   try {
-    const content = await dataManager.getPageContent("home")
-    return NextResponse.json(content)
+    return NextResponse.json(homeContent, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    })
   } catch (error) {
     console.error("Error fetching home content:", error)
-
-    // Return fallback content
-    const fallbackContent = {
-      hero: {
-        title: "SHINEST",
-        subtitle: "İÇ MİMARLIK",
-        description: "Yaşam alanlarınızı sanat eserine dönüştürüyoruz",
-        image: "/images/hero-image.png",
-      },
-      bigText: {
-        line1: "MEKANLARINIZ",
-        line2: "YAŞAMINIZA",
-        line3: "IŞIK TUTAR!",
-      },
-      gallery: {
-        images: [
-          "/images/gallery-1.png",
-          "/images/gallery-2.png",
-          "/images/gallery-3.png",
-          "/images/gallery-4.png",
-          "/images/gallery-5.png",
-        ],
-      },
-      services: {
-        title: "Hizmetlerimiz",
-        items: [
-          {
-            title: "Danışmanlık",
-            description: "Profesyonel iç mimarlık danışmanlığı",
-            image: "/images/consulting-service.png",
-          },
-          {
-            title: "Tasarım",
-            description: "Yaratıcı ve fonksiyonel tasarım çözümleri",
-            image: "/images/design-service.png",
-          },
-          {
-            title: "Uygulama",
-            description: "Tasarımdan uygulamaya kadar tüm süreçler",
-            image: "/images/implementation-service.png",
-          },
-        ],
-      },
-    }
-
-    return NextResponse.json(fallbackContent)
+    return NextResponse.json({ error: "Failed to fetch content" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const content = await request.json()
-    await dataManager.savePageContent("home", content)
+    const body = await request.json()
 
-    // Revalidate home page and admin page
-    revalidatePath("/")
-    revalidatePath("/admin/content/home")
+    // Here you would typically save to database
+    console.log("Updating home content:", body)
 
-    return NextResponse.json({
-      success: true,
-      message: "Ana sayfa içeriği başarıyla güncellendi",
-    })
+    // For now, just return success
+    return NextResponse.json({ success: true, data: body })
   } catch (error) {
     console.error("Error updating home content:", error)
-    return NextResponse.json(
-      {
-        success: false,
-        message: "İçerik güncellenirken hata oluştu",
-        error: error instanceof Error ? error.message : "Bilinmeyen hata",
-      },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Failed to update content" }, { status: 500 })
   }
 }

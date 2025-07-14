@@ -1,87 +1,31 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { MapPin, Phone, Mail, Clock, Send } from "lucide-react"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
+import { useState, useEffect } from "react"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
+import { MapPin, Phone, Mail } from "lucide-react"
 
 export default function ContactPage() {
   const [isLoaded, setIsLoaded] = useState(false)
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    subject: "",
-    message: "",
-  })
   const shinestLetters = "SHINEST".split("")
 
   useEffect(() => {
-    // Sayfa yüklendiğinde scroll'u en üste al
     window.scrollTo(0, 0)
-
-    // State'leri reset et
     setIsLoaded(false)
-
-    // Kısa bir delay sonra animasyonları başlat
     const initialTimer = setTimeout(() => {
       setIsLoaded(true)
     }, 100)
-
     return () => clearTimeout(initialTimer)
   }, [])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Form submitted:", formData)
-    // Form submission logic here
-  }
-
-  const contactInfo = [
-    {
-      icon: MapPin,
-      title: "Adres",
-      content: "Beşiktaş, İstanbul, Türkiye",
-    },
-    {
-      icon: Phone,
-      title: "Telefon",
-      content: "+90 (212) 555 0123",
-    },
-    {
-      icon: Mail,
-      title: "E-posta",
-      content: "info@shinest.com.tr",
-    },
-    {
-      icon: Clock,
-      title: "Çalışma Saatleri",
-      content: "Pazartesi - Cuma: 09:00 - 18:00",
-    },
-  ]
-
   return (
-    <div className="min-h-screen bg-[#f5f3f0]">
+    <main className="min-h-screen bg-[#f5f3f0]">
       <Header />
 
       <section className="pt-32 sm:pt-36 md:pt-40 pb-20">
-        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
-          {/* Header - Mobile Responsive */}
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
+          {/* Header - Blog sayfası ile aynı animasyon */}
           <motion.div
             className="text-center mb-12 md:mb-16"
             initial={{ opacity: 0, y: 50 }}
@@ -110,9 +54,9 @@ export default function ContactPage() {
               ))}
             </div>
 
-            {/* İletişim Başlığı - Kelime olarak animasyon */}
+            {/* İletişim başlığı - Kelime olarak animasyon */}
             <motion.div
-              className="text-[#c4975a] text-[8vw] sm:text-[6vw] md:text-[5vw] lg:text-[4vw] xl:text-[3vw] flex justify-center font-display"
+              className="text-[#c4975a] text-[8vw] sm:text-[6vw] md:text-[5vw] lg:text-[4vw] xl:text-[3vw] flex justify-center"
               initial={{ opacity: 0, y: -30, scale: 0.8 }}
               animate={isLoaded ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -30, scale: 0.8 }}
               transition={{
@@ -128,163 +72,60 @@ export default function ContactPage() {
             </motion.div>
           </motion.div>
 
-          {/* Contact Content */}
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Contact Form */}
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={isLoaded ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-              transition={{ duration: 0.8, delay: 1.8 }}
-            >
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-display font-bold text-shinest-blue mb-6">Bize Ulaşın</h3>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                          Ad Soyad
-                        </label>
-                        <Input
-                          id="name"
-                          name="name"
-                          type="text"
-                          required
-                          value={formData.name}
-                          onChange={handleInputChange}
-                          className="font-sans"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                          Telefon
-                        </label>
-                        <Input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          className="font-sans"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                        E-posta
-                      </label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="font-sans"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                        Konu
-                      </label>
-                      <Input
-                        id="subject"
-                        name="subject"
-                        type="text"
-                        required
-                        value={formData.subject}
-                        onChange={handleInputChange}
-                        className="font-sans"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                        Mesaj
-                      </label>
-                      <Textarea
-                        id="message"
-                        name="message"
-                        rows={5}
-                        required
-                        value={formData.message}
-                        onChange={handleInputChange}
-                        className="font-sans"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className="w-full bg-shinest-blue hover:bg-shinest-blue/90 font-sans"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      Mesaj Gönder
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Contact Info */}
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={isLoaded ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-              transition={{ duration: 0.8, delay: 2.0 }}
-              className="space-y-6"
-            >
-              <div className="mb-8">
-                <h3 className="text-2xl font-display font-bold text-shinest-blue mb-4">İletişim Bilgileri</h3>
-                <p className="font-sans text-lg text-[#2a2a2a] opacity-80 leading-relaxed">
-                  Projeleriniz hakkında konuşmak ve size nasıl yardımcı olabileceğimizi öğrenmek için bizimle iletişime
-                  geçin.
-                </p>
-              </div>
-
-              {contactInfo.map((info, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 2.2 + index * 0.1, duration: 0.6 }}
-                >
-                  <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0">
-                          <info.icon className="w-6 h-6 text-[#c4975a]" />
-                        </div>
-                        <div>
-                          <h4 className="font-display font-bold text-shinest-blue mb-1">{info.title}</h4>
-                          <p className="font-sans text-[#2a2a2a] opacity-80">{info.content}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-
-          {/* CTA Section */}
+          {/* İletişim Bilgileri - Mobile Responsive */}
           <motion.div
-            className="mt-20 py-20 px-8 bg-shinest-blue rounded-3xl text-center"
-            initial={{ opacity: 0, y: 50 }}
-            animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-            transition={{ duration: 0.8, delay: 2.8 }}
+            className="space-y-12 text-center"
+            initial={{ opacity: 0, y: 30 }}
+            animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 1.8 }}
           >
-            <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-6">
-              Hayalinizdeki Projeyi Konuşalım
-            </h2>
-            <p className="text-xl font-sans text-white opacity-90 mb-8 leading-relaxed max-w-2xl mx-auto">
-              Her proje bir hikaye anlatır. Sizin hikayanizi birlikte yazalım.
-            </p>
-            <Button size="lg" className="bg-[#c4975a] hover:bg-[#b8894d] text-white font-sans px-8 py-4 text-lg">
-              Ücretsiz Konsültasyon
-            </Button>
+            {[
+              {
+                icon: Mail,
+                title: "E-posta",
+                content: "iletisim@shinesticmimarlik.com",
+                link: "mailto:iletisim@shinesticmimarlik.com",
+              },
+              {
+                icon: Phone,
+                title: "Telefon",
+                content: "0 552 179 87 35",
+                link: "tel:+905521798735",
+              },
+              {
+                icon: MapPin,
+                title: "Şehir",
+                content: "İzmir",
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={item.title}
+                className="py-8 border-b border-shinest-blue/20 last:border-b-0"
+                initial={{ opacity: 0, y: 20 }}
+                animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ duration: 0.6, delay: 2.0 + index * 0.2 }}
+              >
+                <div className="flex flex-col items-center space-y-4">
+                  <item.icon className="w-8 h-8 text-shinest-blue" />
+                  <h3 className="font-display text-xl text-shinest-blue">{item.title}</h3>
+                  {item.link ? (
+                    <a
+                      href={item.link}
+                      className="font-sans text-base text-[#2a2a2a] hover:text-shinest-blue transition-colors duration-300 whitespace-pre-line"
+                    >
+                      {item.content}
+                    </a>
+                  ) : (
+                    <p className="font-sans text-base text-[#2a2a2a] whitespace-pre-line">{item.content}</p>
+                  )}
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>
 
       <Footer />
-    </div>
+    </main>
   )
 }

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
-import { Save, Upload, Eye, Plus, Trash2 } from "lucide-react"
+import { Save, Upload, Eye } from "lucide-react"
 
 interface HomeContent {
   hero: {
@@ -35,92 +35,70 @@ interface HomeContent {
   }
 }
 
-const defaultContent: HomeContent = {
-  hero: {
-    title: "SHINEST",
-    subtitle: "İç Mimarlık",
-    description: "Yenilikçi ve fonksiyonel iç mekan çözümleri",
-    image: "/images/hero-image.png",
-  },
-  bigText: {
-    line1: "MEKANLARINIZ",
-    line2: "YAŞAMINIZA",
-    line3: "IŞIK TUTAR!",
-  },
-  gallery: {
-    images: [
-      "/images/gallery-1.png",
-      "/images/gallery-2.png",
-      "/images/gallery-3.png",
-      "/images/gallery-4.png",
-      "/images/gallery-5.png",
-    ],
-  },
-  services: {
-    title: "Hizmetlerimiz",
-    items: [
-      {
-        title: "Danışmanlık",
-        description: "Profesyonel iç mimarlık danışmanlığı",
-        image: "/images/consulting-service.png",
-      },
-      {
-        title: "Tasarım",
-        description: "Yaratıcı ve fonksiyonel tasarım çözümleri",
-        image: "/images/design-service.png",
-      },
-      {
-        title: "Uygulama",
-        description: "Kusursuz uygulama ve proje yönetimi",
-        image: "/images/implementation-service.png",
-      },
-    ],
-  },
-}
-
 export default function HomeContentPage() {
   const { toast } = useToast()
-  const [content, setContent] = useState<HomeContent>(defaultContent)
+  const [content, setContent] = useState<HomeContent>({
+    hero: {
+      title: "SHINEST",
+      subtitle: "İç Mimarlık",
+      description: "Yenilikçi ve fonksiyonel iç mekan çözümleri",
+      image: "/images/hero-image.png",
+    },
+    bigText: {
+      line1: "MEKANLARINIZ",
+      line2: "YAŞAMINIZA",
+      line3: "IŞIK TUTAR!",
+    },
+    gallery: {
+      images: [
+        "/images/gallery-1.png",
+        "/images/gallery-2.png",
+        "/images/gallery-3.png",
+        "/images/gallery-4.png",
+        "/images/gallery-5.png",
+      ],
+    },
+    services: {
+      title: "Hizmetlerimiz",
+      items: [
+        {
+          title: "Danışmanlık",
+          description: "Profesyonel iç mimarlık danışmanlığı",
+          image: "/images/consulting-service.png",
+        },
+        {
+          title: "Tasarım",
+          description: "Yaratıcı ve fonksiyonel tasarım çözümleri",
+          image: "/images/design-service.png",
+        },
+        {
+          title: "Uygulama",
+          description: "Kusursuz uygulama ve proje yönetimi",
+          image: "/images/implementation-service.png",
+        },
+      ],
+    },
+  })
   const [loading, setLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchContent()
   }, [])
 
   const fetchContent = async () => {
-    setLoading(true)
     try {
       const response = await fetch("/api/content/home")
       if (response.ok) {
         const data = await response.json()
-        // Merge with default content to ensure all properties exist
-        setContent({
-          hero: { ...defaultContent.hero, ...data.hero },
-          bigText: { ...defaultContent.bigText, ...data.bigText },
-          gallery: {
-            images: data.gallery?.images || defaultContent.gallery.images,
-          },
-          services: {
-            title: data.services?.title || defaultContent.services.title,
-            items: data.services?.items || defaultContent.services.items,
-          },
-        })
+        setContent(data)
       }
     } catch (error) {
       console.error("Error fetching content:", error)
-      toast({
-        title: "Hata",
-        description: "İçerik yüklenemedi",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
     }
   }
 
   const handleSave = async () => {
-    setSaving(true)
+    setLoading(true)
     try {
       const response = await fetch("/api/content/home", {
         method: "POST",
@@ -145,7 +123,7 @@ export default function HomeContentPage() {
         variant: "destructive",
       })
     } finally {
-      setSaving(false)
+      setLoading(false)
     }
   }
 
@@ -169,85 +147,6 @@ export default function HomeContentPage() {
     }))
   }
 
-  const addGalleryImage = () => {
-    setContent((prev) => ({
-      ...prev,
-      gallery: {
-        images: [...(prev.gallery?.images || []), "/placeholder.svg?height=300&width=400"],
-      },
-    }))
-  }
-
-  const removeGalleryImage = (index: number) => {
-    setContent((prev) => ({
-      ...prev,
-      gallery: {
-        images: (prev.gallery?.images || []).filter((_, i) => i !== index),
-      },
-    }))
-  }
-
-  const updateGalleryImage = (index: number, value: string) => {
-    setContent((prev) => ({
-      ...prev,
-      gallery: {
-        images: (prev.gallery?.images || []).map((img, i) => (i === index ? value : img)),
-      },
-    }))
-  }
-
-  const addService = () => {
-    setContent((prev) => ({
-      ...prev,
-      services: {
-        ...prev.services,
-        items: [
-          ...(prev.services?.items || []),
-          {
-            title: "Yeni Hizmet",
-            description: "Hizmet açıklaması",
-            image: "/placeholder.svg?height=200&width=300",
-          },
-        ],
-      },
-    }))
-  }
-
-  const removeService = (index: number) => {
-    setContent((prev) => ({
-      ...prev,
-      services: {
-        ...prev.services,
-        items: (prev.services?.items || []).filter((_, i) => i !== index),
-      },
-    }))
-  }
-
-  const updateService = (index: number, field: string, value: string) => {
-    setContent((prev) => ({
-      ...prev,
-      services: {
-        ...prev.services,
-        items: (prev.services?.items || []).map((service, i) =>
-          i === index ? { ...service, [field]: value } : service,
-        ),
-      },
-    }))
-  }
-
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p>İçerik yükleniyor...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -257,9 +156,9 @@ export default function HomeContentPage() {
             <Eye className="w-4 h-4 mr-2" />
             Önizle
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={loading}>
             <Save className="w-4 h-4 mr-2" />
-            {saving ? "Kaydediliyor..." : "Kaydet"}
+            {loading ? "Kaydediliyor..." : "Kaydet"}
           </Button>
         </div>
       </div>
@@ -282,7 +181,7 @@ export default function HomeContentPage() {
                 <Label htmlFor="hero-title">Başlık</Label>
                 <Input
                   id="hero-title"
-                  value={content.hero?.title || ""}
+                  value={content.hero.title}
                   onChange={(e) => updateHero("title", e.target.value)}
                   placeholder="SHINEST"
                 />
@@ -291,7 +190,7 @@ export default function HomeContentPage() {
                 <Label htmlFor="hero-subtitle">Alt Başlık</Label>
                 <Input
                   id="hero-subtitle"
-                  value={content.hero?.subtitle || ""}
+                  value={content.hero.subtitle}
                   onChange={(e) => updateHero("subtitle", e.target.value)}
                   placeholder="İç Mimarlık"
                 />
@@ -300,33 +199,19 @@ export default function HomeContentPage() {
                 <Label htmlFor="hero-description">Açıklama</Label>
                 <Textarea
                   id="hero-description"
-                  value={content.hero?.description || ""}
+                  value={content.hero.description}
                   onChange={(e) => updateHero("description", e.target.value)}
                   placeholder="Yenilikçi ve fonksiyonel iç mekan çözümleri"
                 />
               </div>
               <div>
                 <Label htmlFor="hero-image">Görsel URL</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="hero-image"
-                    value={content.hero?.image || ""}
-                    onChange={(e) => updateHero("image", e.target.value)}
-                    placeholder="/images/hero-image.png"
-                  />
-                  <Button variant="outline" size="sm">
-                    <Upload className="w-4 h-4" />
-                  </Button>
-                </div>
-                {content.hero?.image && (
-                  <div className="mt-2">
-                    <img
-                      src={content.hero.image || "/placeholder.svg"}
-                      alt="Hero preview"
-                      className="w-full max-w-md h-32 object-cover rounded-lg"
-                    />
-                  </div>
-                )}
+                <Input
+                  id="hero-image"
+                  value={content.hero.image}
+                  onChange={(e) => updateHero("image", e.target.value)}
+                  placeholder="/images/hero-image.png"
+                />
               </div>
             </CardContent>
           </Card>
@@ -342,7 +227,7 @@ export default function HomeContentPage() {
                 <Label htmlFor="line1">1. Satır</Label>
                 <Input
                   id="line1"
-                  value={content.bigText?.line1 || ""}
+                  value={content.bigText.line1}
                   onChange={(e) => updateBigText("line1", e.target.value)}
                   placeholder="MEKANLARINIZ"
                   className="font-display text-lg"
@@ -352,7 +237,7 @@ export default function HomeContentPage() {
                 <Label htmlFor="line2">2. Satır</Label>
                 <Input
                   id="line2"
-                  value={content.bigText?.line2 || ""}
+                  value={content.bigText.line2}
                   onChange={(e) => updateBigText("line2", e.target.value)}
                   placeholder="YAŞAMINIZA"
                   className="font-display text-lg"
@@ -362,7 +247,7 @@ export default function HomeContentPage() {
                 <Label htmlFor="line3">3. Satır (Özel Stil)</Label>
                 <Input
                   id="line3"
-                  value={content.bigText?.line3 || ""}
+                  value={content.bigText.line3}
                   onChange={(e) => updateBigText("line3", e.target.value)}
                   placeholder="IŞIK TUTAR!"
                   className="font-display text-lg text-[#c4975a] italic"
@@ -373,9 +258,9 @@ export default function HomeContentPage() {
               <div className="mt-6 p-6 bg-[#f5f3f0] rounded-lg">
                 <h3 className="text-sm font-medium mb-4">Önizleme:</h3>
                 <div className="text-center space-y-2">
-                  <div className="font-display text-2xl text-[#15415b]">{content.bigText?.line1 || ""}</div>
-                  <div className="font-display text-2xl text-[#15415b]">{content.bigText?.line2 || ""}</div>
-                  <div className="font-display text-2xl text-[#c4975a] italic">{content.bigText?.line3 || ""}</div>
+                  <div className="font-display text-2xl text-[#15415b]">{content.bigText.line1}</div>
+                  <div className="font-display text-2xl text-[#15415b]">{content.bigText.line2}</div>
+                  <div className="font-display text-2xl text-[#c4975a] italic">{content.bigText.line3}</div>
                 </div>
               </div>
             </CardContent>
@@ -385,51 +270,32 @@ export default function HomeContentPage() {
         <TabsContent value="gallery">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Galeri Görselleri
-                <Button onClick={addGalleryImage} size="sm">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Görsel Ekle
-                </Button>
-              </CardTitle>
+              <CardTitle>Galeri Görselleri</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {(content.gallery?.images || []).map((image, index) => (
-                <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
-                  <img
-                    src={image || "/placeholder.svg?height=100&width=150"}
-                    alt={`Gallery ${index + 1}`}
-                    className="w-24 h-16 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <Label htmlFor={`gallery-${index}`}>Görsel {index + 1}</Label>
-                    <div className="flex gap-2 mt-1">
-                      <Input
-                        id={`gallery-${index}`}
-                        value={image}
-                        onChange={(e) => updateGalleryImage(index, e.target.value)}
-                        placeholder={`/images/gallery-${index + 1}.png`}
-                      />
-                      <Button variant="outline" size="sm">
-                        <Upload className="w-4 h-4" />
-                      </Button>
-                    </div>
+              {content.gallery.images.map((image, index) => (
+                <div key={index}>
+                  <Label htmlFor={`gallery-${index}`}>Görsel {index + 1}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id={`gallery-${index}`}
+                      value={image}
+                      onChange={(e) => {
+                        const newImages = [...content.gallery.images]
+                        newImages[index] = e.target.value
+                        setContent((prev) => ({
+                          ...prev,
+                          gallery: { images: newImages },
+                        }))
+                      }}
+                      placeholder={`/images/gallery-${index + 1}.png`}
+                    />
+                    <Button variant="outline" size="sm">
+                      <Upload className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button variant="destructive" size="sm" onClick={() => removeGalleryImage(index)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
                 </div>
               ))}
-
-              {(!content.gallery?.images || content.gallery.images.length === 0) && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>Henüz galeri görseli eklenmemiş</p>
-                  <Button onClick={addGalleryImage} className="mt-2">
-                    <Plus className="w-4 h-4 mr-1" />
-                    İlk Görseli Ekle
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -437,20 +303,14 @@ export default function HomeContentPage() {
         <TabsContent value="services">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Hizmetler Bölümü
-                <Button onClick={addService} size="sm">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Hizmet Ekle
-                </Button>
-              </CardTitle>
+              <CardTitle>Hizmetler Bölümü</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <Label htmlFor="services-title">Bölüm Başlığı</Label>
                 <Input
                   id="services-title"
-                  value={content.services?.title || ""}
+                  value={content.services.title}
                   onChange={(e) =>
                     setContent((prev) => ({
                       ...prev,
@@ -461,69 +321,61 @@ export default function HomeContentPage() {
                 />
               </div>
 
-              {(content.services?.items || []).map((service, index) => (
+              {content.services.items.map((service, index) => (
                 <div key={index} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Hizmet {index + 1}</h4>
-                    <Button variant="destructive" size="sm" onClick={() => removeService(index)}>
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Sil
-                    </Button>
-                  </div>
-
+                  <h4 className="font-medium">Hizmet {index + 1}</h4>
                   <div>
                     <Label htmlFor={`service-title-${index}`}>Başlık</Label>
                     <Input
                       id={`service-title-${index}`}
                       value={service.title}
-                      onChange={(e) => updateService(index, "title", e.target.value)}
-                      placeholder="Hizmet başlığı"
+                      onChange={(e) => {
+                        const newItems = [...content.services.items]
+                        newItems[index].title = e.target.value
+                        setContent((prev) => ({
+                          ...prev,
+                          services: { ...prev.services, items: newItems },
+                        }))
+                      }}
                     />
                   </div>
-
                   <div>
                     <Label htmlFor={`service-desc-${index}`}>Açıklama</Label>
                     <Textarea
                       id={`service-desc-${index}`}
                       value={service.description}
-                      onChange={(e) => updateService(index, "description", e.target.value)}
-                      placeholder="Hizmet açıklaması"
+                      onChange={(e) => {
+                        const newItems = [...content.services.items]
+                        newItems[index].description = e.target.value
+                        setContent((prev) => ({
+                          ...prev,
+                          services: { ...prev.services, items: newItems },
+                        }))
+                      }}
                     />
                   </div>
-
                   <div>
                     <Label htmlFor={`service-image-${index}`}>Görsel</Label>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-2">
                       <Input
                         id={`service-image-${index}`}
                         value={service.image}
-                        onChange={(e) => updateService(index, "image", e.target.value)}
-                        placeholder="/images/service.png"
+                        onChange={(e) => {
+                          const newItems = [...content.services.items]
+                          newItems[index].image = e.target.value
+                          setContent((prev) => ({
+                            ...prev,
+                            services: { ...prev.services, items: newItems },
+                          }))
+                        }}
                       />
                       <Button variant="outline" size="sm">
                         <Upload className="w-4 h-4" />
                       </Button>
                     </div>
-                    {service.image && (
-                      <img
-                        src={service.image || "/placeholder.svg"}
-                        alt={service.title}
-                        className="w-32 h-20 object-cover rounded mt-2"
-                      />
-                    )}
                   </div>
                 </div>
               ))}
-
-              {(!content.services?.items || content.services.items.length === 0) && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>Henüz hizmet eklenmemiş</p>
-                  <Button onClick={addService} className="mt-2">
-                    <Plus className="w-4 h-4 mr-1" />
-                    İlk Hizmeti Ekle
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>

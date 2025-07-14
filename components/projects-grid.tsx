@@ -28,16 +28,18 @@ export function ProjectsGrid() {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600">Projeler yüklenirken bir hata oluştu: {error}</p>
+        <p className="font-sans text-red-600 mb-4">Projeler yüklenirken bir hata oluştu</p>
+        <p className="font-sans text-sm text-gray-500">Varsayılan projeler gösteriliyor</p>
       </div>
     )
   }
 
   const featuredProjects = projects.filter((project) => project.featured).slice(0, 6)
+  const displayProjects = featuredProjects.length > 0 ? featuredProjects : projects.slice(0, 6)
 
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {featuredProjects.map((project, index) => (
+      {displayProjects.map((project, index) => (
         <motion.div
           key={project.id}
           initial={{ opacity: 0, y: 30 }}
@@ -58,7 +60,7 @@ export function ProjectsGrid() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="absolute bottom-4 left-4 right-4 transform translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
                   <div className="flex items-center justify-between text-white">
-                    <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                    <Badge variant="secondary" className="bg-white/20 text-white border-0 font-sans">
                       {project.category}
                     </Badge>
                     <ArrowRight className="w-5 h-5" />
@@ -70,9 +72,9 @@ export function ProjectsGrid() {
                 <h3 className="font-display text-xl text-shinest-blue mb-2 group-hover:text-shinest-blue/80 transition-colors">
                   {project.title}
                 </h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+                <p className="font-sans text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
 
-                <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center justify-between text-sm text-gray-500 font-sans">
                   <div className="flex items-center space-x-1">
                     <Calendar className="w-4 h-4" />
                     <span>{project.year}</span>

@@ -1,43 +1,22 @@
-import { NextResponse } from "next/server"
-import { revalidatePath, revalidateTag } from "next/cache"
+import { type NextRequest, NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { path, tag, all } = await request.json()
+    const { path } = await request.json()
 
-    if (path) {
-      revalidatePath(path)
+    if (!path) {
+      return NextResponse.json({ error: "Path is required" }, { status: 400 })
     }
 
-    if (tag) {
-      revalidateTag(tag)
-    }
-
-    if (all) {
-      // Revalidate all common pages
-      revalidatePath("/")
-      revalidatePath("/projects")
-      revalidatePath("/blog")
-      revalidatePath("/about")
-      revalidatePath("/services")
-      revalidatePath("/contact")
-    }
+    revalidatePath(path)
 
     return NextResponse.json({
       success: true,
-      message: "Cache başarıyla temizlendi",
-      revalidated: true,
-      timestamp: new Date().toISOString(),
+      message: `Revalidated ${path}`,
     })
   } catch (error) {
     console.error("Error revalidating:", error)
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Cache temizlenirken hata oluştu",
-        error: error instanceof Error ? error.message : "Bilinmeyen hata",
-      },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Failed to revalidate" }, { status: 500 })
   }
 }

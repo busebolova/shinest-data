@@ -55,7 +55,7 @@ export function SecondGallery() {
   return (
     <section
       ref={galleryRef}
-      className="min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh] bg-white relative overflow-hidden"
+      className="min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh] bg-[#f9f7f4] relative overflow-hidden py-8 md:py-16"
     >
       <div className="w-full h-full relative">
         {galleryImages.map((image) => (

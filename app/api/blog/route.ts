@@ -1,39 +1,33 @@
 import { NextResponse } from "next/server"
-import { dataManager } from "@/lib/data-manager"
-import { revalidatePath } from "next/cache"
+import { githubAPI } from "@/lib/github-api"
 
 export async function GET() {
   try {
-    const posts = await dataManager.getBlogPosts()
-    return NextResponse.json(posts)
+    const blogPosts = await githubAPI.getBlogPosts()
+    return NextResponse.json(blogPosts)
   } catch (error) {
-    console.error("Error fetching blog posts:", error)
-    return NextResponse.json([])
+    console.error("Blog posts fetch failed:", error)
+    return NextResponse.json(
+      {
+        error: "Blog yazıları alınamadı",
+        message: error instanceof Error ? error.message : "Bilinmeyen hata",
+      },
+      { status: 500 },
+    )
   }
 }
 
 export async function POST(request: Request) {
   try {
     const postData = await request.json()
-    const newPost = await dataManager.createBlogPost(postData)
-
-    // Revalidate all relevant pages
-    revalidatePath("/")
-    revalidatePath("/blog")
-    revalidatePath("/admin/blog")
-
-    return NextResponse.json({
-      success: true,
-      post: newPost,
-      message: "Blog yazısı başarıyla oluşturuldu",
-    })
+    const newPost = await githubAPI.createBlogPost(postData)
+    return NextResponse.json(newPost, { status: 201 })
   } catch (error) {
-    console.error("Error creating blog post:", error)
+    console.error("Blog post creation failed:", error)
     return NextResponse.json(
       {
-        success: false,
-        message: "Blog yazısı oluşturulurken hata oluştu",
-        error: error instanceof Error ? error.message : "Bilinmeyen hata",
+        error: "Blog yazısı oluşturulamadı",
+        message: error instanceof Error ? error.message : "Bilinmeyen hata",
       },
       { status: 500 },
     )

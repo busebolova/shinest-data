@@ -2,113 +2,84 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useLanguage } from "@/contexts/language-context"
 import { Instagram, Facebook, Twitter, Mail, Phone, MapPin } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
-export default function Footer() {
-  const { language } = useLanguage()
+export function Footer() {
+  const { t } = useLanguage()
 
-  const content = {
-    tr: {
-      company: "SHINEST İç Mimarlık",
-      description:
-        "Yaşam alanlarınızı sanat eserine dönüştürüyoruz. Modern tasarım anlayışı ile fonksiyonel ve estetik mekanlar yaratıyoruz.",
-      quickLinks: "Hızlı Bağlantılar",
-      services: "Hizmetlerimiz",
-      contact: "İletişim",
-      followUs: "Bizi Takip Edin",
-      rights: "Tüm hakları saklıdır.",
-      links: [
-        { name: "Ana Sayfa", href: "/" },
-        { name: "Hakkımızda", href: "/about" },
-        { name: "Projelerimiz", href: "/projects" },
-        { name: "Blog", href: "/blog" },
-        { name: "İletişim", href: "/contact" },
-      ],
-      servicesList: [
-        "İç Mimarlık Danışmanlığı",
-        "Mekan Tasarımı",
-        "Mobilya Tasarımı",
-        "Proje Yönetimi",
-        "Uygulama Hizmetleri",
-      ],
-    },
-    en: {
-      company: "SHINEST Interior Architecture",
-      description:
-        "We transform your living spaces into works of art. We create functional and aesthetic spaces with a modern design approach.",
-      quickLinks: "Quick Links",
-      services: "Services",
-      contact: "Contact",
-      followUs: "Follow Us",
-      rights: "All rights reserved.",
-      links: [
-        { name: "Home", href: "/" },
-        { name: "About", href: "/about" },
-        { name: "Projects", href: "/projects" },
-        { name: "Blog", href: "/blog" },
-        { name: "Contact", href: "/contact" },
-      ],
-      servicesList: [
-        "Interior Design Consulting",
-        "Space Design",
-        "Furniture Design",
-        "Project Management",
-        "Implementation Services",
-      ],
-    },
-  }
+  const quickLinks = [
+    { name: t("nav.home"), href: "/" },
+    { name: t("nav.about"), href: "/about" },
+    { name: t("nav.services"), href: "/services" },
+    { name: t("nav.projects"), href: "/projects" },
+    { name: t("nav.blog"), href: "/blog" },
+    { name: t("nav.contact"), href: "/contact" },
+  ]
 
-  const currentContent = content[language]
+  const services = [
+    { name: t("services.consulting"), href: "/services/consulting" },
+    { name: t("services.design"), href: "/services/design" },
+    { name: t("services.implementation"), href: "/services/implementation" },
+    { name: t("services.renovation"), href: "/services/renovation" },
+  ]
 
   return (
-    <footer className="bg-[#15415b] text-white" style={{ fontFamily: "Poppins, sans-serif" }}>
+    <footer className="bg-shinest-blue text-white">
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
-          <div className="lg:col-span-1">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="relative w-12 h-12">
-                <Image
-                  src="/images/shinest-logo.png"
-                  alt="SHINEST Logo"
-                  fill
-                  className="object-contain brightness-0 invert"
-                  sizes="48px"
-                />
+          <div className="space-y-6">
+            <div className="flex items-center space-x-3">
+              <div className="relative w-10 h-10">
+                <Image src="/images/shinest-logo.png" alt="SHINEST" fill className="object-contain" />
               </div>
-              <h3 className="font-bold text-xl">{currentContent.company}</h3>
+              <span className="font-display text-2xl font-bold text-shinest-gold">SHINEST</span>
             </div>
-            <p className="text-gray-300 leading-relaxed mb-6">{currentContent.description}</p>
+            <p className="font-sans text-gray-300 text-sm leading-relaxed">
+              {t("footer.description") ||
+                "Hayalinizdeki yaşam alanlarını gerçeğe dönüştürüyoruz. Modern tasarım anlayışı ile estetik ve fonksiyonelliği bir araya getiriyoruz."}
+            </p>
             <div className="flex space-x-4">
               <a
-                href="#"
-                className="w-10 h-10 bg-[#c4975a] rounded-full flex items-center justify-center hover:bg-[#b8864d] transition-colors duration-300"
+                href="https://instagram.com/shinest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 bg-white/10 rounded-lg hover:bg-shinest-gold transition-colors duration-200"
               >
-                <Instagram size={20} />
+                <Instagram className="w-5 h-5" />
               </a>
               <a
-                href="#"
-                className="w-10 h-10 bg-[#c4975a] rounded-full flex items-center justify-center hover:bg-[#b8864d] transition-colors duration-300"
+                href="https://facebook.com/shinest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 bg-white/10 rounded-lg hover:bg-shinest-gold transition-colors duration-200"
               >
-                <Facebook size={20} />
+                <Facebook className="w-5 h-5" />
               </a>
               <a
-                href="#"
-                className="w-10 h-10 bg-[#c4975a] rounded-full flex items-center justify-center hover:bg-[#b8864d] transition-colors duration-300"
+                href="https://twitter.com/shinest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 bg-white/10 rounded-lg hover:bg-shinest-gold transition-colors duration-200"
               >
-                <Twitter size={20} />
+                <Twitter className="w-5 h-5" />
               </a>
             </div>
           </div>
 
           {/* Quick Links */}
-          <div>
-            <h4 className="font-semibold text-lg mb-6">{currentContent.quickLinks}</h4>
+          <div className="space-y-6">
+            <h3 className="font-display text-lg font-semibold text-shinest-gold">
+              {t("footer.quickLinks") || "Hızlı Bağlantılar"}
+            </h3>
             <ul className="space-y-3">
-              {currentContent.links.map((link) => (
+              {quickLinks.map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-gray-300 hover:text-[#c4975a] transition-colors duration-300">
+                  <Link
+                    href={link.href}
+                    className="font-sans text-gray-300 hover:text-shinest-gold transition-colors duration-200 text-sm"
+                  >
                     {link.name}
                   </Link>
                 </li>
@@ -117,50 +88,78 @@ export default function Footer() {
           </div>
 
           {/* Services */}
-          <div>
-            <h4 className="font-semibold text-lg mb-6">{currentContent.services}</h4>
+          <div className="space-y-6">
+            <h3 className="font-display text-lg font-semibold text-shinest-gold">
+              {t("footer.services") || "Hizmetlerimiz"}
+            </h3>
             <ul className="space-y-3">
-              {currentContent.servicesList.map((service) => (
-                <li key={service} className="text-gray-300">
-                  {service}
+              {services.map((service) => (
+                <li key={service.name}>
+                  <Link
+                    href={service.href}
+                    className="font-sans text-gray-300 hover:text-shinest-gold transition-colors duration-200 text-sm"
+                  >
+                    {service.name}
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
 
           {/* Contact Info */}
-          <div>
-            <h4 className="font-semibold text-lg mb-6">{currentContent.contact}</h4>
+          <div className="space-y-6">
+            <h3 className="font-display text-lg font-semibold text-shinest-gold">
+              {t("footer.contact") || "İletişim"}
+            </h3>
             <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <MapPin size={20} className="text-[#c4975a] flex-shrink-0" />
-                <span className="text-gray-300">İstanbul, Türkiye</span>
+              <div className="flex items-start space-x-3">
+                <MapPin className="w-5 h-5 text-shinest-gold mt-0.5 flex-shrink-0" />
+                <p className="font-sans text-gray-300 text-sm">
+                  Ataşehir, İstanbul
+                  <br />
+                  Türkiye
+                </p>
               </div>
               <div className="flex items-center space-x-3">
-                <Phone size={20} className="text-[#c4975a] flex-shrink-0" />
-                <span className="text-gray-300">+90 (212) 123 45 67</span>
+                <Phone className="w-5 h-5 text-shinest-gold flex-shrink-0" />
+                <a
+                  href="tel:+905551234567"
+                  className="font-sans text-gray-300 hover:text-shinest-gold transition-colors duration-200 text-sm"
+                >
+                  +90 555 123 45 67
+                </a>
               </div>
               <div className="flex items-center space-x-3">
-                <Mail size={20} className="text-[#c4975a] flex-shrink-0" />
-                <span className="text-gray-300">info@shinest.com</span>
+                <Mail className="w-5 h-5 text-shinest-gold flex-shrink-0" />
+                <a
+                  href="mailto:info@shinest.com.tr"
+                  className="font-sans text-gray-300 hover:text-shinest-gold transition-colors duration-200 text-sm"
+                >
+                  info@shinest.com.tr
+                </a>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-700 mt-12 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm">© 2024 SHINEST İç Mimarlık. {currentContent.rights}</p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
+        <div className="border-t border-white/10 mt-12 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <p className="font-sans text-gray-400 text-sm">
+              © 2024 SHINEST. {t("footer.rights") || "Tüm hakları saklıdır."}
+            </p>
+            <div className="flex space-x-6">
               <Link
                 href="/privacy"
-                className="text-gray-400 hover:text-[#c4975a] text-sm transition-colors duration-300"
+                className="font-sans text-gray-400 hover:text-shinest-gold transition-colors duration-200 text-sm"
               >
-                {language === "tr" ? "Gizlilik Politikası" : "Privacy Policy"}
+                {t("footer.privacy") || "Gizlilik Politikası"}
               </Link>
-              <Link href="/terms" className="text-gray-400 hover:text-[#c4975a] text-sm transition-colors duration-300">
-                {language === "tr" ? "Kullanım Şartları" : "Terms of Service"}
+              <Link
+                href="/terms"
+                className="font-sans text-gray-400 hover:text-shinest-gold transition-colors duration-200 text-sm"
+              >
+                {t("footer.terms") || "Kullanım Şartları"}
               </Link>
             </div>
           </div>
@@ -169,3 +168,5 @@ export default function Footer() {
     </footer>
   )
 }
+
+export default Footer

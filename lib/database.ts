@@ -1,211 +1,206 @@
-// GitHub-based database operations
-import { githubAPI } from "./github-api"
+// Simple localStorage-based database for client-side operations
+// This will be used as a fallback when GitHub API is not available
 
-export interface Project {
+interface DatabaseItem {
   id: string
-  title: { tr: string; en: string }
-  description: { tr: string; en: string }
-  category: string
-  location: string
-  year: string
-  status: "published" | "draft" | "archived"
-  featured: boolean
-  images: string[]
-  slug: string
   createdAt: string
   updatedAt: string
+  [key: string]: any
 }
 
-export interface BlogPost {
-  id: string
-  title: { tr: string; en: string }
-  content: { tr: string; en: string }
-  excerpt: { tr: string; en: string }
-  image: string
-  status: "published" | "draft"
-  publishedAt: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface PageContent {
-  page: string
-  content: any
-  updatedAt: string
-}
-
-// Local database fallback
 class LocalDatabase {
-  private projects: Project[] = []
-  private blogPosts: BlogPost[] = []
-  private pageContents: Map<string, any> = new Map()
+  private getStorageKey(table: string): string {
+    return `shinest_${table}`
+  }
 
-  // Project operations
-  async getProjects(): Promise<Project[]> {
+  private getTable<T extends DatabaseItem>(table: string): T[] {
+    if (typeof window === "undefined") return []
+
     try {
-      return await githubAPI.getProjects()
+      const data = localStorage.getItem(this.getStorageKey(table))
+      return data ? JSON.parse(data) : []
     } catch (error) {
-      console.error("GitHub API error, using local fallback:", error)
-      return this.projects
+      console.error(`Error reading ${table} from localStorage:`, error)
+      return []
     }
   }
 
-  async getProject(id: string): Promise<Project | null> {
+  private setTable<T extends DatabaseItem>(table: string, data: T[]): void {
+    if (typeof window === "undefined") return
+
     try {
-      return await githubAPI.getProject(id)
+      localStorage.setItem(this.getStorageKey(table), JSON.stringify(data))
     } catch (error) {
-      console.error("GitHub API error, using local fallback:", error)
-      return this.projects.find((p) => p.id === id) || null
+      console.error(`Error writing ${table} to localStorage:`, error)
     }
   }
 
-  async createProject(project: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<Project> {
-    try {
-      return await githubAPI.createProject(project)
-    } catch (error) {
-      console.error("GitHub API error, using local fallback:", error)
-      const newProject: Project = {
-        ...project,
+  // Generic CRUD operations
+  async create<T extends DatabaseItem>(table: string, item: Omit<T, "id" | "createdAt" | "updatedAt">): Promise<T> {
+    const items = this.getTable<T>(table)
+    const newItem = {
+      ...item,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as T
+
+    items.push(newItem)
+    this.setTable(table, items)
+    return newItem
+  }
+
+  async findAll<T extends DatabaseItem>(table: string): Promise<T[]> {
+    return this.getTable<T>(table)
+  }
+
+  async findById<T extends DatabaseItem>(table: string, id: string): Promise<T | null> {
+    const items = this.getTable<T>(table)
+    return items.find((item) => item.id === id) || null
+  }
+
+  async update<T extends DatabaseItem>(table: string, id: string, updates: Partial<T>): Promise<T | null> {
+    const items = this.getTable<T>(table)
+    const index = items.findIndex((item) => item.id === id)
+
+    if (index === -1) return null
+
+    items[index] = {
+      ...items[index],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    }
+
+    this.setTable(table, items)
+    return items[index]
+  }
+
+  async delete(table: string, id: string): Promise<boolean> {
+    const items = this.getTable(table)
+    const filteredItems = items.filter((item) => item.id !== id)
+
+    if (filteredItems.length === items.length) return false
+
+    this.setTable(table, filteredItems)
+    return true
+  }
+
+  // Specific methods for different data types
+  async getProjects() {
+    return this.findAll("projects")
+  }
+
+  async createProject(project: any) {
+    return this.create("projects", project)
+  }
+
+  async updateProject(id: string, updates: any) {
+    return this.update("projects", id, updates)
+  }
+
+  async deleteProject(id: string) {
+    return this.delete("projects", id)
+  }
+
+  async getBlogPosts() {
+    return this.findAll("blog_posts")
+  }
+
+  async createBlogPost(post: any) {
+    return this.create("blog_posts", post)
+  }
+
+  async updateBlogPost(id: string, updates: any) {
+    return this.update("blog_posts", id, updates)
+  }
+
+  async deleteBlogPost(id: string) {
+    return this.delete("blog_posts", id)
+  }
+
+  async getPageContent(page: string) {
+    const contents = this.getTable("page_contents")
+    const content = contents.find((c: any) => c.page === page)
+    return content?.data || null
+  }
+
+  async updatePageContent(page: string, data: any) {
+    const contents = this.getTable("page_contents")
+    const existingIndex = contents.findIndex((c: any) => c.page === page)
+
+    if (existingIndex !== -1) {
+      contents[existingIndex] = {
+        ...contents[existingIndex],
+        data,
+        updatedAt: new Date().toISOString(),
+      }
+    } else {
+      contents.push({
         id: Date.now().toString(),
+        page,
+        data,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+      })
+    }
+
+    this.setTable("page_contents", contents)
+    return { page, data }
+  }
+
+  // Initialize with sample data
+  async initializeSampleData() {
+    const projects = await this.getProjects()
+    if (projects.length === 0) {
+      const sampleProjects = [
+        {
+          title: "Modern Ev Tasarımı",
+          description: "Minimalist ve fonksiyonel ev iç mekan tasarımı",
+          category: "Residential",
+          status: "completed",
+          images: ["/images/gallery-1.png", "/images/gallery-2.png"],
+          featured: true,
+        },
+        {
+          title: "Ofis Renovasyonu",
+          description: "Kurumsal ofis alanı yenileme projesi",
+          category: "Commercial",
+          status: "in-progress",
+          images: ["/images/gallery-3.png", "/images/gallery-4.png"],
+          featured: false,
+        },
+      ]
+
+      for (const project of sampleProjects) {
+        await this.createProject(project)
       }
-      this.projects.unshift(newProject)
-      return newProject
     }
-  }
 
-  async updateProject(id: string, updates: Partial<Project>): Promise<Project> {
-    try {
-      return await githubAPI.updateProject(id, updates)
-    } catch (error) {
-      console.error("GitHub API error, using local fallback:", error)
-      const index = this.projects.findIndex((p) => p.id === id)
-      if (index === -1) {
-        throw new Error("Project not found")
+    const blogPosts = await this.getBlogPosts()
+    if (blogPosts.length === 0) {
+      const samplePosts = [
+        {
+          title: "2024 İç Mimarlık Trendleri",
+          content: "Bu yıl öne çıkan iç mimarlık trendleri ve uygulamaları...",
+          excerpt: "2024 yılında iç mimarlık dünyasında neler değişiyor?",
+          status: "published",
+          featured: true,
+        },
+        {
+          title: "Küçük Mekanları Büyük Gösterme Sanatı",
+          content: "Küçük alanları daha geniş gösterecek tasarım ipuçları...",
+          excerpt: "Küçük mekanları nasıl daha büyük gösterebiliriz?",
+          status: "published",
+          featured: false,
+        },
+      ]
+
+      for (const post of samplePosts) {
+        await this.createBlogPost(post)
       }
-      const updatedProject = {
-        ...this.projects[index],
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      }
-      this.projects[index] = updatedProject
-      return updatedProject
-    }
-  }
-
-  async deleteProject(id: string): Promise<void> {
-    try {
-      await githubAPI.deleteProject(id)
-    } catch (error) {
-      console.error("GitHub API error, using local fallback:", error)
-      this.projects = this.projects.filter((p) => p.id !== id)
-    }
-  }
-
-  // Blog operations
-  async getBlogPosts(): Promise<BlogPost[]> {
-    try {
-      return await githubAPI.getBlogPosts()
-    } catch (error) {
-      console.error("GitHub API error, using local fallback:", error)
-      return this.blogPosts
-    }
-  }
-
-  async createBlogPost(post: Omit<BlogPost, "id" | "createdAt" | "updatedAt">): Promise<BlogPost> {
-    try {
-      return await githubAPI.createBlogPost(post)
-    } catch (error) {
-      console.error("GitHub API error, using local fallback:", error)
-      const newPost: BlogPost = {
-        ...post,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-      this.blogPosts.unshift(newPost)
-      return newPost
-    }
-  }
-
-  // Page content operations
-  async getPageContent(page: string): Promise<any> {
-    try {
-      return await githubAPI.getPageContent(page)
-    } catch (error) {
-      console.error("GitHub API error, using local fallback:", error)
-      return this.pageContents.get(page) || {}
-    }
-  }
-
-  async savePageContent(page: string, content: any): Promise<void> {
-    try {
-      await githubAPI.savePageContent(page, content)
-    } catch (error) {
-      console.error("GitHub API error, using local fallback:", error)
-      this.pageContents.set(page, content)
     }
   }
 }
 
-// Create local database instance
-const localDatabase = new LocalDatabase()
-
-// Project operations
-export async function getProjects(): Promise<Project[]> {
-  return await localDatabase.getProjects()
-}
-
-export async function getProject(id: string): Promise<Project | null> {
-  return await localDatabase.getProject(id)
-}
-
-export async function createProject(project: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<Project> {
-  return await localDatabase.createProject(project)
-}
-
-export async function updateProject(id: string, updates: Partial<Project>): Promise<Project> {
-  return await localDatabase.updateProject(id, updates)
-}
-
-export async function deleteProject(id: string): Promise<void> {
-  return await localDatabase.deleteProject(id)
-}
-
-// Blog operations
-export async function getBlogPosts(): Promise<BlogPost[]> {
-  return await localDatabase.getBlogPosts()
-}
-
-export async function createBlogPost(post: Omit<BlogPost, "id" | "createdAt" | "updatedAt">): Promise<BlogPost> {
-  return await localDatabase.createBlogPost(post)
-}
-
-// Page content operations
-export async function getPageContent(page: string): Promise<any> {
-  return await localDatabase.getPageContent(page)
-}
-
-export async function savePageContent(page: string, content: any): Promise<void> {
-  return await localDatabase.savePageContent(page, content)
-}
-
-// Dashboard stats
-export async function getDashboardStats() {
-  const projects = await getProjects()
-  const blogPosts = await getBlogPosts()
-
-  return {
-    totalProjects: projects.length,
-    publishedProjects: projects.filter((p) => p.status === "published").length,
-    draftProjects: projects.filter((p) => p.status === "draft").length,
-    featuredProjects: projects.filter((p) => p.featured).length,
-    totalBlogPosts: blogPosts.length,
-    publishedBlogPosts: blogPosts.filter((p) => p.status === "published").length,
-    draftBlogPosts: blogPosts.filter((p) => p.status === "draft").length,
-  }
-}
-
-// Export local database instance
-export const localDb = localDatabase
+export const localDb = new LocalDatabase()
+export default LocalDatabase

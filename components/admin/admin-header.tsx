@@ -1,106 +1,102 @@
 "use client"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Bell, Settings, User, LogOut, Menu, X } from "lucide-react"
-import { RealtimeIndicator } from "./realtime-indicator"
+import { Bell, User, Settings, LogOut } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
+import { RealtimeStatus } from "./realtime-status"
 
-interface AdminHeaderProps {
-  title: string
-  onMenuToggle?: () => void
-  isMobileMenuOpen?: boolean
-}
+export function AdminHeader() {
+  const router = useRouter()
 
-export function AdminHeader({ title, onMenuToggle, isMobileMenuOpen }: AdminHeaderProps) {
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [showUserMenu, setShowUserMenu] = useState(false)
+  const handleLogout = () => {
+    localStorage.removeItem("admin-auth")
+    router.push("/admin/login")
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
-        {/* Left Side */}
         <div className="flex items-center space-x-4">
-          {/* Mobile Menu Button */}
-          <button onClick={onMenuToggle} className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            {isMobileMenuOpen ? <X className="w-5 h-5 text-gray-600" /> : <Menu className="w-5 h-5 text-gray-600" />}
-          </button>
-
-          {/* Page Title */}
-          <h1 className={`text-2xl font-bold text-gray-600`}>{title}</h1>
+          <h1 className="text-xl font-semibold text-gray-900">SHINEST Admin</h1>
+          <RealtimeStatus />
         </div>
 
-        {/* Right Side */}
         <div className="flex items-center space-x-4">
-          {/* Realtime Indicator */}
-          <RealtimeIndicator />
-
           {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
-            >
-              <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-            </button>
-
-            {showNotifications && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
-              >
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="font-semibold text-gray-900">Notifications</h3>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="relative">
+                <Bell className="h-4 w-4" />
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">3</Badge>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Bildirimler</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm font-medium">Yeni proje eklendi</span>
+                  <span className="text-xs text-gray-500">5 dakika önce</span>
                 </div>
-                <div className="p-4">
-                  <p className="text-sm text-gray-500">No new notifications</p>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm font-medium">İçerik güncellendi</span>
+                  <span className="text-xs text-gray-500">1 saat önce</span>
                 </div>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Settings */}
-          <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <Settings className="w-5 h-5 text-gray-600" />
-          </button>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm font-medium">Yeni mesaj</span>
+                  <span className="text-xs text-gray-500">2 saat önce</span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* User Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <div className="w-8 h-8 bg-[#15415b] rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-sm font-medium text-gray-700 hidden sm:block">Admin</span>
-            </button>
-
-            {showUserMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
-              >
-                <div className="p-2">
-                  <button className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                    <User className="w-4 h-4" />
-                    <span>Profile</span>
-                  </button>
-                  <button className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                    <Settings className="w-4 h-4" />
-                    <span>Settings</span>
-                  </button>
-                  <hr className="my-2" />
-                  <button className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
-                  </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/images/admin-avatar.png" alt="Admin" />
+                  <AvatarFallback>AD</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">Admin</p>
+                  <p className="text-xs leading-none text-muted-foreground">admin@shinest.com</p>
                 </div>
-              </motion.div>
-            )}
-          </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Ayarlar</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Çıkış Yap</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
