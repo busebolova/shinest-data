@@ -85,16 +85,6 @@ export default function TextSection() {
               </motion.span>
             ))}
           </motion.div>
-
-          {/* Description Text */}
-          <motion.div
-            className="max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.8, delay: 1.8 }}
-          >
-            <p className="font-sans text-lg md:text-xl text-[#2a2a2a] leading-relaxed">{t("text.description")}</p>
-          </motion.div>
         </motion.div>
       </div>
     </section>

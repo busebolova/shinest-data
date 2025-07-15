@@ -9,6 +9,8 @@
     "start": "next start"
   },
   "dependencies": {
+    "@auth/core": "latest",
+    "@auth/nextjs": "latest",
     "@emotion/is-prop-valid": "latest",
     "@octokit/rest": "latest",
     "@radix-ui/react-slot": "^1.0.2",
@@ -18,6 +20,8 @@
     "framer-motion": "latest",
     "lucide-react": "^0.454.0",
     "next": "14.2.16",
+    "next-auth": "latest",
+    "nodemailer": "latest",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2.5.5",

@@ -61,7 +61,7 @@ export default function HeroSection() {
 
           {/* Single Center Image - Videodaki gibi yumuşak scale animasyon */}
           <motion.div
-            className="relative -mt-8 sm:-mt-12 md:-mt-16 lg:-mt-20 xl:-mt-24 flex justify-center w-full"
+            className="relative -mt-5 sm:-mt-9 md:-mt-10 lg:-mt-11 xl:-mt-12 flex justify-center w-full"
             initial={{ opacity: 0, scale: 0.85, y: 50 }}
             animate={isLoaded ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.85, y: 50 }}
             transition={{

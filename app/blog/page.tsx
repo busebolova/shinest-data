@@ -5,6 +5,8 @@ import { useState, useEffect } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import Image from "next/image"
+import Link from "next/link" // Import Link
+import { blogPostsData } from "@/data/blog-posts" // Import blogPostsData
 
 export default function BlogPage() {
   const [currentLanguage, setCurrentLanguage] = useState("TR")
@@ -13,6 +15,15 @@ export default function BlogPage() {
 
   // SHINEST harfleri için animasyon
   const shinestLetters = "SHINEST".split("")
+
+  // Blog posts from imported data
+  const blogPosts = Object.entries(blogPostsData).map(([slug, data]) => ({
+    id: slug, // Use slug as ID
+    title: data.title,
+    date: data.date,
+    image: data.image,
+    slug: slug, // Add slug for linking
+  }))
 
   useEffect(() => {
     // Sayfa yüklendiğinde scroll'u en üste al
@@ -32,27 +43,6 @@ export default function BlogPage() {
   const handleLanguageChange = (language: string) => {
     setCurrentLanguage(language)
   }
-
-  const blogPosts = [
-    {
-      id: 1,
-      title: "İç Mimaride 2024 Trendleri",
-      date: "15 Mayıs 2024",
-      image: "/placeholder.svg?height=600&width=800",
-    },
-    {
-      id: 2,
-      title: "Küçük Mekanları Büyük Gösterme Sanatı",
-      date: "28 Nisan 2024",
-      image: "/placeholder.svg?height=600&width=800",
-    },
-    {
-      id: 3,
-      title: "Sürdürülebilir İç Mimari Çözümler",
-      date: "10 Nisan 2024",
-      image: "/placeholder.svg?height=600&width=800",
-    },
-  ]
 
   return (
     <main className="min-h-screen bg-[#f5f3f0]">
@@ -117,21 +107,23 @@ export default function BlogPage() {
                 transition={{ duration: 0.8, delay: 1.8 + index * 0.2 }}
                 whileHover={{ y: -10 }}
               >
-                <div className="relative h-64 overflow-hidden mb-4">
-                  <Image
-                    src={post.image || "/placeholder.svg"}
-                    alt={post.title}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                    priority={index === 0}
-                  />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-[#2a2a2a]/70 mb-2 font-sans">{post.date}</p>
-                  <h3 className="font-display text-lg text-shinest-blue hover:text-shinest-blue/80 transition-colors duration-300">
-                    {post.title}
-                  </h3>
-                </div>
+                <Link href={`/blog/${post.slug}`}>
+                  <div className="relative h-64 overflow-hidden mb-4 rounded-lg">
+                    <Image
+                      src={post.image || "/placeholder.svg"}
+                      alt={post.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      priority={index === 0}
+                    />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-[#2a2a2a]/70 mb-2 font-sans">{post.date}</p>
+                    <h3 className="font-display text-lg text-shinest-blue hover:text-shinest-blue/80 transition-colors duration-300">
+                      {post.title}
+                    </h3>
+                  </div>
+                </Link>
               </motion.div>
             ))}
           </div>
