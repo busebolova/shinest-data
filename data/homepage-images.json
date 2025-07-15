@@ -1,0 +1,13 @@
+{
+  "heroMain": "/images/hero-main.png",
+  "aboutInfoSection": "/placeholder.svg?height=800&width=1200",
+  "secondGalleryPatio": "/images/second-gallery-patio.png",
+  "secondGalleryKitchen": "/images/second-gallery-kitchen.png",
+  "scrollGalleryImages": [
+    "/images/gallery-new-1.png",
+    "/images/gallery-new-2.png",
+    "/images/gallery-new-3.png",
+    "/images/gallery-new-4.png",
+    "/images/gallery-new-5.png"
+  ]
+}

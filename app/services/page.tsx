@@ -31,7 +31,7 @@ export default function ServicesPage() {
       id: "design",
       title: t("services.design"),
       description: t("services.design.desc"),
-      image: "/placeholder.svg?height=600&width=800",
+      image: "/images/design-service.png",
       slug: "design",
     },
     {

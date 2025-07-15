@@ -23,7 +23,7 @@ export default function AdminContentPage() {
     const fetchFiles = async () => {
       setLoading(true)
       setError(null)
-      const result = await listGitHubFiles("content/blog") // GitHub deponuzdaki blog yazılarınızın yolu
+      const result = await listGitHubFiles("data") // GitHub deponuzdaki blog yazılarınızın yolu
       if ("error" in result) {
         setError(result.error)
       } else {

@@ -56,7 +56,7 @@ const servicesData = {
       <p>Tasarım sürecimiz, mekanınızın potansiyelini maksimuma çıkarmak ve ihtiyaçlarınıza en uygun çözümleri sunmak üzerine kuruludur. Her projede özgün ve yenilikçi fikirler geliştirmeyi hedefliyoruz.</p>
       <p>3D görselleştirme hizmetimiz sayesinde, tasarımınızı hayata geçirmeden önce nasıl görüneceğini görebilir, gerekli değişiklikleri yapabilirsiniz.</p>
     `,
-    image: "/placeholder.svg?height=800&width=1200",
+    image: "/images/design-service.png",
     features: [
       "Konsept tasarım",
       "Mekan planlama",

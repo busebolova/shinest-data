@@ -3,42 +3,18 @@
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 import Image from "next/image"
-
-const projects = [
-  {
-    id: 1,
-    title: "Cozy Living Room",
-    location: "İstanbul",
-    image: "/images/gallery-new-1.png",
-  },
-  {
-    id: 2,
-    title: "Elegant Living Space",
-    location: "Bodrum",
-    image: "/images/gallery-new-2.png",
-  },
-  {
-    id: 3,
-    title: "Modern Bedroom",
-    location: "Ankara",
-    image: "/images/gallery-new-3.png",
-  },
-  {
-    id: 4,
-    title: "Minimalist Bathroom",
-    location: "İzmir",
-    image: "/images/gallery-new-4.png",
-  },
-  {
-    id: 5,
-    title: "Chic Dining Room",
-    location: "Antalya",
-    image: "/images/gallery-new-5.png",
-  },
-]
+import { useHomepageImages } from "@/hooks/use-homepage-images"
 
 export default function ScrollGallery() {
   const containerRef = useRef(null)
+  const { images } = useHomepageImages()
+
+  const projects = images.scrollGalleryImages.map((src, index) => ({
+    id: index + 1,
+    title: `Gallery Image ${index + 1}`, // You might want to get titles from JSON too if needed
+    location: "Various",
+    image: src,
+  }))
 
   const { scrollYProgress } = useScroll({
     target: containerRef,

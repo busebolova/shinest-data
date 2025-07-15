@@ -9,7 +9,6 @@ import ScrollGallery from "@/components/scroll-gallery"
 import ServiceCards from "@/components/service-cards"
 import TextSection from "@/components/text-section"
 import SecondGallery from "@/components/second-gallery"
-import AboutInfoSection from "@/components/about-info-section"
 import AboutMenuSection from "@/components/about-menu-section"
 import Footer from "@/components/footer"
 
@@ -52,7 +51,6 @@ export default function Home() {
       <ServiceCards />
       <TextSection />
       <SecondGallery />
-      <AboutInfoSection />
       <AboutMenuSection />
       <Footer />
     </motion.main>
