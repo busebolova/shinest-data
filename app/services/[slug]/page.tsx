@@ -20,7 +20,7 @@ const servicesData = {
       <p>Danışmanlık hizmetimiz, mekanınızın mevcut durumunu değerlendirerek başlar. Ardından, ihtiyaçlarınız ve beklentileriniz doğrultusunda size özel çözümler sunarız.</p>
       <p>Online danışmanlık hizmetimiz sayesinde, dünyanın neresinde olursanız olun, profesyonel iç mimarlık desteğimizden faydalanabilirsiniz. Video konferans yoluyla mekanınızı değerlendirir, size özel öneriler sunarız.</p>
     `,
-    image: "/placeholder.svg?height=800&width=1200",
+    image: "/images/consulting-service.png",
     features: [
       "Mekan analizi ve değerlendirme",
       "Konsept danışmanlığı",

@@ -12,6 +12,7 @@ export default function TextSection() {
   // SHINEST harfleri için animasyon
   const mainText1 = t("text.main1").split("")
   const mainText2 = t("text.main2").split("")
+  const handwritingText = t("text.handwriting").split("")
 
   return (
     <section ref={ref} className="py-20 bg-[#f9f7f4]">
@@ -65,14 +66,25 @@ export default function TextSection() {
           </motion.div>
 
           {/* "IŞIK TUTAR!" text - Directly rendered with fade-in */}
-          <motion.h2
-            className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl text-[#c4975a] leading-none uppercase mt-0 mb-8 md:mb-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 1.0, delay: 1.2 }}
-          >
-            {t("text.handwriting")}
-          </motion.h2>
+          <motion.div className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl text-[#c4975a] leading-none uppercase mt-0 mb-8 md:mb-12 flex justify-center flex-wrap">
+            {handwritingText.map((letter, index) => (
+              <motion.span
+                key={`handwriting-${index}`}
+                className="inline-block"
+                initial={{ opacity: 0, y: -50, scale: 0.8 }}
+                animate={isInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -50, scale: 0.8 }}
+                transition={{
+                  duration: 0.6,
+                  delay: 1.2 + index * 0.1, // Önceki metinlerden sonra başlaması için gecikme artırıldı
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 12,
+                }}
+              >
+                {letter === " " ? "\u00A0" : letter}
+              </motion.span>
+            ))}
+          </motion.div>
 
           {/* Description Text */}
           <motion.div

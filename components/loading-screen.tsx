@@ -53,7 +53,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
     >
       <motion.div
         className="text-center"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
@@ -97,7 +97,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
           className="font-display text-3xl md:text-4xl text-[#c4975a] text-center mb-2"
           initial={{
             opacity: 0,
-            y: 20,
+            y: 0,
             fontWeight: 100,
           }}
           animate={{
@@ -121,7 +121,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
         {/* Subtitle */}
         <motion.p
           className="font-sans font-normal text-xs md:text-sm text-[#8b7355] tracking-[0.2em] uppercase mb-12"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 1.2 }}
         >
