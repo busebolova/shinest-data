@@ -1,6 +1,6 @@
 "use client"
 
-import { signIn } from "@/app/api/auth/[...nextauth]/route" // Import signIn from the generated route
+import { signIn } from "@/auth" // Import signIn from the generated route
 import { Button } from "@/components/ui/button"
 import { Github } from "lucide-react"
 import { motion } from "framer-motion"

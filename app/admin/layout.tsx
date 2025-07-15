@@ -2,7 +2,7 @@ import type React from "react"
 import { Inter } from "next/font/google"
 import AdminSidebar from "@/components/admin/sidebar"
 import AdminHeader from "@/components/admin/header"
-import { auth } from "next-auth" // Doğru import yolu
+import { auth } from "@/auth" // Doğru import yolu
 import { redirect } from "next/navigation"
 import { SessionProvider } from "next-auth/react" // Import SessionProvider
 
