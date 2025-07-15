@@ -1,166 +1,227 @@
 "use client"
 
-import { useState, useEffect, useContext } from "react"
-import Image from "next/image"
+import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
+import { useParams } from "next/navigation"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import { LanguageContext } from "@/contexts/language-context"
-import { Loader2, AlertCircle, Calendar, MapPin, Check } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+import Image from "next/image"
+import Link from "next/link"
+import { useLanguage } from "@/contexts/language-context"
+import { useQuoteForm } from "@/contexts/quote-form-context"
+import { projectsData } from "@/data/projects-data" // Import the project data
 
-interface Project {
-  id: string
-  title: { tr: string; en: string }
-  description: { tr: string; en: string }
-  category: { tr: string; en: string }
-  images: string[]
-  year: string
-  location: string
-  features?: { tr: string[]; en: string[] }
-}
+export default function ProjectDetailPage() {
+  const { t } = useLanguage()
+  const { openQuoteForm } = useQuoteForm()
+  const params = useParams()
+  const slug = params.slug as string
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [displayText, setDisplayText] = useState("")
 
-export default function ProjectDetailPage({ params }: { params: { slug: string } }) {
-  const { language } = useContext(LanguageContext)
-  const [project, setProject] = useState<Project | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // Get the current project data
+  const projectData = projectsData[slug as keyof typeof projectsData]
+  const fullText = projectData?.title || ""
+
+  // SHINEST letters for animation
+  const shinestLetters = "SHINEST".split("")
 
   useEffect(() => {
-    const fetchProject = async () => {
-      if (!params.slug) return
-      setLoading(true)
-      setError(null)
-      try {
-        const response = await fetch(`/api/projects?slug=${params.slug}`)
-        if (!response.ok) {
-          throw new Error("Project not found.")
-        }
-        const data = await response.json()
-        setProject(data.project)
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred."
-        setError(errorMessage)
-      } finally {
-        setLoading(false)
-      }
-    }
+    window.scrollTo(0, 0)
+    setDisplayText("")
+    setIsLoaded(false)
 
-    fetchProject()
-  }, [params.slug])
+    const initialTimer = setTimeout(() => {
+      setIsLoaded(true)
+      const typingTimer = setInterval(() => {
+        setDisplayText((prev) => {
+          if (prev.length < fullText.length) {
+            return fullText.slice(0, prev.length + 1)
+          } else {
+            clearInterval(typingTimer)
+            return prev
+          }
+        })
+      }, 120)
+      return () => clearInterval(typingTimer)
+    }, 100)
 
-  if (loading) {
+    return () => clearTimeout(initialTimer)
+  }, [fullText])
+
+  if (!projectData) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
+        <p className="text-2xl text-shinest-blue">Proje bulunamadı.</p>
       </div>
     )
   }
-
-  if (error || !project) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-destructive">
-        <AlertCircle className="h-16 w-16 mb-4" />
-        <h1 className="text-2xl font-bold">Project Not Found</h1>
-        <p>{error}</p>
-      </div>
-    )
-  }
-
-  const { title, description, category, images, year, location, features } = project
-  const currentTitle = title[language] || title.tr
-  const currentDescription = description[language] || description.tr
-  const currentCategory = category[language] || category.tr
-  const currentFeatures = features?.[language] || features?.tr || []
 
   return (
-    <>
+    <main className="min-h-screen bg-[#f5f3f0]">
       <Header />
-      <main className="pt-24 bg-gray-50">
-        <div className="container mx-auto px-4 py-12">
-          <article>
-            <header className="mb-12 text-center">
-              <Badge variant="secondary" className="mb-4">
-                {currentCategory}
-              </Badge>
-              <h1 className="text-4xl md:text-6xl font-bold text-gray-900">{currentTitle}</h1>
-              <div className="flex justify-center items-center gap-6 mt-6 text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  <span>{year}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  <span>{location}</span>
-                </div>
-              </div>
-            </header>
 
-            {images && images.length > 0 && (
-              <div className="mb-12">
-                <div className="relative w-full h-[300px] md:h-[500px] lg:h-[600px] rounded-lg overflow-hidden shadow-lg">
-                  <Image
-                    src={images[0] || "/placeholder.svg"}
-                    alt={currentTitle}
-                    layout="fill"
-                    objectFit="cover"
-                    priority
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-              <div className="lg:col-span-2">
-                <h2 className="text-3xl font-bold mb-4">
-                  {language === "tr" ? "Proje Açıklaması" : "Project Description"}
-                </h2>
-                <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-                  <p>{currentDescription}</p>
-                </div>
-              </div>
-              <div>
-                {currentFeatures.length > 0 && (
-                  <Card>
-                    <CardContent className="p-6">
-                      <h3 className="text-2xl font-bold mb-4">{language === "tr" ? "Özellikler" : "Features"}</h3>
-                      <ul className="space-y-3">
-                        {currentFeatures.map((feature, index) => (
-                          <li key={index} className="flex items-start">
-                            <Check className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+      <section className="pt-32 sm:pt-36 md:pt-40 pb-20">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+          {/* Header - Mobile Responsive */}
+          <motion.div
+            className="text-center mb-12 md:mb-16"
+            initial={{ opacity: 0, y: 50 }}
+            animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+            transition={{ duration: 1.0, ease: [0.25, 0.46, 0.45, 0.94] }}
+          >
+            {/* SHINEST - Yukarıdan gelen harf animasyonu */}
+            <div className="font-display text-[16vw] sm:text-[14vw] md:text-[12vw] lg:text-[10vw] xl:text-[8vw] text-shinest-blue leading-[0.85] font-normal mb-6 md:mb-8 flex justify-center">
+              {shinestLetters.map((letter, index) => (
+                <motion.span
+                  key={index}
+                  className="inline-block"
+                  initial={{ opacity: 0, y: -50, scale: 0.8 }}
+                  animate={isLoaded ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -50, scale: 0.8 }}
+                  transition={{
+                    duration: 1.2,
+                    delay: 0.3 + index * 0.08,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                    type: "spring",
+                    stiffness: 100,
+                    damping: 12,
+                  }}
+                >
+                  {letter}
+                </motion.span>
+              ))}
             </div>
 
-            {images && images.length > 1 && (
-              <div className="mt-16">
-                <h2 className="text-3xl font-bold mb-8 text-center">
-                  {language === "tr" ? "Proje Galerisi" : "Project Gallery"}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {images.slice(1).map((img, index) => (
-                    <div key={index} className="relative h-64 w-full rounded-md overflow-hidden shadow-md">
-                      <Image
-                        src={img || "/placeholder.svg"}
-                        alt={`${currentTitle} gallery image ${index + 1}`}
-                        layout="fill"
-                        objectFit="cover"
-                      />
-                    </div>
-                  ))}
-                </div>
+            {/* Project Title */}
+            <motion.div
+              className="flex justify-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{
+                duration: 1.5,
+                delay: 1.3,
+                ease: [0.25, 0.46, 0.45, 0.94],
+              }}
+            >
+              <h1 className="text-[#c4975a] text-[8vw] sm:text-[6vw] md:text-[5vw] lg:text-[4vw] xl:text-[3vw]">
+                {displayText}
+                {displayText.length < fullText.length && (
+                  <motion.span
+                    className="inline-block w-0.5 h-[6vw] sm:h-[4vw] md:h-[3vw] lg:h-[2.5vw] xl:h-[2vw] bg-[#c4975a] ml-1"
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 1.0, repeat: Number.POSITIVE_INFINITY }}
+                  />
+                )}
+              </h1>
+            </motion.div>
+          </motion.div>
+
+          {/* Main Content */}
+          <motion.div
+            className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16"
+            initial={{ opacity: 0, y: 50 }}
+            animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+            transition={{ duration: 0.8, delay: 1.8 }}
+          >
+            {/* Main Image */}
+            <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-lg overflow-hidden shadow-lg">
+              <Image
+                src={projectData.image || "/placeholder.svg"}
+                alt={projectData.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority={true}
+              />
+            </div>
+
+            {/* Description and Features */}
+            <div className="space-y-6">
+              <p className="font-sans text-lg text-[#2a2a2a] leading-relaxed">{projectData.location}</p>
+              <div
+                className="font-sans text-base text-[#2a2a2a] leading-relaxed space-y-4"
+                dangerouslySetInnerHTML={{ __html: projectData.fullDescription }}
+              />
+
+              <h3 className="font-display text-2xl text-shinest-blue mt-8">Proje Özellikleri</h3>
+              <ul className="list-disc pl-6 space-y-2">
+                {projectData.features.map((feature, index) => (
+                  <motion.li
+                    key={index}
+                    className="font-sans text-[#2a2a2a]"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={isLoaded ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+                    transition={{ duration: 0.5, delay: 2.0 + index * 0.1 }}
+                  >
+                    {feature}
+                  </motion.li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+
+          {/* Project Gallery */}
+          {projectData.galleryImages && projectData.galleryImages.length > 0 && (
+            <motion.div
+              className="mb-16"
+              initial={{ opacity: 0, y: 50 }}
+              animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+              transition={{ duration: 0.8, delay: 2.2 }}
+            >
+              <h3 className="font-display text-3xl text-shinest-blue mb-8 text-center">Galeri</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {projectData.galleryImages.map((imgSrc, index) => (
+                  <motion.div
+                    key={index}
+                    className="relative h-64 rounded-lg overflow-hidden shadow-md"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={isLoaded ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.6, delay: 2.4 + index * 0.15 }}
+                  >
+                    <Image
+                      src={imgSrc || "/placeholder.svg"}
+                      alt={`${projectData.title} - Image ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      priority={index === 0}
+                    />
+                  </motion.div>
+                ))}
               </div>
-            )}
-          </article>
+            </motion.div>
+          )}
+
+          {/* CTA */}
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, y: 30 }}
+            animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 3.0 }}
+          >
+            <p className="font-sans text-lg text-[#2a2a2a] mb-6 max-w-3xl mx-auto">
+              Bu proje hakkında daha fazla bilgi almak veya kendi projeniz için teklif almak ister misiniz?
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={openQuoteForm}
+                className="inline-flex items-center justify-center gap-2 bg-shinest-blue text-white px-8 py-4 rounded-full font-sans font-medium hover:bg-shinest-blue/80 transition-colors duration-300"
+              >
+                <span>{t("services.getQuote")}</span>
+                <span>→</span>
+              </button>
+              <Link
+                href="/projects"
+                className="inline-flex items-center justify-center gap-2 border border-shinest-blue text-shinest-blue px-8 py-4 rounded-full font-sans font-medium hover:bg-shinest-blue/10 transition-colors duration-300"
+              >
+                <span>Tüm Projeler</span>
+              </Link>
+            </div>
+          </motion.div>
         </div>
-      </main>
+      </section>
+
       <Footer />
-    </>
+    </main>
   )
 }

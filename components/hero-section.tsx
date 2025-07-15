@@ -3,94 +3,84 @@
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { useContent } from "@/hooks/use-content"
 
-export function HeroSection() {
-  const { content, loading } = useContent("home")
+export default function HeroSection() {
   const [isLoaded, setIsLoaded] = useState(false)
+  const shinestLetters = "SHINEST".split("")
 
   useEffect(() => {
+    // Component mount olduğunda basit bir delay ile yüklenmiş olarak işaretle
     const timer = setTimeout(() => {
       setIsLoaded(true)
-    }, 800)
+    }, 800) // Videodaki gibi daha yumuşak başlangıç
+
     return () => clearTimeout(timer)
   }, [])
 
-  if (loading) {
-    return (
-      <section className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#f5f3f0]">
-        <div className="animate-pulse">
-          <div className="h-32 bg-gray-200 rounded w-96 mb-4"></div>
-        </div>
-      </section>
-    )
-  }
-
-  const heroData = content?.hero || {
-    title: "SHINEST",
-    image: "/images/hero-image.png",
-  }
-
   return (
-    <section className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#f5f3f0] pt-20">
-      {/* Container for the layout */}
-      <div className="relative w-full max-w-7xl mx-auto px-4 flex flex-col items-center justify-center">
-        {/* Large SHINEST Letters */}
-        <div className="relative z-30 flex items-center justify-center w-full mb-8">
+    <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-24 md:pt-32 lg:pt-40">
+      {/* Background Gradient */}
+      <div className="absolute inset-0 bg-[#f5f3f0] z-0" />
+
+      <div className="w-full relative z-10 flex flex-col items-center justify-center px-4">
+        {/* Main Layout Container - Perfectly Centered */}
+        <div className="relative w-full flex flex-col items-center justify-center">
+          {/* Large SHINEST Text - Tek satır, yukarıdan aşağıya harf animasyonu */}
+          <div className="relative z-30 flex items-center justify-center mb-2 md:mb-4 w-full">
+            <div className="font-display text-[18vw] sm:text-[16vw] md:text-[14vw] lg:text-[12vw] xl:text-[10vw] text-[#c4975a] leading-[0.7] tracking-[-0.03em] drop-shadow-lg text-center flex justify-center">
+              {shinestLetters.map((letter, index) => (
+                <motion.span
+                  key={index}
+                  className="inline-block"
+                  initial={{ opacity: 0, y: -100, scale: 0.8 }}
+                  animate={isLoaded ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -100, scale: 0.8 }}
+                  transition={{
+                    duration: 1.2,
+                    delay: 0.2 + index * 0.08,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                    type: "spring",
+                    stiffness: 100,
+                    damping: 12,
+                  }}
+                >
+                  {letter}
+                </motion.span>
+              ))}
+            </div>
+          </div>
+
+          {/* Single Center Image - Videodaki gibi yumuşak scale animasyon */}
           <motion.div
-            className="font-display text-[25vw] sm:text-[22vw] md:text-[18vw] lg:text-[15vw] xl:text-[12vw] leading-[0.75] tracking-[0.02em] flex justify-center items-center text-[#c4975a] font-bold"
-            initial={{ opacity: 0, y: -100, scale: 0.8 }}
-            animate={isLoaded ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -100, scale: 0.8 }}
+            className="relative -mt-8 sm:-mt-12 md:-mt-16 lg:-mt-20 xl:-mt-24 flex justify-center w-full"
+            initial={{ opacity: 0, scale: 0.85, y: 50 }}
+            animate={isLoaded ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.85, y: 50 }}
             transition={{
-              duration: 1.2,
-              delay: 0.2,
+              duration: 1.8,
+              delay: 1.0,
               ease: [0.25, 0.46, 0.45, 0.94],
-              type: "spring",
-              stiffness: 100,
-              damping: 12,
-            }}
-            style={{
-              textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
-              fontFamily: "Didot, serif",
             }}
           >
-            SHINEST
+            <div className="w-[70vw] sm:w-[60vw] md:w-[50vw] lg:w-[40vw] xl:w-[35vw] h-[50vh] sm:h-[55vh] md:h-[65vh] lg:h-[75vh] xl:h-[80vh] relative rounded-lg overflow-hidden shadow-lg">
+              <Image
+                src="/images/hero-main.png"
+                alt="Luxury Interior Design"
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 640px) 70vw, (max-width: 768px) 60vw, (max-width: 1024px) 50vw, (max-width: 1280px) 40vw, 35vw"
+              />
+            </div>
           </motion.div>
         </div>
 
-        {/* Interior Image - Positioned below and covering about half of the letters */}
+        {/* Minimal Floating Elements */}
         <motion.div
-          className="relative -mt-[12vw] sm:-mt-[10vw] md:-mt-[8vw] lg:-mt-[6vw] xl:-mt-[5vw] z-20 flex justify-center w-full"
-          initial={{ opacity: 0, scale: 0.9, y: 50 }}
-          animate={isLoaded ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.9, y: 50 }}
-          transition={{
-            duration: 1.8,
-            delay: 1.0,
-            ease: [0.25, 0.46, 0.45, 0.94],
-          }}
-        >
-          <div className="w-[80vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw] xl:w-[45vw] h-[40vh] sm:h-[45vh] md:h-[50vh] lg:h-[55vh] xl:h-[60vh] relative rounded-lg overflow-hidden shadow-2xl">
-            <Image
-              src={heroData.image || "/images/hero-image.png"}
-              alt="SHINEST Interior Design"
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 640px) 80vw, (max-width: 768px) 70vw, (max-width: 1024px) 60vw, (max-width: 1280px) 50vw, 45vw"
-            />
-            {/* Subtle overlay for better integration */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-          </div>
-        </motion.div>
-
-        {/* Minimal decorative elements */}
-        <motion.div
-          className="absolute top-1/4 left-8 w-2 h-2 bg-[#c4975a] rounded-full opacity-40"
+          className="absolute top-1/4 left-4 sm:left-8 w-1 h-1 bg-[#c4975a] rounded-full opacity-40"
           initial={{ opacity: 0, scale: 0 }}
           animate={
             isLoaded
               ? {
-                  opacity: [0, 0.4, 0.7, 0.4],
+                  opacity: [0, 0.4, 0.8, 0.4],
                   scale: [0, 1, 1.2, 1],
                 }
               : { opacity: 0, scale: 0 }
@@ -104,7 +94,7 @@ export function HeroSection() {
         />
 
         <motion.div
-          className="absolute bottom-1/3 right-12 w-1.5 h-1.5 bg-[#d4a76a] rounded-full opacity-30"
+          className="absolute bottom-1/3 right-6 sm:right-12 w-1 h-1 bg-[#8b7355] rounded-full opacity-30"
           initial={{ opacity: 0, scale: 0 }}
           animate={
             isLoaded
@@ -125,5 +115,3 @@ export function HeroSection() {
     </section>
   )
 }
-
-export default HeroSection

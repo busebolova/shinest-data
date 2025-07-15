@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 import Image from "next/image"
 
-export function SecondGallery() {
+export default function SecondGallery() {
   const galleryRef = useRef(null)
 
   // Gallery scroll animations
@@ -26,7 +26,7 @@ export function SecondGallery() {
   const galleryImages = [
     {
       id: "gallery-image-1",
-      src: "/images/second-gallery-1.png",
+      src: "/images/second-gallery-patio.png",
       alt: "Design Consultation",
       position: "left-[5%] sm:left-[10%] md:left-[15%] top-[10%]",
       width: "w-[40%] sm:w-[35%] md:w-[35%]",
@@ -36,10 +36,11 @@ export function SecondGallery() {
       opacity: image1Opacity,
       y: image1Y,
       sizes: "(max-width: 640px) 40vw, (max-width: 768px) 35vw, 35vw",
+      priority: true,
     },
     {
       id: "gallery-image-2",
-      src: "/images/second-gallery-2.png",
+      src: "/images/second-gallery-kitchen.png",
       alt: "Project Implementation",
       position: "right-[5%] sm:right-[8%] md:right-[10%] top-[25%]",
       width: "w-[50%] sm:w-[45%] md:w-[45%]",
@@ -55,7 +56,7 @@ export function SecondGallery() {
   return (
     <section
       ref={galleryRef}
-      className="min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh] bg-white relative overflow-hidden"
+      className="min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh] bg-[#f9f7f4] relative overflow-hidden py-8 md:py-16"
     >
       <div className="w-full h-full relative">
         {galleryImages.map((image) => (
@@ -76,7 +77,7 @@ export function SecondGallery() {
                   fill
                   className="object-cover"
                   sizes={image.sizes}
-                  priority={true}
+                  priority={image.priority}
                 />
               </div>
             </div>
@@ -86,5 +87,3 @@ export function SecondGallery() {
     </section>
   )
 }
-
-export default SecondGallery

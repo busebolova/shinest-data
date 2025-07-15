@@ -7,37 +7,37 @@ import Image from "next/image"
 const projects = [
   {
     id: 1,
-    title: "Modern Villa",
+    title: "Cozy Living Room",
     location: "İstanbul",
-    image: "/images/gallery-1.png",
+    image: "/images/gallery-new-1.png",
   },
   {
     id: 2,
-    title: "Wooden Details",
+    title: "Elegant Living Space",
     location: "Bodrum",
-    image: "/images/gallery-2.png",
+    image: "/images/gallery-new-2.png",
   },
   {
     id: 3,
-    title: "Minimal Bathroom",
+    title: "Modern Bedroom",
     location: "Ankara",
-    image: "/images/gallery-3.png",
+    image: "/images/gallery-new-3.png",
   },
   {
     id: 4,
-    title: "Kitchen Design",
+    title: "Minimalist Bathroom",
     location: "İzmir",
-    image: "/images/gallery-4.png",
+    image: "/images/gallery-new-4.png",
   },
   {
     id: 5,
-    title: "Living Space",
+    title: "Chic Dining Room",
     location: "Antalya",
-    image: "/images/gallery-5.png",
+    image: "/images/gallery-new-5.png",
   },
 ]
 
-export function ScrollGallery() {
+export default function ScrollGallery() {
   const containerRef = useRef(null)
 
   const { scrollYProgress } = useScroll({
@@ -87,7 +87,7 @@ export function ScrollGallery() {
                     alt={projects[0].title}
                     fill
                     className="object-cover"
-                    priority
+                    priority={true}
                     sizes="(max-width: 640px) 45vw, (max-width: 768px) 40vw, 35vw"
                   />
                 </div>
@@ -187,5 +187,3 @@ export function ScrollGallery() {
     </section>
   )
 }
-
-export default ScrollGallery

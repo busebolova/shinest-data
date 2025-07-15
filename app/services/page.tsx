@@ -13,31 +13,32 @@ export default function ServicesPage() {
   const { t } = useLanguage()
   const { openQuoteForm } = useQuoteForm()
   const [isLoaded, setIsLoaded] = useState(false)
+  const [displayText, setDisplayText] = useState("")
+  const fullText = t("services.title")
+
+  // SHINEST harfleri için animasyon
   const shinestLetters = "SHINEST".split("")
 
   const services = [
     {
       id: "consulting",
-      title: "Danışmanlık",
-      description:
-        "Profesyonel iç mimarlık danışmanlığı ile hayalinizdeki mekanı planlayın. Uzman ekibimiz, projenizin her aşamasında size rehberlik eder.",
-      image: "/images/consulting-service.jpeg",
+      title: t("services.consulting"),
+      description: t("services.consulting.desc"),
+      image: "/placeholder.svg?height=600&width=800",
       slug: "consulting",
     },
     {
       id: "design",
-      title: "Tasarım",
-      description:
-        "Yaratıcı ve işlevsel tasarım çözümleri ile mekanlarınızı dönüştürün. Modern estetik anlayışımızla kişisel tarzınızı yansıtan mekanlar yaratıyoruz.",
-      image: "/images/design-service.jpeg",
+      title: t("services.design"),
+      description: t("services.design.desc"),
+      image: "/placeholder.svg?height=600&width=800",
       slug: "design",
     },
     {
       id: "implementation",
-      title: "Uygulama",
-      description:
-        "Tasarımdan uygulamaya kadar tüm süreçleri profesyonelce yönetiyoruz. Kaliteli işçilik ve zamanında teslimat garantisi ile projelerinizi hayata geçiriyoruz.",
-      image: "/images/implementation-service.jpeg",
+      title: t("services.implementation"),
+      description: t("services.implementation.desc"),
+      image: "/placeholder.svg?height=600&width=800",
       slug: "implementation",
     },
   ]
@@ -47,15 +48,31 @@ export default function ServicesPage() {
     window.scrollTo(0, 0)
 
     // State'leri reset et
+    setDisplayText("")
     setIsLoaded(false)
 
     // Kısa bir delay sonra animasyonları başlat
     const initialTimer = setTimeout(() => {
       setIsLoaded(true)
+
+      const timer = setTimeout(() => {
+        let index = 0
+        const typingTimer = setInterval(() => {
+          if (index <= fullText.length) {
+            setDisplayText(fullText.slice(0, index))
+            index++
+          } else {
+            clearInterval(typingTimer)
+          }
+        }, 120)
+        return () => clearInterval(typingTimer)
+      }, 800)
+
+      return () => clearTimeout(timer)
     }, 100)
 
     return () => clearTimeout(initialTimer)
-  }, [])
+  }, [fullText])
 
   return (
     <main className="min-h-screen bg-[#f5f3f0]">
@@ -92,21 +109,27 @@ export default function ServicesPage() {
               ))}
             </div>
 
-            {/* Hizmetlerimiz Başlığı - Kelime olarak animasyon */}
+            {/* Hizmetler Başlığı */}
             <motion.div
-              className="text-[#c4975a] text-[8vw] sm:text-[6vw] md:text-[5vw] lg:text-[4vw] xl:text-[3vw] flex justify-center font-display"
-              initial={{ opacity: 0, y: -30, scale: 0.8 }}
-              animate={isLoaded ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -30, scale: 0.8 }}
+              className="flex justify-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{
-                duration: 1.2,
+                duration: 1.5,
                 delay: 1.3,
                 ease: [0.25, 0.46, 0.45, 0.94],
-                type: "spring",
-                stiffness: 100,
-                damping: 12,
               }}
             >
-              Hizmetlerimiz
+              <h1 className="text-[#c4975a] text-[8vw] sm:text-[6vw] md:text-[5vw] lg:text-[4vw] xl:text-[3vw]">
+                {displayText}
+                {displayText.length < fullText.length && (
+                  <motion.span
+                    className="inline-block w-0.5 h-[6vw] sm:h-[4vw] md:h-[3vw] lg:h-[2.5vw] xl:h-[2vw] bg-[#c4975a] ml-1"
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 1.0, repeat: Number.POSITIVE_INFINITY }}
+                  />
+                )}
+              </h1>
             </motion.div>
           </motion.div>
 
@@ -146,20 +169,21 @@ export default function ServicesPage() {
                     className="inline-flex items-center gap-2 bg-shinest-blue text-white px-6 py-3 rounded-full font-sans font-medium hover:bg-shinest-blue/80 transition-colors duration-300"
                   >
                     <span>Detaylı Bilgi</span>
+                    <span>→</span>
                   </Link>
                 </div>
               </motion.div>
             ))}
           </div>
 
-          {/* CTA - "Özel Projeniz" yerine "Projeniz" */}
+          {/* CTA */}
           <motion.div
             className="text-center bg-white p-8 sm:p-12 rounded-lg shadow-lg"
             initial={{ opacity: 0, y: 30 }}
             animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
             transition={{ duration: 0.8, delay: 2.6 }}
           >
-            <h3 className="font-display text-2xl sm:text-3xl text-shinest-blue mb-4">Projeniz İçin Teklif Alın</h3>
+            <h3 className="font-display text-2xl sm:text-3xl text-shinest-blue mb-4">Özel Projeniz İçin Teklif Alın</h3>
             <p className="font-sans text-lg text-[#2a2a2a] mb-6 max-w-3xl mx-auto">
               SHINEST İç Mimarlık olarak, her projeye özel çözümler sunuyoruz. Hayalinizdeki mekanı birlikte yaratalım.
             </p>
@@ -167,7 +191,8 @@ export default function ServicesPage() {
               onClick={openQuoteForm}
               className="inline-flex items-center gap-2 bg-shinest-blue text-white px-8 py-4 rounded-full font-sans font-medium hover:bg-shinest-blue/80 transition-colors duration-300"
             >
-              <span>Teklif Al</span>
+              <span>{t("services.getQuote")}</span>
+              <span>→</span>
             </button>
           </motion.div>
         </div>

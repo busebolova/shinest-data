@@ -4,65 +4,84 @@ import type React from "react"
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, User, Mail, Phone, MessageSquare, Send } from "lucide-react"
-import { useQuoteForm } from "@/contexts/quote-form-context"
+import { X, Send } from "lucide-react"
 
-export function QuoteFormModal() {
-  const { isOpen, closeQuoteForm } = useQuoteForm()
+interface QuoteFormModalProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export default function QuoteFormModal({ isOpen, onClose }: QuoteFormModalProps) {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    fullName: "",
     phone: "",
-    service: "",
+    email: "",
+    designPackage: "",
+    meetingType: "",
     message: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    // Clear error when field is edited
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.fullName.trim()) newErrors.fullName = "İsim Soyisim alanı zorunludur"
+    if (!formData.phone.trim()) newErrors.phone = "Telefon alanı zorunludur"
+    if (!formData.email.trim()) newErrors.email = "E-posta alanı zorunludur"
+    else if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = "Geçerli bir e-posta adresi giriniz"
+    if (!formData.designPackage) newErrors.designPackage = "Tasarım paketi seçimi zorunludur"
+    if (!formData.meetingType) newErrors.meetingType = "Görüşme şekli seçimi zorunludur"
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!validateForm()) return
+
     setIsSubmitting(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Burada form verilerini gönderme işlemi yapılabilir
+      // Örneğin bir API endpoint'e veya e-posta servisine
 
-      // WhatsApp integration
-      const whatsappMessage = `
-Yeni Teklif Talebi:
-İsim: ${formData.name}
-Email: ${formData.email}
-Telefon: ${formData.phone}
-Hizmet: ${formData.service}
-Mesaj: ${formData.message}
-      `.trim()
+      // Simüle edilmiş bir gecikme
+      await new Promise((resolve) => setTimeout(resolve, 1500))
 
-      const whatsappUrl = `https://wa.me/905321234567?text=${encodeURIComponent(whatsappMessage)}`
-      window.open(whatsappUrl, "_blank")
-
-      setSubmitStatus("success")
+      setIsSubmitted(true)
       setFormData({
-        name: "",
-        email: "",
+        fullName: "",
         phone: "",
-        service: "",
+        email: "",
+        designPackage: "",
+        meetingType: "",
         message: "",
       })
 
+      // 5 saniye sonra modal'ı kapat
       setTimeout(() => {
-        closeQuoteForm()
-        setSubmitStatus("idle")
-      }, 2000)
+        onClose()
+        setIsSubmitted(false)
+      }, 5000)
     } catch (error) {
-      setSubmitStatus("error")
+      console.error("Form gönderme hatası:", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -72,158 +91,222 @@ Mesaj: ${formData.message}
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={closeQuoteForm}
+          onClick={onClose}
         >
           <motion.div
+            className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto"
+            transition={{ type: "spring", damping: 20 }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#15415b]">Ücretsiz Teklif</h2>
-              <button onClick={closeQuoteForm} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  <User className="w-4 h-4 inline mr-2" />
-                  Ad Soyad *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#c4975a] focus:border-transparent transition-all"
-                  placeholder="Adınızı ve soyadınızı girin"
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Mail className="w-4 h-4 inline mr-2" />
-                  E-posta *
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#c4975a] focus:border-transparent transition-all"
-                  placeholder="E-posta adresinizi girin"
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Phone className="w-4 h-4 inline mr-2" />
-                  Telefon
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#c4975a] focus:border-transparent transition-all"
-                  placeholder="Telefon numaranızı girin"
-                />
-              </div>
-
-              {/* Service */}
-              <div>
-                <label htmlFor="service" className="block text-sm font-medium text-gray-700 mb-2">
-                  Hizmet Türü
-                </label>
-                <select
-                  id="service"
-                  name="service"
-                  value={formData.service}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#c4975a] focus:border-transparent transition-all"
+            <div className="p-6 md:p-8">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="font-display text-2xl text-shinest-blue">Teklif Formu</h2>
+                <button
+                  onClick={onClose}
+                  className="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-gray-100"
+                  aria-label="Kapat"
                 >
-                  <option value="">Hizmet seçin</option>
-                  <option value="interior-design">İç Mimarlık</option>
-                  <option value="architecture">Mimarlık</option>
-                  <option value="consultation">Danışmanlık</option>
-                  <option value="project-management">Proje Yönetimi</option>
-                </select>
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {/* Message */}
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  <MessageSquare className="w-4 h-4 inline mr-2" />
-                  Mesaj
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#c4975a] focus:border-transparent transition-all resize-none"
-                  placeholder="Projeniz hakkında detayları paylaşın"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-[#c4975a] text-white py-4 px-6 rounded-lg font-medium hover:bg-[#b8895a] focus:ring-2 focus:ring-[#c4975a] focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Gönderiliyor...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-5 h-5" />
-                    <span>Teklif Talep Et</span>
-                  </>
-                )}
-              </button>
-
-              {/* Status Messages */}
-              {submitStatus === "success" && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-green-800 text-sm">
-                    ✅ Mesajınız başarıyla gönderildi! En kısa sürede size dönüş yapacağız.
-                  </p>
+              {isSubmitted ? (
+                <div className="text-center py-12">
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", damping: 20 }}
+                  >
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-8 w-8 text-green-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-display text-shinest-blue mb-2">Teşekkürler!</h3>
+                    <p className="text-gray-600 mb-4">
+                      Talebiniz başarıyla alındı. En kısa sürede sizinle iletişime geçeceğiz.
+                    </p>
+                    <p className="text-sm text-gray-500">Bu pencere otomatik olarak kapanacaktır.</p>
+                  </motion.div>
                 </div>
-              )}
+              ) : (
+                <>
+                  <div className="mb-8 text-[#2a2a2a]">
+                    <p className="text-gray-600">
+                      Hayalinizdeki yaşam alanını birlikte tasarlamak için formu doldurun. En kısa sürede sizinle
+                      iletişime geçeceğiz.
+                    </p>
+                  </div>
 
-              {submitStatus === "error" && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-800 text-sm">❌ Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin.</p>
-                </div>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                          İsim Soyisim <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="fullName"
+                          name="fullName"
+                          value={formData.fullName}
+                          onChange={handleChange}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinest-blue ${
+                            errors.fullName ? "border-red-500" : "border-gray-300"
+                          }`}
+                          placeholder="Adınız Soyadınız"
+                        />
+                        {errors.fullName && <p className="mt-1 text-sm text-red-500">{errors.fullName}</p>}
+                      </div>
+
+                      <div>
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                          Telefon <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          id="phone"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinest-blue ${
+                            errors.phone ? "border-red-500" : "border-gray-300"
+                          }`}
+                          placeholder="05XX XXX XX XX"
+                        />
+                        {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                        E-posta <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinest-blue ${
+                          errors.email ? "border-red-500" : "border-gray-300"
+                        }`}
+                        placeholder="ornek@email.com"
+                      />
+                      {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                    </div>
+
+                    <div>
+                      <label htmlFor="designPackage" className="block text-sm font-medium text-gray-700 mb-1">
+                        Tasarım Paketi <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        id="designPackage"
+                        name="designPackage"
+                        value={formData.designPackage}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinest-blue ${
+                          errors.designPackage ? "border-red-500" : "border-gray-300"
+                        }`}
+                      >
+                        <option value="">Seçiniz</option>
+                        <option value="Işıltı (Konut)">Işıltı (Konut)</option>
+                        <option value="Işıltı Pro (Konut)">Işıltı Pro (Konut)</option>
+                        <option value="Parıltı (Konut)">Parıltı (Konut)</option>
+                        <option value="Zarafet (Konut)">Zarafet (Konut)</option>
+                        <option value="Diva (Konut)">Diva (Konut)</option>
+                        <option value="İkon (Ticari)">İkon (Ticari)</option>
+                        <option value="Elit (Ticari)">Elit (Ticari)</option>
+                        <option value="Star (Ticari)">Star (Ticari)</option>
+                        <option value="İncelemedim">İncelemedim</option>
+                      </select>
+                      {errors.designPackage && <p className="mt-1 text-sm text-red-500">{errors.designPackage}</p>}
+                    </div>
+
+                    <div>
+                      <label htmlFor="meetingType" className="block text-sm font-medium text-gray-700 mb-1">
+                        Görüşme Şekli <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                          <input
+                            type="radio"
+                            name="meetingType"
+                            value="Yazılı iletişim"
+                            checked={formData.meetingType === "Yazılı iletişim"}
+                            onChange={handleChange}
+                            className="mr-2 text-shinest-blue"
+                          />
+                          <span>Yazılı iletişim</span>
+                        </label>
+                        <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                          <input
+                            type="radio"
+                            name="meetingType"
+                            value="Yerinde keşif"
+                            checked={formData.meetingType === "Yerinde keşif"}
+                            onChange={handleChange}
+                            className="mr-2 text-shinest-blue"
+                          />
+                          <span>Yerinde keşif</span>
+                        </label>
+                      </div>
+                      {errors.meetingType && <p className="mt-1 text-sm text-red-500">{errors.meetingType}</p>}
+                    </div>
+
+                    <div>
+                      <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                        Mesajınız
+                      </label>
+                      <textarea
+                        id="message"
+                        name="message"
+                        value={formData.message}
+                        onChange={handleChange}
+                        rows={4}
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinest-blue border-gray-300"
+                        placeholder="Projeniz hakkında detayları buraya yazabilirsiniz..."
+                      ></textarea>
+                    </div>
+
+                    <div className="pt-4">
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full bg-shinest-blue text-white py-3 px-6 rounded-lg font-medium hover:bg-shinest-blue/90 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                            <span>Gönderiliyor...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            <span>Teklif Al</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </>
               )}
-            </form>
+            </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   )
 }
-
-export default QuoteFormModal

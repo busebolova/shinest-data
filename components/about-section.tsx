@@ -5,120 +5,80 @@ import { useInView } from "framer-motion"
 import { useRef } from "react"
 import Image from "next/image"
 
-export function AboutSection() {
+export default function AboutSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
 
   return (
-    <section ref={ref} className="py-20 lg:py-32 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* Left side - Text */}
+    <section ref={ref} className="py-20 bg-white">
+      <div className="container mx-auto px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          {/* Left Side - Image */}
           <motion.div
+            className="relative"
             initial={{ opacity: 0, x: -50 }}
             animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
             transition={{ duration: 0.8 }}
-            className="space-y-6"
+          >
+            <div className="aspect-[4/3] relative rounded-lg overflow-hidden">
+              <Image
+                src="/placeholder.svg?height=600&width=800&query=elegant interior design studio workspace with architectural drawings"
+                alt="About Shinest"
+                fill
+                className="object-cover"
+              />
+            </div>
+          </motion.div>
+
+          {/* Right Side - Content */}
+          <motion.div
+            className="space-y-8"
+            initial={{ opacity: 0, x: 50 }}
+            animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
           >
             <motion.h2
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-4xl lg:text-5xl font-bold text-[#15415b] leading-tight"
+              className="font-display text-4xl md:text-5xl text-[#c4975a]"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
             >
               Hakkımızda
             </motion.h2>
 
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-lg text-gray-600 leading-relaxed"
-            >
-              SHINEST olarak, yaşam alanlarınızı dönüştüren, size özel tasarım çözümleri sunuyoruz. Her proje,
-              müşterilerimizin hayallerini gerçeğe dönüştüren bir yolculuktur.
-            </motion.p>
-
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="text-lg text-gray-600 leading-relaxed"
-            >
-              Deneyimli ekibimiz, modern tasarım anlayışını fonksiyonellikle birleştirerek, yaşam alanlarınıza ışık
-              tutar.
-            </motion.p>
-
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="pt-4"
+              className="space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
             >
-              <button className="bg-[#c4975a] text-white px-8 py-3 rounded-full hover:bg-[#b8895a] transition-colors duration-300 font-medium">
-                Daha Fazla Bilgi
-              </button>
+              <p className="font-serif text-lg text-[#8b7355] leading-relaxed">
+                SHINEST İç Mimarlık, lüks yaşam alanları tasarlama konusunda uzmanlaşmış, yenilikçi ve estetik çözümler
+                sunan bir tasarım stüdyosudur.
+              </p>
+
+              <p className="font-serif text-lg text-[#8b7355] leading-relaxed">
+                Her projede zarafet, işlevsellik ve kişisel tarzı harmanlayarak, müşterilerimizin hayallerini gerçeğe
+                dönüştürüyoruz.
+              </p>
+
+              <p className="font-serif text-lg text-[#8b7355] leading-relaxed">
+                Dünya çapında projeler gerçekleştiren ekibimiz, en son tasarım trendlerini takip ederek, zamansız ve şık
+                iç mekanlar yaratmaktadır.
+              </p>
             </motion.div>
-          </motion.div>
-
-          {/* Right side - Image */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative"
-          >
-            <div className="relative h-[500px] lg:h-[600px] rounded-2xl overflow-hidden shadow-2xl">
-              <Image
-                src="/images/about-section-reference.png"
-                alt="SHINEST Hakkımızda"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-            </div>
-
-            {/* Decorative elements */}
-            <motion.div
-              className="absolute -top-4 -right-4 w-8 h-8 bg-[#c4975a] rounded-full opacity-80"
-              animate={
-                isInView
-                  ? {
-                      scale: [1, 1.2, 1],
-                      opacity: [0.8, 1, 0.8],
-                    }
-                  : { scale: 1, opacity: 0.8 }
-              }
-              transition={{
-                duration: 3,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeInOut",
-              }}
-            />
 
             <motion.div
-              className="absolute -bottom-6 -left-6 w-6 h-6 bg-[#d4a76a] rounded-full opacity-60"
-              animate={
-                isInView
-                  ? {
-                      scale: [1, 1.3, 1],
-                      opacity: [0.6, 0.9, 0.6],
-                    }
-                  : { scale: 1, opacity: 0.6 }
-              }
-              transition={{
-                duration: 4,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeInOut",
-                delay: 1,
-              }}
-            />
+              className="pt-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+            >
+              <p className="font-handwriting text-2xl text-[#c4975a]">"Tasarım, yaşamın kendisidir..."</p>
+            </motion.div>
           </motion.div>
         </div>
       </div>
     </section>
   )
 }
-
-export default AboutSection

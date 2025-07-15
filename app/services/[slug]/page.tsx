@@ -20,7 +20,7 @@ const servicesData = {
       <p>Danışmanlık hizmetimiz, mekanınızın mevcut durumunu değerlendirerek başlar. Ardından, ihtiyaçlarınız ve beklentileriniz doğrultusunda size özel çözümler sunarız.</p>
       <p>Online danışmanlık hizmetimiz sayesinde, dünyanın neresinde olursanız olun, profesyonel iç mimarlık desteğimizden faydalanabilirsiniz. Video konferans yoluyla mekanınızı değerlendirir, size özel öneriler sunarız.</p>
     `,
-    image: "/images/consulting-service.jpeg",
+    image: "/placeholder.svg?height=800&width=1200",
     features: [
       "Mekan analizi ve değerlendirme",
       "Konsept danışmanlığı",
@@ -56,7 +56,7 @@ const servicesData = {
       <p>Tasarım sürecimiz, mekanınızın potansiyelini maksimuma çıkarmak ve ihtiyaçlarınıza en uygun çözümleri sunmak üzerine kuruludur. Her projede özgün ve yenilikçi fikirler geliştirmeyi hedefliyoruz.</p>
       <p>3D görselleştirme hizmetimiz sayesinde, tasarımınızı hayata geçirmeden önce nasıl görüneceğini görebilir, gerekli değişiklikleri yapabilirsiniz.</p>
     `,
-    image: "/images/design-service.jpeg",
+    image: "/placeholder.svg?height=800&width=1200",
     features: [
       "Konsept tasarım",
       "Mekan planlama",
@@ -93,7 +93,7 @@ const servicesData = {
       <p>Uygulama sürecimiz, tasarım aşamasında belirlenen tüm detayların hayata geçirilmesini kapsar. Profesyonel ekibimiz, projenizin her aşamasında kalite kontrolü sağlar.</p>
       <p>Proje yönetimi hizmetimiz sayesinde, tüm süreci sizin adınıza takip eder, sorunsuz bir uygulama süreci yaşamanızı sağlarız.</p>
     `,
-    image: "/images/implementation-service.jpeg",
+    image: "/placeholder.svg?height=800&width=1200",
     features: [
       "Proje yönetimi",
       "Kalite kontrolü",
@@ -133,24 +133,44 @@ export default function ServiceDetailPage() {
   const params = useParams()
   const slug = params.slug as string
   const [isLoaded, setIsLoaded] = useState(false)
+  const [displayText, setDisplayText] = useState("")
+
+  // Geçerli hizmet verisini al
   const serviceData = servicesData[slug as keyof typeof servicesData]
+  const fullText = serviceData?.title || ""
 
   useEffect(() => {
     // Sayfa yüklendiğinde scroll'u en üste al
     window.scrollTo(0, 0)
 
     // State'leri reset et
+    setDisplayText("")
     setIsLoaded(false)
 
     // Kısa bir delay sonra animasyonları başlat
     const initialTimer = setTimeout(() => {
       setIsLoaded(true)
+
+      const timer = setTimeout(() => {
+        let index = 0
+        const typingTimer = setInterval(() => {
+          if (index <= fullText.length) {
+            setDisplayText(fullText.slice(0, index))
+            index++
+          } else {
+            clearInterval(typingTimer)
+          }
+        }, 120)
+        return () => clearInterval(typingTimer)
+      }, 800)
+
+      return () => clearTimeout(timer)
     }, 100)
 
     return () => clearTimeout(initialTimer)
-  }, [])
+  }, [fullText])
 
-  if (!servicesData[slug as keyof typeof servicesData]) {
+  if (!serviceData) {
     return (
       <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
         <p className="text-2xl text-shinest-blue">Hizmet bulunamadı.</p>
@@ -196,21 +216,27 @@ export default function ServiceDetailPage() {
               ))}
             </div>
 
-            {/* Hizmet Başlığı - Kelime olarak animasyon */}
+            {/* Hizmet Başlığı */}
             <motion.div
-              className="text-[#c4975a] text-[8vw] sm:text-[6vw] md:text-[5vw] lg:text-[4vw] xl:text-[3vw] flex justify-center"
-              initial={{ opacity: 0, y: -30, scale: 0.8 }}
-              animate={isLoaded ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -30, scale: 0.8 }}
+              className="flex justify-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{
-                duration: 1.2,
+                duration: 1.5,
                 delay: 1.3,
                 ease: [0.25, 0.46, 0.45, 0.94],
-                type: "spring",
-                stiffness: 100,
-                damping: 12,
               }}
             >
-              {serviceData.title}
+              <h1 className="text-[#c4975a] text-[8vw] sm:text-[6vw] md:text-[5vw] lg:text-[4vw] xl:text-[3vw]">
+                {displayText}
+                {displayText.length < fullText.length && (
+                  <motion.span
+                    className="inline-block w-0.5 h-[6vw] sm:h-[4vw] md:h-[3vw] lg:h-[2.5vw] xl:h-[2vw] bg-[#c4975a] ml-1"
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 1.0, repeat: Number.POSITIVE_INFINITY }}
+                  />
+                )}
+              </h1>
             </motion.div>
           </motion.div>
 
@@ -301,6 +327,7 @@ export default function ServiceDetailPage() {
                 className="inline-flex items-center justify-center gap-2 bg-shinest-blue text-white px-8 py-4 rounded-full font-sans font-medium hover:bg-shinest-blue/80 transition-colors duration-300"
               >
                 <span>{t("services.getQuote")}</span>
+                <span>→</span>
               </button>
               <Link
                 href="/services"

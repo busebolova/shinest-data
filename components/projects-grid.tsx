@@ -1,94 +1,222 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useInView } from "framer-motion"
+import { useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, ArrowRight } from "lucide-react"
-import { useGitHubProjects } from "@/hooks/use-github-projects"
 
-export function ProjectsGrid() {
-  const { projects, loading, error } = useGitHubProjects()
+const projects = [
+  {
+    id: 1,
+    title: "Modern Villa",
+    location: "İstanbul",
+    image: "/images/project-kitchen.png",
+    size: "large-vertical",
+  },
+  {
+    id: 2,
+    title: "Wooden Details",
+    location: "Bodrum",
+    image: "/images/project-patio.png",
+    size: "large-horizontal",
+  },
+  {
+    id: 3,
+    title: "Minimal Bathroom",
+    location: "Ankara",
+    image: "/placeholder.svg?height=500&width=700",
+    size: "medium",
+  },
+  {
+    id: 4,
+    title: "Luxury Apartment",
+    location: "İzmir",
+    image: "/placeholder.svg?height=600&width=400",
+    size: "small-vertical",
+  },
+  {
+    id: 5,
+    title: "Office Space",
+    location: "İstanbul",
+    image: "/placeholder.svg?height=400&width=600",
+    size: "small-horizontal",
+  },
+  {
+    id: 6,
+    title: "Hotel Lobby",
+    location: "Antalya",
+    image: "/placeholder.svg?height=500&width=500",
+    size: "medium-square",
+  },
+]
 
-  if (loading) {
-    return (
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="bg-gray-200 aspect-[4/3] rounded-xl mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Projeler yüklenirken bir hata oluştu: {error}</p>
-      </div>
-    )
-  }
-
-  const featuredProjects = projects.filter((project) => project.featured).slice(0, 6)
+export default function ProjectsGrid() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
 
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {featuredProjects.map((project, index) => (
-        <motion.div
-          key={project.id}
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: index * 0.1 }}
-          viewport={{ once: true }}
-        >
-          <Link href={`/projects/${project.id}`}>
-            <Card className="group overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
-              <div className="relative aspect-[4/3] overflow-hidden">
-                <Image
-                  src={project.images[0] || "/placeholder.svg?height=300&width=400"}
-                  alt={project.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute bottom-4 left-4 right-4 transform translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                  <div className="flex items-center justify-between text-white">
-                    <Badge variant="secondary" className="bg-white/20 text-white border-0">
-                      {project.category}
-                    </Badge>
-                    <ArrowRight className="w-5 h-5" />
-                  </div>
-                </div>
+    <section ref={ref} className="py-20 bg-white">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="grid grid-cols-12 gap-4 md:gap-6">
+          {/* Sol büyük dikey görsel */}
+          <motion.div
+            className="col-span-12 md:col-span-5 lg:col-span-4 row-span-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+          >
+            <div className="relative h-[70vh] md:h-[80vh]">
+              <Image
+                src={projects[0].image || "/placeholder.svg"}
+                alt={projects[0].title}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute bottom-0 left-0 p-4 bg-white bg-opacity-90">
+                <h3 className="font-display text-xl text-[#8b7355]">{projects[0].title}</h3>
+                <p className="font-sans text-sm text-[#8b7355]">{projects[0].location}</p>
               </div>
+            </div>
+          </motion.div>
 
-              <CardContent className="p-6">
-                <h3 className="font-display text-xl text-shinest-blue mb-2 group-hover:text-shinest-blue/80 transition-colors">
-                  {project.title}
-                </h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+          {/* Orta büyük yatay görsel */}
+          <motion.div
+            className="col-span-12 md:col-span-7 lg:col-span-5 row-span-1"
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <div className="relative h-[40vh]">
+              <Image
+                src={projects[1].image || "/placeholder.svg"}
+                alt={projects[1].title}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute bottom-0 left-0 p-4 bg-white bg-opacity-90">
+                <h3 className="font-display text-xl text-[#8b7355]">{projects[1].title}</h3>
+                <p className="font-sans text-sm text-[#8b7355]">{projects[1].location}</p>
+              </div>
+            </div>
+          </motion.div>
 
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>{project.year}</span>
-                  </div>
-                  {project.location && (
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="w-4 h-4" />
-                      <span>{project.location}</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        </motion.div>
-      ))}
-    </div>
+          {/* Sağ üst orta görsel */}
+          <motion.div
+            className="col-span-12 md:col-span-7 lg:col-span-3 row-span-1"
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
+            <div className="relative h-[40vh]">
+              <Image
+                src={projects[2].image || "/placeholder.svg"}
+                alt={projects[2].title}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute bottom-0 left-0 p-4 bg-white bg-opacity-90">
+                <h3 className="font-display text-xl text-[#8b7355]">{projects[2].title}</h3>
+                <p className="font-sans text-sm text-[#8b7355]">{projects[2].location}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Orta alt sol görsel */}
+          <motion.div
+            className="col-span-6 md:col-span-3 lg:col-span-2 row-span-1"
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            <div className="relative h-[35vh]">
+              <Image
+                src={projects[3].image || "/placeholder.svg"}
+                alt={projects[3].title}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute bottom-0 left-0 p-4 bg-white bg-opacity-90">
+                <h3 className="font-display text-lg text-[#8b7355]">{projects[3].title}</h3>
+                <p className="font-sans text-xs text-[#8b7355]">{projects[3].location}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Orta alt orta görsel */}
+          <motion.div
+            className="col-span-6 md:col-span-4 lg:col-span-3 row-span-1"
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
+            <div className="relative h-[35vh]">
+              <Image
+                src={projects[4].image || "/placeholder.svg"}
+                alt={projects[4].title}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute bottom-0 left-0 p-4 bg-white bg-opacity-90">
+                <h3 className="font-display text-lg text-[#8b7355]">{projects[4].title}</h3>
+                <p className="font-sans text-xs text-[#8b7355]">{projects[4].location}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Sağ alt kategoriler */}
+          <motion.div
+            className="col-span-12 md:col-span-5 lg:col-span-3 row-span-1 bg-white flex flex-col justify-center"
+            initial={{ opacity: 0, x: 20 }}
+            animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+          >
+            <div className="p-4 md:p-6">
+              <div className="mb-8">
+                <span className="text-[#c4975a] font-sans text-sm">»</span>
+              </div>
+              <nav className="space-y-4">
+                <Link
+                  href="#"
+                  className="block font-display text-xl text-[#8b7355] hover:text-[#c4975a] transition-colors"
+                >
+                  EV
+                </Link>
+                <Link
+                  href="#"
+                  className="block font-display text-xl text-[#8b7355] hover:text-[#c4975a] transition-colors"
+                >
+                  STUDYO
+                </Link>
+                <Link
+                  href="#"
+                  className="block font-display text-xl text-[#8b7355] hover:text-[#c4975a] transition-colors"
+                >
+                  SHINEST
+                </Link>
+                <Link
+                  href="#"
+                  className="block font-display text-xl text-[#8b7355] hover:text-[#c4975a] transition-colors"
+                >
+                  İŞ
+                </Link>
+                <Link
+                  href="#"
+                  className="block font-display text-xl text-[#8b7355] hover:text-[#c4975a] transition-colors"
+                >
+                  TEMAS ETMEK
+                </Link>
+                <Link
+                  href="#"
+                  className="block font-display text-xl text-[#8b7355] hover:text-[#c4975a] transition-colors"
+                >
+                  WEB MAGAZASI
+                </Link>
+              </nav>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
   )
 }

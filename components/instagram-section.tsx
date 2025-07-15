@@ -10,31 +10,31 @@ import { Button } from "@/components/ui/button"
 const instagramPosts = [
   {
     id: 1,
-    image: "/placeholder.svg?height=400&width=400",
+    image: "/placeholder.svg?height=400&width=400&query=luxury interior design detail shot",
   },
   {
     id: 2,
-    image: "/placeholder.svg?height=400&width=400",
+    image: "/placeholder.svg?height=400&width=400&query=modern furniture arrangement",
   },
   {
     id: 3,
-    image: "/placeholder.svg?height=400&width=400",
+    image: "/placeholder.svg?height=400&width=400&query=elegant lighting design",
   },
   {
     id: 4,
-    image: "/placeholder.svg?height=400&width=400",
+    image: "/placeholder.svg?height=400&width=400&query=luxury bathroom design",
   },
   {
     id: 5,
-    image: "/placeholder.svg?height=400&width=400",
+    image: "/placeholder.svg?height=400&width=400&query=contemporary living room",
   },
   {
     id: 6,
-    image: "/placeholder.svg?height=400&width=400",
+    image: "/placeholder.svg?height=400&width=400&query=designer kitchen interior",
   },
 ]
 
-export function InstagramSection() {
+export default function InstagramSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
 
@@ -54,10 +54,7 @@ export function InstagramSection() {
           <p className="font-serif text-lg text-[#8b7355] mb-8">
             Güncel projelerimizi ve tasarım ilhamlarımızı takip edin
           </p>
-          <Button
-            variant="outline"
-            className="border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white bg-transparent"
-          >
+          <Button variant="outline" className="border-[#c4975a] text-[#c4975a] hover:bg-[#c4975a] hover:text-white">
             @shinest_interior
           </Button>
         </motion.div>
@@ -88,5 +85,3 @@ export function InstagramSection() {
     </section>
   )
 }
-
-export default InstagramSection
