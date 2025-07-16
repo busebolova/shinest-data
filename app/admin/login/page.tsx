@@ -1,6 +1,6 @@
 "use client"
 
-import { signIn } from "@/auth" // Import signIn from the generated route
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Github } from "lucide-react"
 import { motion } from "framer-motion"
@@ -9,6 +9,14 @@ import { useSearchParams } from "next/navigation"
 export default function AdminLoginPage() {
   const searchParams = useSearchParams()
   const error = searchParams.get("error")
+
+  const handleSignIn = async () => {
+    try {
+      await signIn("github", { callbackUrl: "/admin" })
+    } catch (error) {
+      console.error("Sign in error:", error)
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f5f3f0]">
@@ -33,7 +41,7 @@ export default function AdminLoginPage() {
         )}
 
         <Button
-          onClick={() => signIn("github")}
+          onClick={handleSignIn}
           className="w-full bg-shinest-blue hover:bg-shinest-blue/90 text-white py-3 flex items-center justify-center gap-2"
         >
           <Github className="w-5 h-5" />

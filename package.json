@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@auth/core": "latest",
-    "@auth/nextjs": "^5.0.0",
     "@emotion/is-prop-valid": "latest",
     "@octokit/rest": "latest",
     "@radix-ui/react-slot": "^1.0.2",

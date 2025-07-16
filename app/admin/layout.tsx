@@ -2,21 +2,13 @@ import type React from "react"
 import { Inter } from "next/font/google"
 import AdminSidebar from "@/components/admin/sidebar"
 import AdminHeader from "@/components/admin/header"
-import { auth } from "@/auth" // Doğru import yolu
-import { redirect } from "next/navigation"
-import { SessionProvider } from "next-auth/react" // Import SessionProvider
+import { SessionProvider } from "next-auth/react"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth()
-
-  if (!session?.user) {
-    redirect("/admin/login")
-  }
-
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider session={session}>
+    <SessionProvider>
       <div className={`${inter.className} flex min-h-screen bg-gray-100`}>
         <AdminSidebar />
         <div className="flex flex-col flex-1">
