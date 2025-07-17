@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "functions": {
+    "pages/api/auth/[...nextauth].ts": {
+      "maxDuration": 30
+    }
+  }
+}
