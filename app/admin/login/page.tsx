@@ -1,20 +1,67 @@
 "use client"
 
-import { signIn } from "next-auth/react"
+import { useState, useEffect } from "react"
+import { signIn, getSession } from "next-auth/react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Github } from "lucide-react"
+import { Github, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
-import { useSearchParams } from "next/navigation"
 
-export default function AdminLoginPage() {
+export default function LoginPage() {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
   const searchParams = useSearchParams()
-  const error = searchParams.get("error")
 
-  const handleSignIn = async () => {
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession()
+      if (session) {
+        router.push("/admin")
+      }
+    }
+    checkSession()
+  }, [router])
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error")
+    if (errorParam) {
+      switch (errorParam) {
+        case "Configuration":
+          setError("Server configuration error. Please contact support.")
+          break
+        case "AccessDenied":
+          setError("Access denied. You do not have permission to access this area.")
+          break
+        case "Verification":
+          setError("Verification failed. Please try again.")
+          break
+        default:
+          setError("An authentication error occurred. Please try again.")
+      }
+    }
+  }, [searchParams])
+
+  const handleGitHubSignIn = async () => {
     try {
-      await signIn("github", { callbackUrl: "/admin" })
+      setIsLoading(true)
+      setError(null)
+
+      const result = await signIn("github", {
+        callbackUrl: "/admin",
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError("Failed to sign in with GitHub. Please try again.")
+      } else if (result?.url) {
+        router.push(result.url)
+      }
     } catch (error) {
       console.error("Sign in error:", error)
+      setError("An unexpected error occurred. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -36,17 +83,22 @@ export default function AdminLoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <span className="block sm:inline">Yetkisiz erişim. Lütfen doğru GitHub hesabıyla giriş yapın.</span>
+            <span className="block sm:inline">{error}</span>
           </motion.div>
         )}
 
         <Button
-          onClick={handleSignIn}
-          className="w-full bg-shinest-blue hover:bg-shinest-blue/90 text-white py-3 flex items-center justify-center gap-2"
+          onClick={handleGitHubSignIn}
+          disabled={isLoading}
+          className="w-full bg-shinest-blue hover:bg-shinest-blue/90 text-white py-3 flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          <Github className="w-5 h-5" />
-          <span>GitHub ile Giriş Yap</span>
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Github className="w-5 h-5" />}
+          <span>{isLoading ? "Giriş yapılıyor..." : "GitHub ile Giriş Yap"}</span>
         </Button>
+
+        <div className="mt-6 text-sm text-gray-500">
+          <p>Sorun yaşıyorsanız, lütfen GitHub hesabınızın aktif olduğundan emin olun.</p>
+        </div>
       </motion.div>
     </div>
   )

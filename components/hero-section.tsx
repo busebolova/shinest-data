@@ -3,12 +3,13 @@
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { useHomepageImages } from "@/hooks/use-homepage-images"
 
 export default function HeroSection() {
   const [isLoaded, setIsLoaded] = useState(false)
-  const { images, loading } = useHomepageImages()
   const shinestLetters = "SHINEST".split("")
+
+  // Static hero image
+  const heroImage = "/images/hero-main.png"
 
   useEffect(() => {
     // Component mount olduğunda basit bir delay ile yüklenmiş olarak işaretle
@@ -18,14 +19,6 @@ export default function HeroSection() {
 
     return () => clearTimeout(timer)
   }, [])
-
-  if (loading) {
-    return (
-      <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-24 md:pt-32 lg:pt-40 bg-[#f5f3f0]">
-        <div className="text-center text-[#c4975a]">Loading images...</div>
-      </section>
-    )
-  }
 
   return (
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-24 md:pt-32 lg:pt-40">
@@ -72,7 +65,7 @@ export default function HeroSection() {
           >
             <div className="w-[70vw] sm:w-[60vw] md:w-[50vw] lg:w-[40vw] xl:w-[35vw] h-[50vh] sm:h-[55vh] md:h-[65vh] lg:h-[75vh] xl:h-[80vh] relative rounded-lg overflow-hidden shadow-lg">
               <Image
-                src={images.heroMain || "/images/hero-main.png"}
+                src={heroImage || "/placeholder.svg"}
                 alt="Luxury Interior Design"
                 fill
                 className="object-cover"

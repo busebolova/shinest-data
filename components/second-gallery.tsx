@@ -2,12 +2,16 @@
 
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
-import { useHomepageImages } from "@/hooks/use-homepage-images"
 import Image from "next/image"
 
 export default function SecondGallery() {
   const galleryRef = useRef(null)
-  const { images } = useHomepageImages()
+
+  // Static image data - no need for the hook anymore
+  const images = {
+    secondGalleryPatio: "/images/second-gallery-patio.png",
+    secondGalleryKitchen: "/images/second-gallery-kitchen.png",
+  }
 
   // Gallery scroll animations
   const { scrollYProgress } = useScroll({
@@ -28,7 +32,7 @@ export default function SecondGallery() {
   const galleryImages = [
     {
       id: "gallery-image-1",
-      src: images.secondGalleryPatio || "/images/second-gallery-patio.png",
+      src: images.secondGalleryPatio,
       alt: "Design Consultation",
       position: "left-[5%] sm:left-[10%] md:left-[15%] top-[10%]",
       width: "w-[40%] sm:w-[35%] md:w-[35%]",
@@ -42,7 +46,7 @@ export default function SecondGallery() {
     },
     {
       id: "gallery-image-2",
-      src: images.secondGalleryKitchen || "/images/second-gallery-kitchen.png",
+      src: images.secondGalleryKitchen,
       alt: "Project Implementation",
       position: "right-[5%] sm:right-[8%] md:right-[10%] top-[25%]",
       width: "w-[50%] sm:w-[45%] md:w-[45%]",

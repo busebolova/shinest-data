@@ -26,29 +26,14 @@ const defaultImages: HomepageImages = {
 
 export function useHomepageImages() {
   const [images, setImages] = useState<HomepageImages>(defaultImages)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false) // Changed to false since we're using static data
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchImages() {
-      try {
-        const response = await fetch("/data/homepage-images.json")
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        const data: HomepageImages = await response.json()
-        setImages(data)
-      } catch (e: any) {
-        console.error("Failed to fetch homepage images:", e)
-        setError(e.message)
-        // Fallback to default images if fetching fails
-        setImages(defaultImages)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchImages()
+    // Since we're using static data, just set the images and mark as loaded
+    setImages(defaultImages)
+    setLoading(false)
+    setError(null)
   }, [])
 
   return { images, loading, error }

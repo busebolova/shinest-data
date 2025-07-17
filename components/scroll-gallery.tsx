@@ -3,15 +3,22 @@
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 import Image from "next/image"
-import { useHomepageImages } from "@/hooks/use-homepage-images"
 
 export default function ScrollGallery() {
   const containerRef = useRef(null)
-  const { images } = useHomepageImages()
 
-  const projects = images.scrollGalleryImages.map((src, index) => ({
+  // Static image data
+  const scrollGalleryImages = [
+    "/images/gallery-new-1.png",
+    "/images/gallery-new-2.png",
+    "/images/gallery-new-3.png",
+    "/images/gallery-new-4.png",
+    "/images/gallery-new-5.png",
+  ]
+
+  const projects = scrollGalleryImages.map((src, index) => ({
     id: index + 1,
-    title: `Gallery Image ${index + 1}`, // You might want to get titles from JSON too if needed
+    title: `Gallery Image ${index + 1}`,
     location: "Various",
     image: src,
   }))
@@ -42,6 +49,10 @@ export default function ScrollGallery() {
   const image5Opacity = useTransform(scrollYProgress, [0.4, 0.7], [0, 1])
   const image5Y = useTransform(scrollYProgress, [0.4, 0.7], [20, 0])
 
+  const opacities = [image1Opacity, image2Opacity, image3Opacity, image4Opacity, image5Opacity]
+  const yValues = [image1Y, image2Y, image3Y, image4Y, image5Y]
+  const scaleValues = [image1Scale, image2Scale, image3Scale, image4Scale, image5Scale]
+
   return (
     <section ref={containerRef} className="min-h-[120vh] bg-[#f5f3f0] relative overflow-hidden">
       <div className="sticky top-0 h-screen overflow-hidden">
@@ -51,9 +62,9 @@ export default function ScrollGallery() {
             <motion.div
               className="absolute left-0 md:left-0 top-[10%] w-[45%] sm:w-[40%] md:w-[35%] h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-[80vh] z-10"
               style={{
-                scale: image1Scale,
-                opacity: image1Opacity,
-                y: image1Y,
+                scale: scaleValues[0],
+                opacity: opacities[0],
+                y: yValues[0],
               }}
             >
               <div className="relative h-full w-full border border-white/30 shadow-sm bg-white p-0.5 md:p-1">
@@ -74,9 +85,9 @@ export default function ScrollGallery() {
             <motion.div
               className="absolute left-[20%] sm:left-[25%] md:left-[25%] top-[5%] w-[60%] sm:w-[55%] md:w-[50%] h-[30vh] sm:h-[35vh] md:h-[40vh] lg:h-[45vh] z-20"
               style={{
-                scale: image2Scale,
-                opacity: image2Opacity,
-                y: image2Y,
+                scale: scaleValues[1],
+                opacity: opacities[1],
+                y: yValues[1],
               }}
             >
               <div className="relative h-full w-full border border-white/30 shadow-sm bg-white p-0.5 md:p-1">
@@ -96,9 +107,9 @@ export default function ScrollGallery() {
             <motion.div
               className="absolute right-[5%] sm:right-[10%] md:right-[15%] top-[15%] w-[30%] sm:w-[28%] md:w-[25%] h-[40vh] sm:h-[45vh] md:h-[50vh] lg:h-[55vh] z-30"
               style={{
-                scale: image3Scale,
-                opacity: image3Opacity,
-                y: image3Y,
+                scale: scaleValues[2],
+                opacity: opacities[2],
+                y: yValues[2],
               }}
             >
               <div className="relative h-full w-full border border-white/30 shadow-sm bg-white p-0.5 md:p-1">
@@ -118,9 +129,9 @@ export default function ScrollGallery() {
             <motion.div
               className="absolute left-[30%] sm:left-[35%] md:left-[40%] bottom-[20%] md:bottom-[15%] w-[40%] sm:w-[35%] md:w-[30%] h-[25vh] sm:h-[30vh] md:h-[35vh] lg:h-[40vh] z-40"
               style={{
-                scale: image4Scale,
-                opacity: image4Opacity,
-                y: image4Y,
+                scale: scaleValues[3],
+                opacity: opacities[3],
+                y: yValues[3],
               }}
             >
               <div className="relative h-full w-full border border-white/30 shadow-sm bg-white p-0.5 md:p-1">
@@ -140,9 +151,9 @@ export default function ScrollGallery() {
             <motion.div
               className="absolute right-[2%] sm:right-[5%] md:right-[5%] bottom-[8%] w-[45%] sm:w-[40%] md:w-[35%] h-[18vh] sm:h-[20vh] md:h-[22vh] lg:h-[25vh] z-50"
               style={{
-                scale: image5Scale,
-                opacity: image5Opacity,
-                y: image5Y,
+                scale: scaleValues[4],
+                opacity: opacities[4],
+                y: yValues[4],
               }}
             >
               <div className="relative h-full w-full border border-white/30 shadow-sm bg-white p-0.5 md:p-1">
